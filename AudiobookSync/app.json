@@ -1,0 +1,10 @@
+{
+  "name": "AudiobookSync",
+  "displayName": "AudiobookSync",
+  "android": {
+    "package": "com.anonymous.audiobooksync"
+  },
+  "ios": {
+    "bundleIdentifier": "com.anonymous.audiobooksync"
+  }
+}
