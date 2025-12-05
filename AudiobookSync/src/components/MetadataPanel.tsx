@@ -28,7 +28,7 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
             open={isOpen}
             onClose={onClose}
             side="bottom"
-            height="40%"               // similar to your old 40dvh
+            height="50%"
         >
             <View
                 style={[

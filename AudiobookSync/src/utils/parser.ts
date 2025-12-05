@@ -1,4 +1,5 @@
-import { SubtitleCue } from '../types';
+import { SubtitleCue } from './types.ts';
+import uuid from 'react-native-uuid';
 
 // Helper to convert timestamp string to seconds
 // Formats supported: "MM:SS.mmm", "HH:MM:SS.mmm", "HH:MM:SS,mmm"
@@ -90,7 +91,7 @@ export const parseSubtitleText = (text: string): SubtitleCue[] => {
 
         if (content) {
             cues.push({
-                id: crypto.randomUUID(),
+                id: uuid.v4().toString(),
                 start,
                 end,
                 text: content

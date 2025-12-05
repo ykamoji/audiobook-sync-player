@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -8,16 +8,38 @@ import {
     Image,
     LayoutChangeEvent,
     Dimensions,
-    Animated,
 } from 'react-native';
 
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import {
+    Gesture,
+    GestureDetector,
+} from 'react-native-gesture-handler';
+
+import Animated, {
+    interpolate,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Controls } from './Controls';
-import { XIcon, ListIcon, ChevronDownIcon } from './Icons.tsx';
+import {
+    XIcon,
+    ListIcon,
+    ChevronDownIcon,
+    PlayIcon,
+    PauseIcon,
+} from './Icons.tsx';
 
-import { AudioFileState, SubtitleFileState, SubtitleCue } from '../utils/types';
+import {
+    AudioFileState,
+    SubtitleFileState,
+    SubtitleCue,
+} from '../utils/types';
 
 interface PlayerViewProps {
     audioState: AudioFileState;
@@ -33,7 +55,7 @@ interface PlayerViewProps {
     onSegmentChange: (index: number) => void;
 
     isPlaying: boolean;
-    onBack: () => void;
+    onBack: () => void;              // now only for "full close" if you want it
     onTogglePlay: () => void;
     onSeek: (percentage: number) => void;
     onSubtitleClick: (time: number) => void;
@@ -47,6 +69,9 @@ interface PlayerViewProps {
 }
 
 const CUES_PER_SEGMENT = 100;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const MINI_HEIGHT = 80;
 
 export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           audioState,
@@ -55,9 +80,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           currentCueIndex,
                                                           currentTime,
                                                           duration,
-                                                          segmentMarkers,
                                                           currentSegmentIndex,
                                                           totalSegments,
+                                                          segmentMarkers,
                                                           onSegmentChange,
                                                           isPlaying,
                                                           onBack,
@@ -74,54 +99,24 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                       }) => {
     const insets = useSafeAreaInsets();
 
-    // UI State
+    // UI
     const [showChapters, setShowChapters] = useState(false);
 
-    // Scroll + subtitle layout refs
+    // Scroll refs
     const scrollRef = useRef<ScrollView | null>(null);
     const cuePositionsRef = useRef<Record<string, number>>({});
     const containerHeightRef = useRef<number>(0);
-
-    // Track when list is at the top (to allow swipe-down)
     const scrollAtTop = useRef(true);
 
-    // Animated vertical drag
-    const translateY = useRef(new Animated.Value(0)).current;
+    // ----- REANIMATED SHARED VALUES -----
+    // translateY: 0 = full screen, miniOffset = mini-player at bottom
+    const translateY = useSharedValue(0);
+    const startY = useSharedValue(0);
+    const progress = useSharedValue(0); // 0 = full, 1 = mini
 
-    // ---------------------------
-    // GESTURE HANDLER SWIPE-DOWN
-    // ---------------------------
-    const dragGesture = useMemo(() => {
-        return Gesture.Pan()
-            .onUpdate((event) => {
-                if (event.translationY > 0 && scrollAtTop.current) {
-                    translateY.setValue(event.translationY);
-                }
-            })
-            .onEnd((event) => {
-                const shouldClose =
-                    event.translationY > 120 || event.velocityY > 600;
+    const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom;
 
-                if (shouldClose) {
-                    onBack();
-                } else {
-                    Animated.spring(translateY, {
-                        toValue: 0,
-                        useNativeDriver: true,
-                    }).start();
-                }
-            })
-            .runOnJS(true);
-    }, [onBack]);
-
-    // Animated style
-    const swipeStyle = {
-        transform: [{ translateY }],
-    };
-
-    // ---------------------------
-    // AUTO-SCROLL TO ACTIVE CUE
-    // ---------------------------
+    // ----- AUTO-SCROLL TO ACTIVE CUE -----
     const scrollToActiveCue = () => {
         if (!scrollRef.current || !displayedCues.length) return;
         if (currentCueIndex < 0 || currentCueIndex >= displayedCues.length) return;
@@ -131,7 +126,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         if (y == null) return;
 
         const containerHeight =
-            containerHeightRef.current || Dimensions.get('window').height * 0.4;
+            containerHeightRef.current || SCREEN_HEIGHT * 0.4;
 
         const targetY = Math.max(0, y - containerHeight * 0.4);
 
@@ -145,7 +140,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         scrollToActiveCue();
     }, [currentCueIndex, currentSegmentIndex, displayedCues]);
 
-    // Layout tracking
     const onSubtitleLayout = (cueId: string) => (e: LayoutChangeEvent) => {
         cuePositionsRef.current[cueId] = e.nativeEvent.layout.y;
     };
@@ -155,10 +149,114 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     };
 
     const formatTime = (seconds: number) => {
-        if (!seconds || isNaN(seconds)) return "00:00";
+        if (!seconds || isNaN(seconds)) return '00:00';
         const m = Math.floor(seconds / 60);
         const s = Math.floor(seconds % 60);
-        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    // ----- APPLE-MUSIC-STYLE DRAG -----
+    const dragGesture = Gesture.Pan()
+        .onUpdate((e) => {
+            if (e.translationY > 0 && scrollAtTop.current) {
+                translateY.value = e.translationY;
+            }
+        })
+        .onEnd((e) => {
+            const shouldClose = e.translationY > 120 || e.velocityY > 600;
+
+            if (shouldClose) {
+                // animate off-screen
+                translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 }, () => {
+                    // 🔥 Switch UI to mini (run on JS thread)
+                    runOnJS(onBack)();
+                });
+            } else {
+                // snap back to full
+                translateY.value = withSpring(0, {
+                    damping: 14,
+                    stiffness: 140,
+                });
+            }
+        });
+
+    // Tap on mini-player to expand back
+    const miniTapGesture = Gesture.Tap().onEnd(() => {
+        translateY.value = withSpring(0, {
+            damping: 20,
+            stiffness: 240,
+        });
+        progress.value = withSpring(0);
+    });
+
+    // ----- ANIMATED STYLES -----
+    const containerStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateY.value }],
+        };
+    });
+
+    // Artwork morph (scale + move like Apple Music)
+    const artworkStyle = useAnimatedStyle(() => {
+        const scale = interpolate(progress.value, [0, 1], [1, 0.45], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+        });
+        const translateX = interpolate(progress.value, [0, 1], [0, -SCREEN_WIDTH * 0.18], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+        });
+        const translateY = interpolate(
+            progress.value,
+            [0, 1],
+            [0, -SCREEN_HEIGHT * 0.16],
+            {extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',}
+        );
+
+        return {
+            transform: [{ translateX }, { translateY }, { scale }],
+        };
+    });
+
+    // Main header/subtitle/controls fade out as it collapses
+    const fullContentStyle = useAnimatedStyle(() => {
+        const opacity = interpolate(progress.value, [0, 0.8], [1, 0], {extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',});
+        return { opacity };
+    });
+
+    // Mini-player fade in
+    const miniStyle = useAnimatedStyle(() => {
+        const opacity = interpolate(progress.value, [0.2, 1], [0, 1], {extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',});
+        return { opacity };
+    });
+
+    // Mini-player vertical offset (sticks to bottom)
+    const miniContainerStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                {
+                    translateY: interpolate(
+                        progress.value,
+                        [0, 1],
+                        [MINI_HEIGHT, 0],
+                        {extrapolateLeft: 'clamp',
+                            extrapolateRight: 'clamp',}
+                    ),
+                },
+            ],
+        };
+    });
+
+    // ChevronDown: collapse to mini (same as swipe)
+    const collapseToMini = () => {
+        translateY.value = withSpring(miniOffset, {
+            damping: 18,
+            stiffness: 220,
+        });
+        progress.value = withSpring(1);
     };
 
     // ----------------------------------------------------
@@ -170,105 +268,169 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 <Animated.View
                     style={[
                         styles.root,
-                        swipeStyle,
-                        { paddingTop: insets.top, paddingBottom: insets.bottom },
+                        containerStyle,
+                        {
+                            paddingTop: insets.top,
+                            paddingBottom: insets.bottom,
+                        },
                     ]}
                 >
-                    {/* Header */}
-                    <View style={styles.headerContainer}>
-                        <TouchableOpacity onPress={onBack} style={styles.headerBackButton}>
-                            <ChevronDownIcon />
-                        </TouchableOpacity>
+                    {/* FULL PLAYER CONTENT */}
+                    <Animated.View style={fullContentStyle}>
+                        {/* Header */}
+                        <View style={styles.headerContainer}>
+                            <TouchableOpacity onPress={collapseToMini} style={styles.headerBackButton}>
+                                <ChevronDownIcon />
+                            </TouchableOpacity>
 
-                        <View style={styles.headerTextContainer}>
-                            <Text style={styles.nowPlayingLabel}>Now Playing</Text>
-                            <Text style={styles.trackTitle}>{audioState.name}</Text>
-                        </View>
-                    </View>
-
-                    {/* COVER ART */}
-                    <View style={styles.coverContainer}>
-                        {audioState.coverPath ? (
-                            <View style={styles.coverWrapper}>
-                                <Image source={{ uri: audioState.coverPath }} style={styles.coverImage} />
-                                <View style={styles.coverBorder} />
-                            </View>
-                        ) : (
-                            <View style={styles.coverPlaceholder}>
-                                <Text style={styles.coverPlaceholderText}>
-                                    {audioState.name.substring(0, 2).toUpperCase()}
+                            <View style={styles.headerTextContainer}>
+                                <Text style={styles.nowPlayingLabel}>Now Playing</Text>
+                                <Text style={styles.trackTitle} numberOfLines={2}>
+                                    {audioState.name}
                                 </Text>
                             </View>
-                        )}
-                    </View>
+                        </View>
 
-                    {/* SUBTITLES */}
-                    <View style={styles.subtitlesContainer} onLayout={onSubtitleContainerLayout}>
-                        <ScrollView
-                            ref={scrollRef}
-                            style={styles.subtitlesScroll}
-                            contentContainerStyle={styles.subtitlesContent}
-                            scrollEventThrottle={16}
-                            onScroll={({ nativeEvent }) => {
-                                const y = nativeEvent.contentOffset.y;
-                                scrollAtTop.current = y <= 0;
-                            }}
-                        >
-                            {displayedCues.map((cue, index) => {
-                                const isActive = index === currentCueIndex;
-                                return (
-                                    <View
-                                        key={cue.id}
-                                        onLayout={onSubtitleLayout(cue.id)}
-                                        style={[styles.cueContainer, isActive && styles.cueContainerActive]}
-                                    >
-                                        <Text
-                                            onPress={() => onSubtitleClick(cue.start)}
-                                            style={[
-                                                styles.cueText,
-                                                isActive ? styles.cueTextActive : styles.cueTextInactive,
-                                            ]}
-                                        >
-                                            {cue.text}
-                                        </Text>
-                                    </View>
-                                );
-                            })}
-
-                            {displayedCues.length === 0 && (
-                                <View style={styles.noTextContainer}>
-                                    <Text style={styles.noText}>No text content for this section.</Text>
+                        {/* COVER ART */}
+                        <Animated.View style={[styles.coverContainer, artworkStyle]}>
+                            {audioState.coverPath ? (
+                                <View style={styles.coverWrapper}>
+                                    <Image
+                                        source={{ uri: audioState.coverPath }}
+                                        style={styles.coverImage}
+                                    />
+                                    <View style={styles.coverBorder} />
+                                </View>
+                            ) : (
+                                <View style={styles.coverPlaceholder}>
+                                    <Text style={styles.coverPlaceholderText}>
+                                        {audioState.name.substring(0, 2).toUpperCase()}
+                                    </Text>
                                 </View>
                             )}
-                        </ScrollView>
-                    </View>
+                        </Animated.View>
 
-                    {/* CONTROLS */}
-                    <View style={styles.controlsContainer}>
-                        <Controls
-                            isPlaying={isPlaying}
-                            currentTime={currentTime}
-                            duration={duration}
-                            progress={duration > 0 ? (currentTime / duration) * 100 : 0}
-                            onPlayPause={onTogglePlay}
-                            onSeek={onSeek}
-                            onNext={onNext}
-                            onPrevious={onPrevious}
-                            onSkipForward={onSkipForward}
-                            onSkipBackward={onSkipBackward}
-                            onOpenMetadata={onOpenMetadata}
-                            onOpenChapters={() => setShowChapters(true)}
-                            segmentMarkers={segmentMarkers}
-                            hasNext={hasNext}
-                            hasPrevious={hasPrevious}
-                        />
-                    </View>
+                        {/* SUBTITLES */}
+                        <View
+                            style={styles.subtitlesContainer}
+                            onLayout={onSubtitleContainerLayout}
+                        >
+                            <ScrollView
+                                ref={scrollRef}
+                                style={styles.subtitlesScroll}
+                                contentContainerStyle={styles.subtitlesContent}
+                                scrollEventThrottle={16}
+                                onScroll={({ nativeEvent }) => {
+                                    const y = nativeEvent.contentOffset.y;
+                                    scrollAtTop.current = y <= 0;
+                                }}
+                            >
+                                {displayedCues.map((cue, index) => {
+                                    const isActive = index === currentCueIndex;
+                                    return (
+                                        <View
+                                            key={cue.id}
+                                            onLayout={onSubtitleLayout(cue.id)}
+                                            style={[
+                                                styles.cueContainer,
+                                                isActive && styles.cueContainerActive,
+                                            ]}
+                                        >
+                                            <Text
+                                                onPress={() => onSubtitleClick(cue.start)}
+                                                style={[
+                                                    styles.cueText,
+                                                    isActive
+                                                        ? styles.cueTextActive
+                                                        : styles.cueTextInactive,
+                                                ]}
+                                            >
+                                                {cue.text}
+                                            </Text>
+                                        </View>
+                                    );
+                                })}
 
-                    <View style={styles.ambientGlow} pointerEvents="none" />
+                                {displayedCues.length === 0 && (
+                                    <View style={styles.noTextContainer}>
+                                        <Text style={styles.noText}>
+                                            No text content for this section.
+                                        </Text>
+                                    </View>
+                                )}
+                            </ScrollView>
+                        </View>
+
+                        {/* CONTROLS */}
+                        <View style={styles.controlsContainer}>
+                            <Controls
+                                isPlaying={isPlaying}
+                                currentTime={currentTime}
+                                duration={duration}
+                                progress={duration > 0 ? (currentTime / duration) * 100 : 0}
+                                onPlayPause={onTogglePlay}
+                                onSeek={onSeek}
+                                onNext={onNext}
+                                onPrevious={onPrevious}
+                                onSkipForward={onSkipForward}
+                                onSkipBackward={onSkipBackward}
+                                onOpenMetadata={onOpenMetadata}
+                                onOpenChapters={() => setShowChapters(true)}
+                                segmentMarkers={segmentMarkers}
+                                hasNext={hasNext}
+                                hasPrevious={hasPrevious}
+                            />
+                        </View>
+                    </Animated.View>
+
+                    {/* MINI-PLAYER OVERLAY (Apple Music style) */}
+                    <GestureDetector gesture={miniTapGesture}>
+                        <Animated.View
+                            style={[
+                                styles.miniPlayerContainer,
+                                miniContainerStyle,
+                                miniStyle,
+                            ]}
+                        >
+                            <View style={styles.miniLeft}>
+                                {audioState.coverPath ? (
+                                    <Image
+                                        source={{ uri: audioState.coverPath }}
+                                        style={styles.miniCover}
+                                    />
+                                ) : (
+                                    <View style={styles.miniCoverPlaceholder}>
+                                        <Text style={styles.miniCoverText}>
+                                            {audioState.name.substring(0, 2).toUpperCase()}
+                                        </Text>
+                                    </View>
+                                )}
+                                <View style={styles.miniTextWrapper}>
+                                    <Text
+                                        style={styles.miniTitle}
+                                        numberOfLines={1}
+                                    >
+                                        {audioState.name}
+                                    </Text>
+                                    <Text style={styles.miniSubtitle}>
+                                        {formatTime(currentTime)} / {formatTime(duration)}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <TouchableOpacity onPress={onTogglePlay} style={styles.miniPlayButton}>
+                                {isPlaying ? (
+                                    <PauseIcon size={28} color="#fff" />
+                                ) : (
+                                    <PlayIcon size={28} color="#fff" />
+                                )}
+                            </TouchableOpacity>
+                        </Animated.View>
+                    </GestureDetector>
                 </Animated.View>
             </GestureDetector>
 
-            {/* CHAPTERS MODAL */}
+            {/* CHAPTERS MODAL (unchanged) */}
             {showChapters && (
                 <View style={styles.chaptersOverlayRoot} pointerEvents="box-none">
                     <TouchableOpacity
@@ -319,7 +481,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 return (
                                     <TouchableOpacity
                                         key={i}
-                                        style={[styles.chapterItem, isActive && styles.chapterItemActive]}
+                                        style={[
+                                            styles.chapterItem,
+                                            isActive && styles.chapterItemActive,
+                                        ]}
                                         onPress={() => {
                                             onSegmentChange(i);
                                             setShowChapters(false);
@@ -353,12 +518,17 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     );
 };
 
-// ------------------ ORIGINAL FULL STYLES ------------------
+// ------------------ STYLES ------------------
 
 const styles = StyleSheet.create({
     root: {
         position: 'absolute',
-        inset: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
         backgroundColor: 'black',
         flexDirection: 'column',
     },
@@ -395,7 +565,7 @@ const styles = StyleSheet.create({
         marginTop: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        height: Dimensions.get('window').height * 0.4,
+        height: SCREEN_HEIGHT * 0.4,
         minHeight: 260,
     },
     coverWrapper: {
@@ -471,17 +641,64 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingBottom: 4,
     },
-    ambientGlow: {
+
+    // Mini-player styles
+    miniPlayerContainer: {
         position: 'absolute',
-        width: 400,
-        height: 400,
-        borderRadius: 200,
-        backgroundColor: 'rgba(249,115,22,0.15)',
-        top: '40%',
-        left: '50%',
-        marginLeft: -200,
-        marginTop: -200,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: MINI_HEIGHT,
+        backgroundColor: '#111',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(255,255,255,0.15)',
     },
+    miniLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    miniCover: {
+        width: 52,
+        height: 52,
+        borderRadius: 8,
+        marginRight: 10,
+    },
+    miniCoverPlaceholder: {
+        width: 52,
+        height: 52,
+        borderRadius: 8,
+        backgroundColor: '#222',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+    },
+    miniCoverText: {
+        color: '#aaa',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    miniTextWrapper: {
+        flex: 1,
+    },
+    miniTitle: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    miniSubtitle: {
+        color: '#aaa',
+        fontSize: 12,
+        marginTop: 2,
+    },
+    miniPlayButton: {
+        padding: 8,
+    },
+
+    // Chapters
     chaptersOverlayRoot: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'flex-end',
@@ -522,7 +739,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.08)',
     },
     chaptersList: {
-        maxHeight: Dimensions.get('window').height * 0.4,
+        maxHeight: SCREEN_HEIGHT * 0.4,
     },
     chaptersListContent: {
         paddingHorizontal: 12,

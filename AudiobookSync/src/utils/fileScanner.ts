@@ -2,6 +2,7 @@ import RNFS from 'react-native-fs';
 import uuid from 'react-native-uuid';
 import { Track, AppData } from './types.ts';
 import { Platform } from 'react-native';
+import * as path from "node:path";
 
 // Valid extensions
 const AUDIO_EXTS = ['.mp3', '.wav', '.aac', '.m4a', '.ogg', '.flac'];
@@ -48,12 +49,20 @@ export const scanNativePath = async (
     for (const uri of fileUris) {
         // Convert "content://" uris to actual file paths for RNFS
         let path = uri;
-        if (uri.startsWith('content://')) {
+
+        if (path.startsWith('file://')) {
+            path = path.replace('file://', '');
+        }
+
+        if (path.startsWith('content://')) {
             const stat = await RNFS.stat(uri);
             path = stat.path; // real absolute path
         }
 
+        path = decodeURI(path);
+
         const name = path.split('/').pop() || '';
+
         const ext = getExtension(name);
 
         // Metadata JSON
@@ -124,12 +133,15 @@ export const scanNativePath = async (
 
         tracks.push({
             id: uuid.v4().toString(),
+            coverFile: undefined,
             name: base,
             audioPath: path,
             subtitlePath,
-            coverPath,
+            coverPath
         });
     });
+
+    // console.log(tracks)
 
     return {
         tracks: sortTracks(tracks),

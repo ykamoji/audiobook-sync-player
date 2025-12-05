@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Slider from '@react-native-community/slider';
+import { Slider } from '@miblanchard/react-native-slider';
 
 import {
     PlayIcon,
@@ -60,14 +60,13 @@ export const Controls: React.FC<ControlsProps> = ({
             {/* PROGRESS + TIME */}
             <View style={styles.sliderContainer}>
                 <Slider
-                    style={{ width: '100%' }}
+                    value={progress}
                     minimumValue={0}
                     maximumValue={100}
-                    value={progress}
+                    onSlidingComplete={(values) => onSeek(values[0])}
                     minimumTrackTintColor="#f97316"
                     maximumTrackTintColor="#555"
                     thumbTintColor="#fff"
-                    onSlidingComplete={(v) => onSeek(v)}
                 />
 
                 <View style={styles.timeRow}>

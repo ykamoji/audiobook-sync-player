@@ -1,17 +1,16 @@
-import React, { FC, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import {
     View,
     Text,
+    StyleSheet,
     TouchableOpacity,
     Image,
-    StyleSheet
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { MusicIcon, PauseIcon, PlayIcon } from './Icons';
+import { PlayIcon, PauseIcon } from './Icons.tsx';
 
-interface MiniProps {
-    coverUrl: string | null;
+interface MiniPlayerProps {
+    coverUrl: string;
     name: string;
     isPlaying: boolean;
     progress: number; // 0–100
@@ -19,141 +18,134 @@ interface MiniProps {
     onOpen: () => void;
 }
 
-export const MiniPlayer: FC<MiniProps> = ({
-                                              coverUrl,
-                                              name,
-                                              isPlaying,
-                                              onTogglePlay,
-                                              onOpen,
-                                              progress
-                                          }) => {
-
-    const [colorMap, setColorMap] = useState<Record<string, string>>({});
-
-    // Load colorMap from AsyncStorage instead of localStorage
-    useEffect(() => {
-        (async () => {
-            try {
-                const stored = await AsyncStorage.getItem('colorMap');
-                if (stored) {
-                    setColorMap(JSON.parse(stored));
-                }
-            } catch {}
-        })();
-    }, []);
-
-    // Background color
-    const bgColor = useMemo(() => {
-        if (coverUrl && colorMap) {
-            const key = name + '.png';
-            if (colorMap[key]) {
-                return `rgba(${colorMap[key]}, 0.65)`; // "r,g,b"
-            }
-        }
-        return 'rgba(255,131,0,0.60)'; // Default audible orange
-    }, [coverUrl, colorMap, name]);
+export const MiniPlayer: React.FC<MiniPlayerProps> = ({
+                                                          coverUrl,
+                                                          name,
+                                                          isPlaying,
+                                                          progress,
+                                                          onTogglePlay,
+                                                          onOpen,
+                                                      }) => {
+    const safeName = name || 'Now Playing';
 
     return (
-        <View style={styles.wrapper}>
-            {/* MAIN ROW */}
-            <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                    if (coverUrl) onOpen();
-                }}
-                style={[styles.container, { backgroundColor: bgColor }]}
-            >
-                {/* Thumbnail */}
-                <View style={styles.thumbnailBox}>
-                    {coverUrl ? (
-                        <Image
-                            source={{ uri: coverUrl }}
-                            style={styles.thumbnail}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <MusicIcon size={40} color="#fff" />
-                    )}
-                </View>
+        <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.container}
+            onPress={onOpen}
+        >
+            {/* LEFT: cover + text */}
+            <View style={styles.left}>
+                {coverUrl ? (
+                    <Image source={{ uri: coverUrl }} style={styles.cover} />
+                ) : (
+                    <View style={styles.coverPlaceholder}>
+                        <Text style={styles.coverPlaceholderText}>
+                            {safeName.substring(0, 2).toUpperCase()}
+                        </Text>
+                    </View>
+                )}
 
-                {/* Title */}
-                <View style={styles.titleBox}>
-                    <Text
-                        numberOfLines={1}
-                        style={styles.title}
-                    >
-                        {name}
+                <View style={styles.textWrapper}>
+                    <Text style={styles.title} numberOfLines={1}>
+                        {safeName}
+                    </Text>
+                    <Text style={styles.subtitle} numberOfLines={1}>
+                        Tap to open player
                     </Text>
                 </View>
+            </View>
 
-                {/* Play / Pause */}
-                <TouchableOpacity
-                    disabled={!coverUrl}
-                    onPress={(e) => {
-                        e.stopPropagation?.();
-                        onTogglePlay();
-                    }}
-                    style={styles.playButton}
-                >
-                    {isPlaying ? (
-                        <PauseIcon size={34} color="#fff" />
-                    ) : (
-                        <PlayIcon size={34} color="#fff" />
-                    )}
-                </TouchableOpacity>
+            {/* RIGHT: play / pause */}
+            <TouchableOpacity
+                onPress={(e) => {
+                    e.stopPropagation();
+                    onTogglePlay();
+                }}
+                style={styles.playButton}
+            >
+                {isPlaying ? (
+                    <PauseIcon size={24} color="#fff" />
+                ) : (
+                    <PlayIcon size={24} color="#fff" />
+                )}
             </TouchableOpacity>
 
-            {/* Progress bar */}
-            <View
-                style={[
-                    styles.progressBar,
-                    { width: `${progress}%` }
-                ]}
-            />
-        </View>
+            {/* PROGRESS BAR */}
+            <View style={styles.progressTrack}>
+                <View
+                    style={[
+                        styles.progressFill,
+                        { width: `${Math.max(0, Math.min(progress, 100))}%` },
+                    ]}
+                />
+            </View>
+        </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
-    wrapper: {
-        width: '100%',
-        position: 'relative'
-    },
     container: {
+        height: 68,
+        backgroundColor: '#111',
         flexDirection: 'row',
         alignItems: 'center',
-        paddingLeft: 14,
-        paddingRight: 10,
-        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(255,255,255,0.18)',
     },
-    thumbnailBox: {
-        width: 44,
-        height: 44,
-        borderRadius: 6,
-        overflow: 'hidden',
-        marginRight: 12,
-    },
-    thumbnail: {
-        width: '100%',
-        height: '100%',
-    },
-    titleBox: {
+    left: {
+        flexDirection: 'row',
+        alignItems: 'center',
         flex: 1,
+    },
+    cover: {
+        width: 46,
+        height: 46,
+        borderRadius: 8,
+        marginRight: 10,
+    },
+    coverPlaceholder: {
+        width: 46,
+        height: 46,
+        borderRadius: 8,
+        backgroundColor: '#222',
+        alignItems: 'center',
         justifyContent: 'center',
+        marginRight: 10,
+    },
+    coverPlaceholderText: {
+        color: '#aaa',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    textWrapper: {
+        flex: 1,
     },
     title: {
         color: '#fff',
-        fontSize: 15,
-        fontWeight: '500',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    subtitle: {
+        color: '#888',
+        fontSize: 11,
+        marginTop: 2,
     },
     playButton: {
-        padding: 4,
+        padding: 8,
+        borderRadius: 999,
     },
-    progressBar: {
-        height: 3,
-        backgroundColor: '#f97316', // audible-orange
+    progressTrack: {
         position: 'absolute',
-        bottom: 0,
         left: 0,
+        right: 0,
+        bottom: 0,
+        height: 2,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#f97316',
     },
 });
