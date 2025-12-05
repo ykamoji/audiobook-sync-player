@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
-import {AppData} from './types.ts';
+import {AppData, Playlist, AppSettings} from './types.ts';
 
 /**
  * Save metadata (progress, playlists, settings) to device storage.
@@ -8,7 +8,12 @@ import {AppData} from './types.ts';
  */
 export const saveToNativeFilesystem = async (data: AppData, rootPath?: string) => {
     try {
-        await AsyncStorage.setItem("metadata", JSON.stringify(data));
+        // await AsyncStorage.setItem("metadata", JSON.stringify(data));
+        const { playlists, progress, settings } = data
+        const {isAutoPlay} = settings
+        await AsyncStorage.setItem("audiobook_progress", JSON.stringify(progress))
+        await savePlaylist(playlists)
+        await saveAutoPlay(isAutoPlay)
         return true;
     } catch (e) {
         console.error("Error saving metadata", e);
@@ -16,14 +21,41 @@ export const saveToNativeFilesystem = async (data: AppData, rootPath?: string) =
     }
 };
 
+export const savePlaylist = async (playlists: Playlist[]) => {
+    try{
+        await AsyncStorage.setItem("audiobook_playlists", JSON.stringify(playlists))
+    }catch (e){
+        console.error("Error saving playlist", e);
+    }
+}
+
+
+export const saveAutoPlay = async (isAutoPlay: boolean) => {
+    try{
+        await AsyncStorage.setItem("audiobook_autoplay", JSON.stringify(isAutoPlay))
+    }catch (e){
+        console.error("Error saving playlist", e);
+    }
+}
+
 /**
  * Load stored metadata from device.
  */
-export const loadInitialNativeMetadata = async (): Promise<AppData | null> => {
+export const loadInitialNativeMetadata = async (): Promise<any | null> => {
     try {
-        const value = await AsyncStorage.getItem("metadata");
-        if (!value) return null;
-        return JSON.parse(value);
+        const storedPlaylists = await AsyncStorage.getItem("audiobook_playlists")
+
+        const storedAutoPlay = await AsyncStorage.getItem("audiobook_autoplay");
+
+        let reload_files: string | null = await AsyncStorage.getItem('filePaths')
+        let filePaths = [] as string[]
+
+        if (reload_files !== null) {
+            filePaths = JSON.parse(reload_files) as string[]
+        }
+
+        return { storedPlaylists, storedAutoPlay,  filePaths}
+
     } catch (e) {
         console.warn("Failed to load metadata", e);
         return null;

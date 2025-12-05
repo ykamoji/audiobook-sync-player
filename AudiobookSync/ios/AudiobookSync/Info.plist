@@ -25,7 +25,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.anonymous.audiobooksync</string>
+				<string>com.ykamoji.audiobooksync</string>
 			</array>
 		</dict>
 	</array>

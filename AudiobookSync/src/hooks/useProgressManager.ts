@@ -15,6 +15,15 @@ export const useProgressManager = () => {
         }
     };
 
+    const initProgress = async (data: Record<string, ProgressData>) => {
+
+        setProgressMap((prev) => {
+            const newMap = {...prev, ...data};
+            persistProgress(newMap);
+            return newMap;
+        });
+    }
+
     const saveProgress = (
         trackName: string,
         currentTime: number,
@@ -52,7 +61,7 @@ export const useProgressManager = () => {
 
     return {
         progressMap,
-        setProgressMap,
+        initProgress,
         saveProgress,
         reloadProgress,
     };

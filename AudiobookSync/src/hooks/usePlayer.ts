@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import TrackPlayer, {
     State,
     Event,
@@ -6,6 +6,8 @@ import TrackPlayer, {
     useProgress,
     useTrackPlayerEvents,
 } from 'react-native-track-player';
+
+import { releaseSecureAccess } from 'react-native-document-picker'
 
 import { AudioFileState, SubtitleFileState, Track, ProgressData } from '../utils/types';
 import { loadTrackMedia } from '../utils/mediaLoader';
@@ -115,6 +117,11 @@ export const usePlayer = ({
             await TrackPlayer.play();
         }
     };
+
+    useEffect(() => {
+        if(!!audioState.path) releaseSecureAccess([audioState.path!]).then();
+    }, [audioState.path]);
+
 
     /** ─────────────────────────────────────────────
      *  SAVE PROGRESS LOOP

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Track, AppData } from '../utils/types';
 import { scanNativePath } from '../utils/fileScanner';
 
+
 interface UseLibraryProps {
     onMetadataLoaded: (data: AppData) => void;
     onUploadSuccess: () => void;
@@ -19,17 +20,25 @@ export const useLibrary = ({ onMetadataLoaded, onUploadSuccess }: UseLibraryProp
         setIsLoading(true);
 
         try {
+
             // Works on all DocumentPicker versions
-            const results = await DocumentPicker.pick({
+            const responses = await DocumentPicker.pick({
                 allowMultiSelection: true,
                 presentationStyle: 'fullScreen',
                 type: [types.allFiles],
                 mode: 'open',
             });
 
-            const filePaths = results
+            const filePaths = responses
                 .map(f => f.uri)
                 .filter(Boolean);
+
+
+            // Save the directory paths for library views
+            await AsyncStorage.setItem(
+                'filePaths',
+                JSON.stringify(filePaths)
+            );
 
             // Scan selected files
             const scan = await scanNativePath(filePaths);
@@ -41,6 +50,8 @@ export const useLibrary = ({ onMetadataLoaded, onUploadSuccess }: UseLibraryProp
             if (resultMetadata) onMetadataLoaded(resultMetadata);
 
             setAllTracks(resultTracks);
+
+            // release = await RNBlobUtil.ios.startAccessingSecurityScopedResource(uri);
 
             // Save color map (converted to plain object)
             await AsyncStorage.setItem(
@@ -64,6 +75,7 @@ export const useLibrary = ({ onMetadataLoaded, onUploadSuccess }: UseLibraryProp
 
     return {
         allTracks,
+        setAllTracks,
         isLoading,
         nativeRootPath: nativeRootPathRef.current,
         handleDirectoryUpload,

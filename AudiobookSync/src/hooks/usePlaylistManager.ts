@@ -14,7 +14,7 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
         AsyncStorage.setItem(
             'audiobook_playlists',
             JSON.stringify(savedPlaylists)
-        );
+        ).then();
     }, [savedPlaylists, isStorageLoaded]);
 
     const createPlaylist = (name: string, initialTracks: Track[]) => {

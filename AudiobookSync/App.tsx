@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     Text,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import RNFS from "react-native-fs";
 
@@ -29,6 +28,8 @@ import {usePlayer} from "./src/hooks/usePlayer";
 
 import TrackPlayer, {Capability} from "react-native-track-player";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {scanNativePath} from "./src/utils/fileScanner.ts";
+import {savePlaylist, saveAutoPlay} from "./src/utils/persistence";
 
 export const setupPlayer = async () => {
     await TrackPlayer.setupPlayer();
@@ -64,7 +65,6 @@ const AppContent: React.FC = () => {
     const [view, setView] = useState<ViewName>("setup");
     const [playerMode, setPlayerMode] = useState<PlayerMode>("mini");
     const [isStorageLoaded, setIsStorageLoaded] = useState(false);
-    const [hasSystemMetadata, setHasSystemMetadata] = useState(false);
 
     // --- Settings ---
     const [isAutoPlay, setIsAutoPlay] = useState(false);
@@ -74,10 +74,10 @@ const AppContent: React.FC = () => {
 
     // --- Custom Hooks ---
     const playlistManager = usePlaylistManager(isStorageLoaded);
-    const {progressMap, setProgressMap, saveProgress, reloadProgress} =
+    const {progressMap, initProgress, saveProgress, reloadProgress} =
         useProgressManager();
 
-    const {allTracks, isLoading, nativeRootPath, handleDirectoryUpload} =
+    const {allTracks, setAllTracks, isLoading, nativeRootPath, handleDirectoryUpload} =
         useLibrary({
             onMetadataLoaded: (data: AppData) => applyMetadata(data),
             onUploadSuccess: () => setView("titles"),
@@ -93,69 +93,46 @@ const AppContent: React.FC = () => {
         saveProgress,
     });
 
+
     // ------------------------------------------------
     // Apply metadata logic (unchanged)
     // ------------------------------------------------
     const applyMetadata = (data: AppData) => {
-        if (hasSystemMetadata) return;
 
         if (data.progress) {
-            setProgressMap((prev) => {
-                const newMap = {...prev, ...data.progress};
-                AsyncStorage.setItem(
-                    "audiobook_progress",
-                    JSON.stringify(newMap)
-                ).catch(() => {
-                });
-                return newMap;
-            });
+            initProgress(data.progress).then()
         }
 
         if (data.playlists) {
             playlistManager.setSavedPlaylists(data.playlists);
-            AsyncStorage.setItem(
-                "audiobook_playlists",
-                JSON.stringify(data.playlists)
-            ).catch(() => {
-            });
+            savePlaylist(data.playlists).then();
         }
 
         if (data.settings?.isAutoPlay !== undefined) {
             setIsAutoPlay(data.settings.isAutoPlay);
         }
-
-        setHasSystemMetadata(true);
-        AsyncStorage.setItem("system_metadata", "true").catch(() => {
-        });
     };
 
     // ------------------------------------------------
     // Initial load (unchanged)
     // ------------------------------------------------
     useEffect(() => {
+
         const loadStorage = async () => {
             try {
                 await reloadProgress();
-
-                const storedPlaylists = await AsyncStorage.getItem(
-                    "audiobook_playlists"
-                );
+                const { storedPlaylists, storedAutoPlay,  filePaths} = await loadInitialNativeMetadata();
                 if (storedPlaylists) {
                     playlistManager.setSavedPlaylists(JSON.parse(storedPlaylists));
                 }
-
-                const storedAutoPlay = await AsyncStorage.getItem(
-                    "audiobook_autoplay"
-                );
                 if (storedAutoPlay) {
                     setIsAutoPlay(JSON.parse(storedAutoPlay));
                 }
-
-                const systemFlag = await AsyncStorage.getItem("system_metadata");
-                if (systemFlag === "true") setHasSystemMetadata(true);
-
-                const nativeData = await loadInitialNativeMetadata();
-                if (nativeData) applyMetadata(nativeData);
+                if(filePaths !== null && filePaths.length > 0){
+                    const scan = await scanNativePath(filePaths);
+                    const resultTracks = scan.tracks;
+                    setAllTracks(resultTracks);
+                }
             } catch (e) {
                 console.error("Storage load error", e);
             } finally {
@@ -163,16 +140,15 @@ const AppContent: React.FC = () => {
             }
         };
 
-        loadStorage();
-    }, []);
+        if (!isStorageLoaded){
+            loadStorage().then();
+        }
+
+    }, [isStorageLoaded]);
 
     useEffect(() => {
         if (!isStorageLoaded) return;
-        AsyncStorage.setItem(
-            "audiobook_autoplay",
-            JSON.stringify(isAutoPlay)
-        ).catch(() => {
-        });
+        saveAutoPlay(isAutoPlay).then()
     }, [isAutoPlay, isStorageLoaded]);
 
     // ------------------------------------------------
@@ -220,9 +196,6 @@ const AppContent: React.FC = () => {
     const showMiniPlayer =
         (view !== "setup" || !!player.audioState.coverUrl) &&
         player.audioState.name;
-
-    // console.log(playerMode)
-    // console.log(view)
 
     return (
         <View style={styles.root}>

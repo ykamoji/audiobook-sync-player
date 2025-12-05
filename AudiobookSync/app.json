@@ -2,9 +2,9 @@
   "name": "AudiobookSync",
   "displayName": "AudiobookSync",
   "android": {
-    "package": "com.anonymous.audiobooksync"
+    "package": "com.ykamoji.audiobooksync"
   },
   "ios": {
-    "bundleIdentifier": "com.anonymous.audiobooksync"
+    "bundleIdentifier": "com.ykamoji.audiobooksync"
   }
 }
