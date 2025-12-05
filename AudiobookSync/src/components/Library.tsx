@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, {useState, useMemo, useCallback, useEffect} from 'react';
 import { FlashList } from '@shopify/flash-list';
 import {
     View,
@@ -47,7 +47,6 @@ export const Library: React.FC<LibraryProps> = ({
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
 
-
     const handleSelectAll = () => {
         if (selectedTrackIds.size === allTracks.length) {
             setSelectedTrackIds(new Set()); // unselect all
@@ -65,6 +64,12 @@ export const Library: React.FC<LibraryProps> = ({
             return copy;
         });
     };
+
+    useEffect(() => {
+        if(!isSelectionMode){
+            setSelectedTrackIds(new Set());
+        }
+    }, [isSelectionMode]);
 
     // ----- Renderers -----
     const renderTrackItem = useCallback(
@@ -84,6 +89,7 @@ export const Library: React.FC<LibraryProps> = ({
                     setShowModal(true);
                     handleAlbumActions([track])
                 }}
+                onLongPress={() => setIsSelectionMode(prev => !prev)}
                 onViewMetadata={onViewMetadata}
                 style={{ height: ROW_HEIGHT }}
             />
@@ -108,9 +114,6 @@ export const Library: React.FC<LibraryProps> = ({
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => {
-                        if(isSelectionMode) {
-                            setSelectedTrackIds(new Set());
-                        }
                         setIsSelectionMode((prev) => !prev)}
                     }>
                         <Text style={styles.selectToggleText}>
@@ -175,14 +178,14 @@ export const Library: React.FC<LibraryProps> = ({
                 <TouchableOpacity
                     onPress={() => {
                         const selected = allTracks.filter((t) => selectedTrackIds.has(t.id));
-                        setIsSelectionMode((prev) => !prev);
                         setShowModal(true);
-                        setSelectedTrackIds(new Set());
+                        // setIsSelectionMode((prev) => !prev);
+                        // setSelectedTrackIds(new Set());
                         handleAlbumActions(selected);
                     }}
                     style={styles.bulkAddButton}
                 >
-                    <Text style={styles.bulkAddText}>Add to Playlist</Text>
+                    <Text style={styles.bulkAddText}>Edit Playlist</Text>
                 </TouchableOpacity>
             </View>
         </View>

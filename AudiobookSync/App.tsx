@@ -242,6 +242,8 @@ const AppContent: React.FC = () => {
                             playlists={playlistManager.savedPlaylists}
                             allTracks={allTracks}
                             progressMap={progressMap}
+                            onUpdate={loadStorage}
+                            playlistManager={playlistManager}
                         />
                     </SafeAreaView>
                 </View>

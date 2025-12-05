@@ -31,6 +31,7 @@ interface TrackRowProps {
     associatedPlaylists: Playlist[];
     onSelectTrack: (track: Track, index: number, list: Track[]) => void;
     onToggleSelection: (trackId: string) => void;
+    onLongPress: () => void;
     onAddToPlaylist: (track: Track) => void;
     onViewMetadata: (track: Track) => void;
     style?: ViewStyle;
@@ -47,6 +48,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                                    associatedPlaylists,
                                                    onSelectTrack,
                                                    onToggleSelection,
+                                                   onLongPress,
                                                    onAddToPlaylist,
                                                    onViewMetadata,
                                                    style,
@@ -109,6 +111,10 @@ export const TrackRow: React.FC<TrackRowProps> = ({
             <TouchableOpacity
                 style={[styles.mainRow, isSelected && styles.selectedRow]}
                 onPress={handlePress}
+                onLongPress={() => {
+                    onLongPress();
+                    onToggleSelection(track.id);
+                }}
                 activeOpacity={0.7}
             >
                 {/* Thumbnail / Checkbox */}

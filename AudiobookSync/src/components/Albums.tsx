@@ -1,55 +1,64 @@
-import {ActionSheetIOS, Alert, FlatList, Text, TouchableOpacity, View} from "react-native";
+import {ActionSheetIOS, Alert, FlatList, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {PlaylistCard} from "./PlaylistCard.tsx";
 import {PlusIcon} from "./Icons.tsx";
-import React, {FC, useState} from "react";
+import React, {FC, useRef, useState} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
+import {modelStyles} from "../assets/modelStyles.ts";
 // import {LibraryModals} from "./LibraryModels.tsx";
 
 interface AlbumsProps {
     playlists: Playlist[];
     allTracks: Track[];
     progressMap: Record<string, ProgressData>;
+    onUpdate: () => void;
+    playlistManager: {
+        savedPlaylists: Playlist[];
+        createPlaylist: (name: string, initialTracks: Track[]) => void;
+        deletePlaylist: (id: string) => void;
+        updatePlaylistName: (id: string, newName: string) => void;
+        addToPlaylist: (playlistId: string, track: Track) => void;
+        addMultipleToPlaylist: (playlistId: string, tracks: Track[]) => void;
+        removeFromPlaylist: (playlistId: string, trackName: string) => void;
+        removeMultipleFromPlaylist: (playlistId: string, trackNames: string[]) => void;
+    };
 
 }
 
 export const Albums : FC<AlbumsProps> = ({
                                                  playlists,
                                                  allTracks,
+                                                 onUpdate,
+                                                 playlistManager,
                                                  progressMap}) =>{
 
 
-    const [showCreatePlaylistModal, setShowCreatePlaylistModal] = useState(false);
     const [tracksToAdd, setTracksToAdd] = useState<Track[]>([]);
-    const [createPlaylistName, setCreatePlaylistName] = useState('');
+
+    const newAlbumRef = useRef("")
+
     const [newPlaylistName, setNewPlaylistName] = useState('');
+
     const [renamePlaylistName, setRenamePlaylistName] = useState('');
     const [showRenamePlaylistModal, setShowRenamePlaylistModal] = useState(false);
 
-    const [showAddModal, setShowAddModal] = useState(false);
-
-    // reset selection on tab change / playlist exit
-    React.useEffect(() => {
-        // setIsSelectionMode(false);
-        // setSelectedTrackIds(new Set());
-    }, []);
-
+    const [showModal, setShowModal] = React.useState(false);
 
 
     // ----- Playlist / Modals logic -----
 
     const handleOpenAddModal = (tracks: Track[]) => {
-        setTracksToAdd(tracks);
-        setNewPlaylistName('');
-        setShowAddModal(true);
+        // setTracksToAdd(tracks);
+        // setNewPlaylistName('');
+        // setShowModal(true);
         // setActiveMenuTrackId(null);
     };
 
     const handleRenamePlaylist = () => {
         // if (!selectedPlaylistId || !renamePlaylistName.trim()) return;
         // onUpdatePlaylistName(selectedPlaylistId, renamePlaylistName.trim());
-        setRenamePlaylistName('');
-        setShowRenamePlaylistModal(false);
+        // setRenamePlaylistName('');
+        // setShowModal(false);
     };
 
     const handleAddToExisting = (playlistId: string) => {
@@ -61,7 +70,7 @@ export const Albums : FC<AlbumsProps> = ({
             // onAddMultipleToPlaylist(playlistId, tracksToAdd);
         }
 
-        setShowAddModal(false);
+        setShowModal(false);
         // setIsSelectionMode(false);
         // setSelectedTrackIds(new Set());
     };
@@ -101,18 +110,17 @@ export const Albums : FC<AlbumsProps> = ({
 
 
     const handleCreatePlaylist = () => {
-        if (!newPlaylistName.trim() || tracksToAdd.length === 0) return;
-        // onCreatePlaylist(newPlaylistName.trim(), tracksToAdd);
-        setShowAddModal(false);
-        // setIsSelectionMode(false);
-        // setSelectedTrackIds(new Set());
+
+        // setShowModal(false);
+
     };
 
     const handleCreateEmptyPlaylist = () => {
-        if (!createPlaylistName.trim()) return;
+        // if (!createPlaylistName.trim()) return;
         // onCreatePlaylist(createPlaylistName.trim(), []);
-        setCreatePlaylistName('');
-        setShowCreatePlaylistModal(false);
+        // setCreatePlaylistName('');
+        playlistManager.createPlaylist(newAlbumRef.current, [])
+        setShowModal(false);
     };
 
     const handleBulkRemove = () => {
@@ -154,7 +162,7 @@ export const Albums : FC<AlbumsProps> = ({
                 )}
                 ListFooterComponent={
                     <TouchableOpacity
-                        onPress={() => setShowCreatePlaylistModal(true)}
+                        onPress={() => setShowModal(true)}
                         style={styles.createPlaylistButton}
                         activeOpacity={0.8}
                     >
@@ -165,26 +173,41 @@ export const Albums : FC<AlbumsProps> = ({
                 contentContainerStyle={styles.playlistsListContent}
             />
         </View>
+            <Modal visible={showModal} transparent animationType="slide">
+                <View style={modelStyles.backdrop}>
+                    <View style={modelStyles.modalContainer}>
+                        <Text style={modelStyles.headerText}>Create New Playlist</Text>
+                        <TextInput
+                            placeholder="Playlist Name"
+                            placeholderTextColor="#888"
+                            onChangeText={(val) => newAlbumRef.current = val}
+                            style={[modelStyles.input, { marginVertical: 20 }]}
+                            autoFocus
+                        />
 
-        {/*<LibraryModals*/}
-        {/*    showAddModal={showAddModal}*/}
-        {/*    setShowAddModal={setShowAddModal}*/}
-        {/*    showCreatePlaylistModal={showCreatePlaylistModal}*/}
-        {/*    setShowCreatePlaylistModal={setShowCreatePlaylistModal}*/}
-        {/*    showRenamePlaylistModal={showRenamePlaylistModal}*/}
-        {/*    setShowRenamePlaylistModal={setShowRenamePlaylistModal}*/}
-        {/*    newPlaylistName={newPlaylistName}*/}
-        {/*    setNewPlaylistName={setNewPlaylistName}*/}
-        {/*    createPlaylistName={createPlaylistName}*/}
-        {/*    setCreatePlaylistName={setCreatePlaylistName}*/}
-        {/*    renamePlaylistName={renamePlaylistName}*/}
-        {/*    setRenamePlaylistName={setRenamePlaylistName}*/}
-        {/*    playlists={playlists}*/}
-        {/*    handleCreatePlaylist={handleCreatePlaylist}*/}
-        {/*    handleCreateEmptyPlaylist={handleCreateEmptyPlaylist}*/}
-        {/*    handleRenamePlaylist={handleRenamePlaylist}*/}
-        {/*    handleAddToExisting={handleAddToExisting}*/}
-        {/*/>*/}
+                        <View style={modelStyles.buttonRow}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    newAlbumRef.current = ""
+                                    setShowModal(false)
+                                }}
+                                style={[modelStyles.secondaryButton, { marginTop: 10, paddingVertical: 12 }]}>
+                                <Text style={[modelStyles.secondaryButtonText, { paddingTop:1}]}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={handleCreateEmptyPlaylist}
+                                style={[
+                                    modelStyles.primaryButton,
+                                    { flex: 1 },
+                                ]}
+                            >
+                                <Text style={modelStyles.primaryButtonText}>Create</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </>
     )
 };
