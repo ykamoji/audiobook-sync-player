@@ -51,13 +51,8 @@ export interface ProgressData {
     segmentHistory?: Record<number, number>;
 }
 
-export interface AppSettings {
-    isAutoPlay: boolean;
-}
-
 export interface AppData {
     progress: Record<string, ProgressData>;
     playlists: Playlist[];
-    settings: AppSettings;
     exportedAt: number;
 }

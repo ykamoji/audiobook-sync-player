@@ -18,18 +18,17 @@ import {
     MetadataPanelData,
 } from "./src/components/MetadataPanel";
 import {MiniPlayer} from "./src/components/MiniPlayer";
-
 import {Track, AppData} from "./src/utils/types";
 import {loadInitialNativeMetadata} from "./src/utils/persistence";
 import {usePlaylistManager} from "./src/hooks/usePlaylistManager";
 import {useProgressManager} from "./src/hooks/useProgressManager";
 import {useLibrary} from "./src/hooks/useLibrary";
 import {usePlayer} from "./src/hooks/usePlayer";
-
 import TrackPlayer, {Capability} from "react-native-track-player";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {scanNativePath} from "./src/utils/fileScanner.ts";
-import {savePlaylist, saveAutoPlay} from "./src/utils/persistence";
+import {savePlaylist} from "./src/utils/persistence";
+import {Albums} from "./src/components/Albums.tsx";
 
 export const setupPlayer = async () => {
     await TrackPlayer.setupPlayer();
@@ -49,7 +48,7 @@ export const setupPlayer = async () => {
     });
 };
 
-type ViewName = "setup" | "titles" | "playlists";
+type ViewName = "setup" | "library" | "albums";
 type PlayerMode = "mini" | "full";
 
 const getFileSize = async (path: string): Promise<number> => {
@@ -66,21 +65,19 @@ const AppContent: React.FC = () => {
     const [playerMode, setPlayerMode] = useState<PlayerMode>("mini");
     const [isStorageLoaded, setIsStorageLoaded] = useState(false);
 
-    // --- Settings ---
-    const [isAutoPlay, setIsAutoPlay] = useState(false);
-
     const [metadataPanelData, setMetadataPanelData] =
         useState<MetadataPanelData | null>(null);
 
     // --- Custom Hooks ---
     const playlistManager = usePlaylistManager(isStorageLoaded);
+
     const {progressMap, initProgress, saveProgress, reloadProgress} =
         useProgressManager();
 
     const {allTracks, setAllTracks, isLoading, nativeRootPath, handleDirectoryUpload} =
         useLibrary({
             onMetadataLoaded: (data: AppData) => applyMetadata(data),
-            onUploadSuccess: () => setView("titles"),
+            onUploadSuccess: () => setView("library"),
         });
 
     useEffect(() => {
@@ -88,14 +85,13 @@ const AppContent: React.FC = () => {
     }, []);
 
     const player = usePlayer({
-        isAutoPlay,
         progressMap,
         saveProgress,
     });
 
 
     // ------------------------------------------------
-    // Apply metadata logic (unchanged)
+    // Apply metadata logic
     // ------------------------------------------------
     const applyMetadata = (data: AppData) => {
 
@@ -108,48 +104,37 @@ const AppContent: React.FC = () => {
             savePlaylist(data.playlists).then();
         }
 
-        if (data.settings?.isAutoPlay !== undefined) {
-            setIsAutoPlay(data.settings.isAutoPlay);
+    };
+
+    const loadStorage = async () => {
+        try {
+            await reloadProgress();
+            const { storedPlaylists,  filePaths} = await loadInitialNativeMetadata();
+            if (storedPlaylists) {
+                playlistManager.setSavedPlaylists(JSON.parse(storedPlaylists));
+            }
+
+            if(filePaths !== null && filePaths.length > 0){
+                const scan = await scanNativePath(filePaths);
+                const resultTracks = scan.tracks;
+                setAllTracks(resultTracks);
+            }
+        } catch (e) {
+            console.error("Storage load error", e);
+        } finally {
+            setIsStorageLoaded(true);
         }
     };
 
     // ------------------------------------------------
-    // Initial load (unchanged)
+    // Initial load
     // ------------------------------------------------
+
     useEffect(() => {
-
-        const loadStorage = async () => {
-            try {
-                await reloadProgress();
-                const { storedPlaylists, storedAutoPlay,  filePaths} = await loadInitialNativeMetadata();
-                if (storedPlaylists) {
-                    playlistManager.setSavedPlaylists(JSON.parse(storedPlaylists));
-                }
-                if (storedAutoPlay) {
-                    setIsAutoPlay(JSON.parse(storedAutoPlay));
-                }
-                if(filePaths !== null && filePaths.length > 0){
-                    const scan = await scanNativePath(filePaths);
-                    const resultTracks = scan.tracks;
-                    setAllTracks(resultTracks);
-                }
-            } catch (e) {
-                console.error("Storage load error", e);
-            } finally {
-                setIsStorageLoaded(true);
-            }
-        };
-
         if (!isStorageLoaded){
             loadStorage().then();
         }
-
     }, [isStorageLoaded]);
-
-    useEffect(() => {
-        if (!isStorageLoaded) return;
-        saveAutoPlay(isAutoPlay).then()
-    }, [isAutoPlay, isStorageLoaded]);
 
     // ------------------------------------------------
     // Metadata logic (unchanged)
@@ -197,6 +182,12 @@ const AppContent: React.FC = () => {
         (view !== "setup" || !!player.audioState.coverUrl) &&
         player.audioState.name;
 
+    useEffect(() => {
+        if(isStorageLoaded && view === "setup") {
+            setView("library");
+        }
+    }, []);
+
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content"/>
@@ -218,7 +209,7 @@ const AppContent: React.FC = () => {
                 <View
                     style={[
                         styles.screen,
-                        view !== "titles" && styles.hiddenScreen,
+                        view !== "library" && styles.hiddenScreen,
                     ]}
                 >
                     <SafeAreaView
@@ -227,16 +218,11 @@ const AppContent: React.FC = () => {
                     >
                         <LibraryContainer
                             allTracks={allTracks}
-                            playlists={playlistManager.savedPlaylists}
                             progressMap={progressMap}
-                            isAutoPlay={isAutoPlay}
-                            activeTab={view}
                             onSelectTrack={playTrackWrapper}
-                            onToggleAutoPlay={() =>
-                                setIsAutoPlay((p) => !p)
-                            }
                             onViewMetadata={handleOpenMetadata}
-                            playlistActions={playlistManager}
+                            playlistManager={playlistManager}
+                            onUpdate={loadStorage}
                             nativeRootPath={nativeRootPath}
                         />
                     </SafeAreaView>
@@ -245,29 +231,21 @@ const AppContent: React.FC = () => {
                 <View
                     style={[
                         styles.screen,
-                        (view !== "playlists" && view !== "titles") && styles.hiddenScreen,
+                        view !== "albums" && styles.hiddenScreen,
                     ]}
                 >
                     <SafeAreaView
                         edges={["top"]}
                         style={styles.safeAreaTopWrap}
                     >
-                        <LibraryContainer
-                            allTracks={allTracks}
+                        <Albums
                             playlists={playlistManager.savedPlaylists}
+                            allTracks={allTracks}
                             progressMap={progressMap}
-                            isAutoPlay={isAutoPlay}
-                            activeTab={view}
-                            onSelectTrack={playTrackWrapper}
-                            onToggleAutoPlay={() =>
-                                setIsAutoPlay((p) => !p)
-                            }
-                            onViewMetadata={handleOpenMetadata}
-                            playlistActions={playlistManager}
-                            nativeRootPath={nativeRootPath}
                         />
                     </SafeAreaView>
                 </View>
+
             </View>
 
                 <View
@@ -329,13 +307,13 @@ const AppContent: React.FC = () => {
                     />
                     <TabButton
                         label="Library"
-                        active={view === "titles"}
-                        onPress={() => setView("titles")}
+                        active={view === "library"}
+                        onPress={() => setView("library")}
                     />
                     <TabButton
                         label="Playlists"
-                        active={view === "playlists"}
-                        onPress={() => setView("playlists")}
+                        active={view === "albums"}
+                        onPress={() => setView("albums")}
                     />
                 </View>
             </View>

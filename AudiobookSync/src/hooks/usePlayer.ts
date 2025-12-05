@@ -15,7 +15,6 @@ import { loadTrackMedia } from '../utils/mediaLoader';
 const CUES_PER_SEGMENT = 100;
 
 interface UsePlayerProps {
-    isAutoPlay: boolean;
     progressMap: Record<string, ProgressData>;
     saveProgress: (
         trackName: string,
@@ -26,7 +25,6 @@ interface UsePlayerProps {
 }
 
 export const usePlayer = ({
-                              isAutoPlay,
                               progressMap,
                               saveProgress,
                           }: UsePlayerProps) => {
@@ -113,9 +111,6 @@ export const usePlayer = ({
             resumeRef.current = 0;
         }
 
-        if (isAutoPlay) {
-            await TrackPlayer.play();
-        }
     };
 
     useEffect(() => {

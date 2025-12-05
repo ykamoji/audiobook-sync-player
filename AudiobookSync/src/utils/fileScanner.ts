@@ -103,7 +103,6 @@ export const scanNativePath = async (
         // Cover image
         if (COVER_EXTS.includes(ext)) {
             coverMap.set(name, path);
-            continue;
         }
     }
 

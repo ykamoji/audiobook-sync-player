@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
     View,
     Text,
@@ -8,16 +8,17 @@ import {
     StyleSheet,
     ViewStyle
 } from "react-native";
+
 import {
     MusicIcon,
     MoreHorizontalIcon,
     CheckCircleIcon,
     CircleIcon,
     PlusIcon,
-    InfoIcon,
+    InfoIcon, PencilIcon,
 } from "./Icons";
 
-import { Track, Playlist, ProgressData } from '../utils/types';
+import { Track, Playlist, ProgressData } from "../utils/types";
 
 interface TrackRowProps {
     track: Track;
@@ -28,69 +29,86 @@ interface TrackRowProps {
     isSelectionMode: boolean;
     progressMap: Record<string, ProgressData>;
     associatedPlaylists: Playlist[];
-    activeMenuTrackId: string | null;
     onSelectTrack: (track: Track, index: number, list: Track[]) => void;
     onToggleSelection: (trackId: string) => void;
-    onOpenMenu: (trackId: string | null) => void;
     onAddToPlaylist: (track: Track) => void;
     onViewMetadata: (track: Track) => void;
-    onRemoveFromPlaylist: (trackName: string) => void;
-    style?  : ViewStyle;
+    style?: ViewStyle;
 }
 
-
 export const TrackRow: React.FC<TrackRowProps> = ({
-                             track,
-                             index,
-                             list,
-                             isInsidePlaylist,
-                             isSelected,
-                             isSelectionMode,
-                             progressMap,
-                             associatedPlaylists,
-                             activeMenuTrackId,
-                             onSelectTrack,
-                             onToggleSelection,
-                             onOpenMenu,
-                             onAddToPlaylist,
-                             onViewMetadata,
-                             style,
-                         }) => {
+                                                   track,
+                                                   index,
+                                                   list,
+                                                   isInsidePlaylist,
+                                                   isSelected,
+                                                   isSelectionMode,
+                                                   progressMap,
+                                                   associatedPlaylists,
+                                                   onSelectTrack,
+                                                   onToggleSelection,
+                                                   onAddToPlaylist,
+                                                   onViewMetadata,
+                                                   style,
+                                               }) => {
+    const [menuVisible, setMenuVisible] = useState(false);
+
+
+    const displayName = useMemo(
+        () => track.name.replace(/\s*\(.*?\)/g, "").trim(),
+        [track.name]
+    );
+
     const progress = progressMap[track.name];
     const percentage = progress ? Math.min(progress.percentage, 100) : 0;
     const isCompleted = percentage >= 99;
 
-    const [menuVisible, setMenuVisible] = useState(false);
+    const coverSource = useMemo(() => {
+        const uri = track.coverFile || track.coverPath;
+        return uri ? { uri } : null;
+    }, [track.coverFile, track.coverPath]);
 
-    const openMenu = () => {
-        setMenuVisible(true);
-        onOpenMenu(track.id);
-    };
+    const playlistBadges = useMemo(() => {
+        if (isInsidePlaylist || associatedPlaylists.length === 0) return null;
 
-    const closeMenu = () => {
-        setMenuVisible(false);
-        onOpenMenu(null);
-    };
+        return (
+            <View style={styles.badgesRow}>
+                {associatedPlaylists.map((p) => (
+                    <Text key={p.id} style={styles.playlistBadge}>
+                        {p.name}
+                    </Text>
+                ))}
+            </View>
+        );
+    }, [isInsidePlaylist, associatedPlaylists]);
 
-    const coverSource =
-        track.coverFile || track.coverPath
-            ? { uri: track.coverFile || track.coverPath }
-            : null;
+
+    const handlePress = useCallback(() => {
+        if (isSelectionMode) {
+            onToggleSelection(track.id);
+        } else {
+            onSelectTrack(track, index, list);
+        }
+    }, [isSelectionMode, onToggleSelection, onSelectTrack, track, index, list]);
+
+    const openMenu = useCallback(() => setMenuVisible(true), []);
+    const closeMenu = useCallback(() => setMenuVisible(false), []);
+
+    const handleAdd = useCallback(() => {
+        onAddToPlaylist(track);
+        closeMenu();
+    }, [onAddToPlaylist, track, closeMenu]);
+
+    const handleMetadata = useCallback(() => {
+        onViewMetadata(track);
+        closeMenu();
+    }, [onViewMetadata, track, closeMenu]);
 
     return (
         <View style={[styles.rowContainer, style]}>
             <TouchableOpacity
-                style={[
-                    styles.mainRow,
-                    isSelected ? styles.selectedRow : null,
-                ]}
-                onPress={() => {
-                    if (isSelectionMode) {
-                        onToggleSelection(track.id);
-                    } else {
-                        onSelectTrack(track, index, list);
-                    }
-                }}
+                style={[styles.mainRow, isSelected && styles.selectedRow]}
+                onPress={handlePress}
                 activeOpacity={0.7}
             >
                 {/* Thumbnail / Checkbox */}
@@ -117,59 +135,54 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     <Text
                         style={[
                             styles.trackTitle,
-                            isSelected ? styles.selectedText : null,
+                            isSelected && styles.selectedText,
                         ]}
                         numberOfLines={1}
                     >
-                        {track.name.replace(/\s*\(.*?\)/g, "").trim()}
+                        {displayName}
                     </Text>
 
                     <View style={styles.metaRow}>
-                        {/* Progress Bar */}
                         {!isSelectionMode && percentage > 0 && (
                             <View style={styles.progressBarBackground}>
                                 <View
                                     style={[
                                         styles.progressBarFill,
-                                        isCompleted ? styles.completedBar : null,
+                                        isCompleted && styles.completedBar,
                                         { width: `${percentage}%` },
                                     ]}
                                 />
                             </View>
                         )}
 
-                        {/* Progress label OR playlist badges */}
                         <View style={styles.metaDetails}>
                             {isCompleted ? (
                                 <Text style={styles.completedLabel}>Completed</Text>
                             ) : percentage > 0 ? (
-                                <Text style={styles.mediumText}>{Math.floor(percentage)}%</Text>
+                                <Text style={styles.mediumText}>
+                                    {Math.floor(percentage)}%
+                                </Text>
                             ) : null}
 
-                            {!isInsidePlaylist && associatedPlaylists.length > 0 && (
-                                <View style={styles.badgesRow}>
-                                    {associatedPlaylists.map((p) => (
-                                        <Text key={p.id} style={styles.playlistBadge}>
-                                            {p.name}
-                                        </Text>
-                                    ))}
-                                </View>
-                            )}
+                            {playlistBadges}
                         </View>
                     </View>
                 </View>
             </TouchableOpacity>
 
-            {/* Options Button (disabled in selection mode) */}
             {!isSelectionMode && (
-                <TouchableOpacity style={styles.menuButton} onPress={openMenu}>
+                <TouchableOpacity
+                    style={styles.menuButton}
+                    onPress={openMenu}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
                     <MoreHorizontalIcon size={22} color="#aaa" />
                 </TouchableOpacity>
             )}
 
-            {/* Context Menu Modal */}
+            {/* Menu */}
             <Modal
-                visible={menuVisible && activeMenuTrackId === track.id}
+                visible={menuVisible}
                 transparent
                 animationType="fade"
                 onRequestClose={closeMenu}
@@ -177,23 +190,14 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                 <TouchableOpacity style={styles.backdrop} onPress={closeMenu} />
 
                 <View style={styles.menuContainer}>
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => {
-                            onAddToPlaylist(track);
-                            closeMenu();
-                        }}
-                    >
-                        <PlusIcon size={18} color="#fff" />
-                        <Text style={styles.menuText}>Add to Playlist</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={handleAdd}>
+                        <PencilIcon size={18} color="#fff" />
+                        <Text style={styles.menuText}>Edit Playlist</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.menuItem}
-                        onPress={() => {
-                            onViewMetadata(track);
-                            closeMenu();
-                        }}
+                        onPress={handleMetadata}
                     >
                         <InfoIcon size={18} color="#fff" />
                         <Text style={styles.menuText}>View Metadata</Text>
@@ -204,10 +208,12 @@ export const TrackRow: React.FC<TrackRowProps> = ({
     );
 };
 
+
 const styles = StyleSheet.create({
     rowContainer: {
         width: "100%",
         paddingVertical: 4,
+
     },
 
     mainRow: {
@@ -260,6 +266,7 @@ const styles = StyleSheet.create({
         height: 4,
         backgroundColor: "#444",
         borderRadius: 2,
+        width: "80%",
         overflow: "hidden",
     },
 
@@ -293,6 +300,8 @@ const styles = StyleSheet.create({
     badgesRow: {
         flexDirection: "row",
         flexWrap: "wrap",
+        position: "relative",
+        marginTop: 10,
         maxWidth: "60%",
     },
 
