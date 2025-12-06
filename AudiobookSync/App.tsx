@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {SafeAreaView, SafeAreaProvider} from "react-native-safe-area-context";
 import {
     View,
@@ -17,6 +17,14 @@ import {
     MetadataPanel,
     MetadataPanelData,
 } from "./src/components/MetadataPanel";
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    runOnJS,
+} from "react-native-reanimated";
+
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { MenuProvider } from 'react-native-popup-menu';
 import {MiniPlayer} from "./src/components/MiniPlayer";
 import {Track, AppData} from "./src/utils/types";
@@ -189,12 +197,50 @@ const AppContent: React.FC = () => {
         specificPlaylist?: Track[]
     ) => {
         player.playTrack(track, index, specificPlaylist || [track]).then();
-        setPlayerMode("full");
+        handleTransition()
     };
 
+    const handleTransition = useCallback(() => {
+        translateY.value = 300;
+        setPlayerMode("full");
+        translateY.value = withSpring(0, { damping: 20, stiffness: 180 });
+    },[])
+
     const showMiniPlayer =
-        (view !== "setup" || !!player.audioState.coverUrl) &&
-        player.audioState.name;
+        (view !== "setup" || !!player.audioState.coverUrl) && playerMode === "mini";
+
+    const translateY = useSharedValue(0);
+
+    const openPlayer = () => {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 180 });
+    };
+
+    const closePlayer = () => {
+        translateY.value = withSpring(300, { damping: 20, stiffness: 180 });
+        runOnJS(setPlayerMode)("mini");
+    };
+
+// ------------------ GESTURE ------------------
+    const gesture = Gesture.Pan()
+        .onUpdate((event) => {
+            if (event.translationY > 0)
+                translateY.value = event.translationY;
+        })
+        .onEnd((event) => {
+            if (event.translationY > 120 || event.velocityY > 800) {
+                runOnJS(closePlayer)();
+            } else {
+                openPlayer();
+            }
+        });
+
+// ------------------ ANIMATED STYLE ------------------
+    const sheetStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: translateY.value },
+        ],
+    }));
+
 
     return (
         <View style={styles.root}>
@@ -259,34 +305,38 @@ const AppContent: React.FC = () => {
                 </View>
 
             </View>
-
-                <View
-                    style={[
-                        styles.playerOverlay,
-                        playerMode !== "full" && styles.hiddenScreen,
-                        {paddingTop: insets.top},
-                    ]}
-                >
-                    <PlayerContainer
-                        audioState={player.audioState}
-                        subtitleState={player.subtitleState}
-                        isPlaying={player.isPlaying}
-                        currentTime={player.currentTime}
-                        duration={player.duration}
-                        currentTrackIndex={player.currentTrackIndex}
-                        playlistLength={player.playlist.length}
-                        onNext={player.next}
-                        onPrevious={player.previous}
-                        onSkipForward={player.skipForward}
-                        onSkipBackward={player.skipBackward}
-                        onBack={() => {setPlayerMode("mini")}}
-                        onTogglePlay={player.togglePlay}
-                        onSeek={player.seek}
-                        onSubtitleClick={player.jumpToTime}
-                        onOpenMetadata={handleOpenMetadata}
-                        onSegmentChange={player.changeSegment}
-                    />
-                </View>
+            {playerMode === "full" && player.audioState.name && (
+                <GestureDetector gesture={gesture}>
+                    <Animated.View
+                        style={[
+                            styles.playerOverlay,
+                            sheetStyle,
+                            { paddingTop: insets.top },
+                        ]}
+                    >
+                        <PlayerContainer
+                            audioState={player.audioState}
+                            subtitleState={player.subtitleState}
+                            isPlaying={player.isPlaying}
+                            currentTime={player.currentTime}
+                            duration={player.duration}
+                            currentTrackIndex={player.currentTrackIndex}
+                            playlistLength={player.playlist.length}
+                            onNext={player.next}
+                            onPrevious={player.previous}
+                            onSkipForward={player.skipForward}
+                            onSkipBackward={player.skipBackward}
+                            onExpand={() => setPlayerMode("full")}
+                            onBack={() => closePlayer()}
+                            onTogglePlay={player.togglePlay}
+                            onSeek={player.seek}
+                            onSubtitleClick={player.jumpToTime}
+                            onOpenMetadata={handleOpenMetadata}
+                            onSegmentChange={player.changeSegment}
+                        />
+                    </Animated.View>
+                </GestureDetector>
+            )}
 
             {/* Metadata Panel */}
             <MetadataPanel
@@ -298,7 +348,7 @@ const AppContent: React.FC = () => {
             <View style={styles.bottomBar}>
                 {showMiniPlayer && (
                     <MiniPlayer
-                        coverUrl={player.audioState.coverUrl || ""}
+                        coverUrl={player.audioState.coverPath || ""}
                         name={player.audioState.name}
                         isPlaying={player.isPlaying}
                         onTogglePlay={player.togglePlay}
@@ -307,7 +357,9 @@ const AppContent: React.FC = () => {
                                 ? (player.currentTime / player.duration) * 100
                                 : 0
                         }
-                        onOpen={() => setPlayerMode("full")}
+                        onOpen={() => {
+                            handleTransition()
+                        }}
                     />
                 )}
 
@@ -367,11 +419,6 @@ const styles = StyleSheet.create({
     hiddenScreen: {
         opacity: 0,
         pointerEvents: "none",
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
     },
 
     flex1: {
@@ -386,7 +433,6 @@ const styles = StyleSheet.create({
     /** Overlay player */
     playerOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "#000",
         zIndex: 50,
     },
 

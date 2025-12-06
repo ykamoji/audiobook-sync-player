@@ -8,6 +8,7 @@ interface PlayerContainerProps {
     isPlaying: boolean;
     currentTime: number;
     duration: number;
+    onExpand: () => void;
 
     // Navigation
     currentTrackIndex: number;
@@ -47,6 +48,7 @@ export const PlayerContainer: React.FC<PlayerContainerProps> = ({
                                                                     onBack,
                                                                     onTogglePlay,
                                                                     onSeek,
+                                                                    onExpand,
                                                                     onSubtitleClick,
                                                                     onOpenMetadata,
                                                                     onSegmentChange,
@@ -127,6 +129,7 @@ export const PlayerContainer: React.FC<PlayerContainerProps> = ({
             segmentMarkers={segmentMarkers}
             onSegmentChange={onSegmentChange}
 
+            onExpand={onExpand}
             isPlaying={isPlaying}
             onBack={onBack}
             onTogglePlay={onTogglePlay}

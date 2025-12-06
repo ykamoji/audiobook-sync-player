@@ -41,8 +41,3 @@ export const loadTrackMedia = async (
 
     return { audioState, subtitleState };
 };
-
-export const cleanupTrackMedia = (_audioState: AudioFileState) => {
-    // No cleanup required in React Native:
-    // No URLs or blobs are created.
-};

@@ -54,6 +54,7 @@ interface PlayerViewProps {
     segmentMarkers: number[];
     onSegmentChange: (index: number) => void;
 
+    onExpand: () => void;
     isPlaying: boolean;
     onBack: () => void;              // now only for "full close" if you want it
     onTogglePlay: () => void;
@@ -86,6 +87,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           onSegmentChange,
                                                           isPlaying,
                                                           onBack,
+                                                          onExpand,
                                                           onTogglePlay,
                                                           onSeek,
                                                           onSubtitleClick,
@@ -160,6 +162,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         .onUpdate((e) => {
             if (e.translationY > 0 && scrollAtTop.current) {
                 translateY.value = e.translationY;
+                progress.value = Math.min(1, translateY.value / miniOffset);
             }
         })
         .onEnd((e) => {
@@ -167,10 +170,18 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
             if (shouldClose) {
                 // animate off-screen
-                translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 }, () => {
-                    // 🔥 Switch UI to mini (run on JS thread)
-                    runOnJS(onBack)();
-                });
+                translateY.value = withSpring(
+                    SCREEN_HEIGHT,
+                    {
+                        damping: 20,
+                        stiffness: 120,
+                        mass: 1.1,
+                        overshootClamping: true,
+                    },
+                    () => {
+                        runOnJS(onBack)();
+                    }
+                );
             } else {
                 // snap back to full
                 translateY.value = withSpring(0, {
@@ -187,6 +198,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             stiffness: 240,
         });
         progress.value = withSpring(0);
+        runOnJS(onExpand)();
     });
 
     // ----- ANIMATED STYLES -----
@@ -279,7 +291,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                     <Animated.View style={fullContentStyle}>
                         {/* Header */}
                         <View style={styles.headerContainer}>
-                            <TouchableOpacity onPress={collapseToMini} style={styles.headerBackButton}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    collapseToMini();
+                                    runOnJS(onBack)();
+                                }}
+                                style={styles.headerBackButton}>
                                 <ChevronDownIcon />
                             </TouchableOpacity>
 
@@ -383,7 +400,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         </View>
                     </Animated.View>
 
-                    {/* MINI-PLAYER OVERLAY (Apple Music style) */}
                     <GestureDetector gesture={miniTapGesture}>
                         <Animated.View
                             style={[
@@ -600,6 +616,7 @@ const styles = StyleSheet.create({
     subtitlesContainer: {
         flex: 1,
         marginTop: 8,
+        minHeight: 150,
     },
     subtitlesScroll: {
         flex: 1,
@@ -773,5 +790,3 @@ const styles = StyleSheet.create({
         color: '#111827',
     },
 });
-
-export default PlayerView;
