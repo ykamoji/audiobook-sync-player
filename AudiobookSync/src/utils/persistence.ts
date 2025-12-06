@@ -26,6 +26,14 @@ export const savePlaylist = async (playlists: Playlist[]) => {
     }
 }
 
+export const checkLocalStorageAvailable = async () => {
+    try{
+        return await AsyncStorage.getItem('filePaths')
+    }catch (e){
+        console.error("Error checking local storage", e);
+    }
+}
+
 
 /**
  * Load stored metadata from device.
