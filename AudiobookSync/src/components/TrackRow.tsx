@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, {useState, useMemo, useCallback, useRef} from "react";
 import {
     View,
     Text,
@@ -14,8 +14,7 @@ import {
     MoreHorizontalIcon,
     CheckCircleIcon,
     CircleIcon,
-    PlusIcon,
-    InfoIcon, PencilIcon,
+    InfoIcon, PencilIcon, TrashIcon,
 } from "./Icons";
 
 import { Track, Playlist, ProgressData } from "../utils/types";
@@ -32,7 +31,7 @@ interface TrackRowProps {
     onSelectTrack: (track: Track, index: number, list: Track[]) => void;
     onToggleSelection: (trackId: string) => void;
     onLongPress: () => void;
-    onAddToPlaylist: (track: Track) => void;
+    onEditToPlaylist: (track: Track, callback:() => void) => void;
     onViewMetadata: (track: Track) => void;
     style?: ViewStyle;
 }
@@ -49,11 +48,14 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                                    onSelectTrack,
                                                    onToggleSelection,
                                                    onLongPress,
-                                                   onAddToPlaylist,
+                                                   onEditToPlaylist,
                                                    onViewMetadata,
                                                    style,
                                                }) => {
     const [menuVisible, setMenuVisible] = useState(false);
+
+    const rowRef = useRef<View>(null);
+    const [menuPos, setMenuPos] = useState({ top: 0, right: 20 });
 
 
     const displayName = useMemo(
@@ -93,13 +95,25 @@ export const TrackRow: React.FC<TrackRowProps> = ({
         }
     }, [isSelectionMode, onToggleSelection, onSelectTrack, track, index, list]);
 
-    const openMenu = useCallback(() => setMenuVisible(true), []);
+    const openMenu = useCallback(() => {
+        if (!rowRef.current) return;
+
+        rowRef.current.measureInWindow((x, y, width, height) => {
+            setMenuPos({
+                top: y + height / 2,
+                right: 20
+            });
+            setMenuVisible(true);
+        });
+    }, []);
+
     const closeMenu = useCallback(() => setMenuVisible(false), []);
 
-    const handleAdd = useCallback(() => {
-        onAddToPlaylist(track);
-        closeMenu();
-    }, [onAddToPlaylist, track, closeMenu]);
+    const handleEdit = useCallback(() => {
+        onEditToPlaylist(track, () => {
+            closeMenu();
+        });
+    }, [onEditToPlaylist, track, closeMenu]);
 
     const handleMetadata = useCallback(() => {
         onViewMetadata(track);
@@ -107,7 +121,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
     }, [onViewMetadata, track, closeMenu]);
 
     return (
-        <View style={[styles.rowContainer, style]}>
+        <View ref={rowRef} style={[styles.rowContainer, style]}>
             <TouchableOpacity
                 style={[styles.mainRow, isSelected && styles.selectedRow]}
                 onPress={handlePress}
@@ -185,7 +199,6 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     <MoreHorizontalIcon size={22} color="#aaa" />
                 </TouchableOpacity>
             )}
-
             {/* Menu */}
             <Modal
                 visible={menuVisible}
@@ -194,13 +207,11 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                 onRequestClose={closeMenu}
             >
                 <TouchableOpacity style={styles.backdrop} onPress={closeMenu} />
-
-                <View style={styles.menuContainer}>
-                    <TouchableOpacity style={styles.menuItem} onPress={handleAdd}>
-                        <PencilIcon size={18} color="#fff" />
-                        <Text style={styles.menuText}>Edit Playlist</Text>
+                <View style={[styles.menuContainer, { top: menuPos.top, right: menuPos.right }]} >
+                    <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
+                        {isInsidePlaylist ? <TrashIcon size={18} color={"#fff"} /> : <PencilIcon size={18} color="#fff" />}
+                        <Text style={styles.menuText}>{ isInsidePlaylist ? 'Remove' : "Edit Playlist"}</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
                         style={styles.menuItem}
                         onPress={handleMetadata}

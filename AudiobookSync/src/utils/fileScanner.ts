@@ -1,8 +1,6 @@
 import RNFS from 'react-native-fs';
 import uuid from 'react-native-uuid';
 import { Track, AppData } from './types.ts';
-import { Platform } from 'react-native';
-import * as path from "node:path";
 
 // Valid extensions
 const AUDIO_EXTS = ['.mp3', '.wav', '.aac', '.m4a', '.ogg', '.flac'];
@@ -45,6 +43,7 @@ export const scanNativePath = async (
     const coverMap = new Map<string, string>();
     let metadata: AppData | undefined = undefined;
     let colorMap: Map<string, string> = new Map();
+
 
     for (const uri of fileUris) {
         // Convert "content://" uris to actual file paths for RNFS
@@ -135,8 +134,8 @@ export const scanNativePath = async (
             coverFile: undefined,
             name: base,
             audioPath: path,
-            subtitlePath,
-            coverPath
+            subtitlePath:subtitlePath,
+            coverPath: coverPath
         });
     });
 

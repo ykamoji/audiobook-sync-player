@@ -43,7 +43,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
             playlistProgress: total > 0 ? Math.round(totalPercentage / total) : 0,
             totalTracks: total,
         };
-    }, [playlist, allTracks, progressMap]);
+    }, [allTracks, progressMap, playlist.trackNames]);
 
     // Starting offset so each playlist rotates differently
     const [offset, setOffset] = useState(() => Math.floor(Math.random() * 100));
@@ -57,6 +57,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
 
         return () => clearInterval(interval);
     }, [covers.length]);
+
 
     const currentCover = covers.length > 0 ? covers[offset % covers.length] : null;
 
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
 
     coverContainer: {
         width: "100%",
-        aspectRatio: 2 / 1,
+        aspectRatio: 2,
         borderRadius: 14,
         overflow: "hidden",
         backgroundColor: "#333",

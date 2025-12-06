@@ -5,16 +5,14 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    FlatList,
 } from 'react-native';
-
 import { Track, Playlist, ProgressData } from '../utils/types';
 import {
     SaveIcon,
-    RepeatIcon,
 } from './Icons';
 import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
+import {Menu, MenuOptions, MenuOption, MenuTrigger, MenuOptionsCustomStyle} from "react-native-popup-menu";
 
 interface LibraryProps {
     allTracks: Track[];
@@ -24,6 +22,8 @@ interface LibraryProps {
     handleAlbumActions: (track: Track[]) => void;
     setShowModal: (showModal: boolean) => void;
     onExportData: () => void;
+    onDownloadData: () => void;
+    onClearStorage: () => void;
     exportSuccess: boolean;
     onViewMetadata: (track: Track) => void;
 }
@@ -38,11 +38,11 @@ export const Library: React.FC<LibraryProps> = ({
                                                     handleAlbumActions,
                                                     setShowModal,
                                                     onExportData,
+                                                    onDownloadData,
                                                     exportSuccess,
+                                                    onClearStorage,
                                                     onViewMetadata,
                                                 }) => {
-
-
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
@@ -61,6 +61,10 @@ export const Library: React.FC<LibraryProps> = ({
             const copy = new Set(prev);
             if (copy.has(trackId)) copy.delete(trackId);
             else copy.add(trackId);
+
+            if(copy.size === 0){
+                setIsSelectionMode(false)
+            }
             return copy;
         });
     };
@@ -69,6 +73,7 @@ export const Library: React.FC<LibraryProps> = ({
         if(!isSelectionMode){
             setSelectedTrackIds(new Set());
         }
+
     }, [isSelectionMode]);
 
     // ----- Renderers -----
@@ -85,9 +90,10 @@ export const Library: React.FC<LibraryProps> = ({
                 associatedPlaylists={playlists.filter((p) => p.trackNames.includes(item.name))}
                 onSelectTrack={onSelectTrack}
                 onToggleSelection={toggleSelection}
-                onAddToPlaylist={(track: Track) => {
+                onEditToPlaylist={(track: Track, done) => {
                     setShowModal(true);
                     handleAlbumActions([track])
+                    done()
                 }}
                 onLongPress={() => setIsSelectionMode(prev => !prev)}
                 onViewMetadata={onViewMetadata}
@@ -104,7 +110,6 @@ export const Library: React.FC<LibraryProps> = ({
             setShowModal,
             allTracks]
     );
-
 
     // ----- Main render -----
 
@@ -129,25 +134,42 @@ export const Library: React.FC<LibraryProps> = ({
                     )}
                 </View>
                 <View style={styles.headerRight}>
-                    <TouchableOpacity
-                        onPress={onExportData}
-                        activeOpacity={0.8}
-                        style={styles.saveButton}
-                    >
-                        {exportSuccess ? (
-                            <SpinnerIcon size={20} color="#22c55e" />
-                        ) : (
-                            <SaveIcon size={20} color="#9ca3af" />
-                        )}
-                        <Text
-                            style={[
-                                styles.saveText,
-                                exportSuccess ? styles.saveTextSuccess : undefined,
-                            ]}
-                        >
-                            Save Data
-                        </Text>
-                    </TouchableOpacity>
+                    <Menu>
+                        <MenuTrigger>
+                            <View style={styles.saveButton}>
+                                {exportSuccess ? (
+                                    <SpinnerIcon size={20} color="#22c55e" />
+                                ) : (
+                                    <SaveIcon size={20} color="#9ca3af" />
+                                )}
+                                <Text
+                                    style={[
+                                        styles.saveText,
+                                        exportSuccess ? styles.saveTextSuccess : undefined,
+                                    ]}
+                                >
+                                    {exportSuccess ? '' : 'Options'}
+                                </Text>
+                            </View>
+                        </MenuTrigger>
+
+                        <MenuOptions customStyles={iosMenuStyles}>
+                            <MenuOption onSelect={onExportData}  customStyles={{ optionText: iosMenuStyles.optionText }}>
+                                <Text style={iosMenuStyles.optionText} >Save Data</Text>
+                            </MenuOption>
+                            <View style={{ height: 1, backgroundColor: "#E5E5EA" }} />
+                            <MenuOption
+                                onSelect={onDownloadData}
+                                customStyles={{ optionText: iosMenuStyles.optionText }}
+                            >
+                                <Text style={iosMenuStyles.optionText}>Download File</Text>
+                            </MenuOption>
+                            <View style={{ height: 1, backgroundColor: "#E5E5EA" }} />
+                            <MenuOption onSelect={onClearStorage}>
+                                <Text  style={[iosMenuStyles.optionText, { color: "#FF3B30" }]}>Clear Storage</Text>
+                            </MenuOption>
+                        </MenuOptions>
+                    </Menu>
                 </View>
             </View>
             {/* Content */}
@@ -169,7 +191,6 @@ export const Library: React.FC<LibraryProps> = ({
                     }
                 </View>
             </View>
-            {/* Bulk Action */}
             <View style={[
                 styles.bulkBar,
                 selectedTrackIds.size === 0 && styles.bulkHidden
@@ -189,7 +210,6 @@ export const Library: React.FC<LibraryProps> = ({
                 </TouchableOpacity>
             </View>
         </View>
-
     );
 };
 
@@ -217,11 +237,11 @@ const styles = StyleSheet.create({
         gap: 12,
     } as any,
     selectAllText: {
-        fontSize: 13,
+        fontSize: 20,
         color: '#9ca3af',
     },
     selectToggleText: {
-        fontSize: 13,
+        fontSize: 20,
         color: '#f97316',
         fontWeight: '600',
     },
@@ -231,7 +251,7 @@ const styles = StyleSheet.create({
         gap: 6,
     } as any,
     saveText: {
-        fontSize: 13,
+        fontSize: 20,
         color: '#9ca3af',
     },
     saveTextSuccess: {
@@ -244,39 +264,11 @@ const styles = StyleSheet.create({
         paddingBottom: 80,
         paddingHorizontal: 12,
     },
-    detailContainer: {
-        flex: 1,
-    },
-    detailHeader: {
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 8,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    detailTitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        flexShrink: 1,
-    } as any,
-    detailTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#ffffff',
-        maxWidth: 220,
-    },
-    detailRightRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    } as any,
     iconButton: {
         padding: 6,
     },
     selectText: {
-        fontSize: 13,
+        fontSize: 20,
         color: '#f97316',
         fontWeight: '600',
     },
@@ -288,7 +280,8 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         color: '#6b7280',
-        fontSize: 16,
+        fontSize: 24,
+        textAlign: 'center',
     },
     emptyFull: {
         flex: 1,
@@ -342,3 +335,27 @@ const styles = StyleSheet.create({
         position: "absolute",
     }
 });
+
+const iosMenuStyles: MenuOptionsCustomStyle = {
+    optionsContainer: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 14,
+        width: 180,
+        paddingVertical: 4,
+        shadowColor: "#000",
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 3,
+        opacity: 0.97,
+    },
+    optionWrapper: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    optionText: {
+        fontSize: 16,
+        fontWeight: "500",
+        color: "#007AFF", // iOS blue
+    }
+};

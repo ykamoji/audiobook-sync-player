@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import RNFS from "react-native-fs";
-
+import { pickDirectory  } from "react-native-document-picker";
 import {Setup} from "./src/components/Setup";
 import {LibraryContainer} from "./src/components/LibraryContainer";
 import {PlayerContainer} from "./src/components/PlayerContainer";
@@ -17,6 +17,7 @@ import {
     MetadataPanel,
     MetadataPanelData,
 } from "./src/components/MetadataPanel";
+import { MenuProvider } from 'react-native-popup-menu';
 import {MiniPlayer} from "./src/components/MiniPlayer";
 import {Track, AppData} from "./src/utils/types";
 import {loadInitialNativeMetadata} from "./src/utils/persistence";
@@ -27,8 +28,9 @@ import {usePlayer} from "./src/hooks/usePlayer";
 import TrackPlayer, {Capability} from "react-native-track-player";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {scanNativePath} from "./src/utils/fileScanner.ts";
-import {savePlaylist} from "./src/utils/persistence";
-import {Albums} from "./src/components/Albums.tsx";
+import {savePlaylist, checkLocalStorageAvailable} from "./src/utils/persistence";
+import {AlbumContainer} from "./src/components/AlbumContainer.tsx";
+import Toast, {ToastConfig} from "react-native-toast-message";
 
 export const setupPlayer = async () => {
     await TrackPlayer.setupPlayer();
@@ -126,13 +128,25 @@ const AppContent: React.FC = () => {
         }
     };
 
+    const clearStorage = () => {
+        playlistManager.setSavedPlaylists([]);
+        reloadProgress().then()
+        setAllTracks([])
+    }
+
     // ------------------------------------------------
     // Initial load
     // ------------------------------------------------
 
     useEffect(() => {
         if (!isStorageLoaded){
-            loadStorage().then();
+            checkLocalStorageAvailable()
+                .then(response => {
+                    if(response !== null)
+                        pickDirectory({}).then(r => {
+                            loadStorage().then(() => setView('library'));
+                        }).then()
+                }).then()
         }
     }, [isStorageLoaded]);
 
@@ -182,12 +196,6 @@ const AppContent: React.FC = () => {
         (view !== "setup" || !!player.audioState.coverUrl) &&
         player.audioState.name;
 
-    useEffect(() => {
-        if(isStorageLoaded && view === "setup") {
-            setView("library");
-        }
-    }, []);
-
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content"/>
@@ -223,6 +231,7 @@ const AppContent: React.FC = () => {
                             onViewMetadata={handleOpenMetadata}
                             playlistManager={playlistManager}
                             onUpdate={loadStorage}
+                            clearStorage={clearStorage}
                             nativeRootPath={nativeRootPath}
                         />
                     </SafeAreaView>
@@ -238,12 +247,13 @@ const AppContent: React.FC = () => {
                         edges={["top"]}
                         style={styles.safeAreaTopWrap}
                     >
-                        <Albums
-                            playlists={playlistManager.savedPlaylists}
+                        <AlbumContainer
                             allTracks={allTracks}
                             progressMap={progressMap}
                             onUpdate={loadStorage}
+                            onViewMetadata={handleOpenMetadata}
                             playlistManager={playlistManager}
+                            onSelectTrack={playTrackWrapper}
                         />
                     </SafeAreaView>
                 </View>
@@ -346,7 +356,6 @@ const styles = StyleSheet.create({
     mainContent: {
         flex: 1,
     },
-
     /** Screen switching (zero re-mount lag) */
     screen: {
         position: "absolute",
@@ -391,7 +400,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-around",
         paddingTop: 15,
-        height: 75,
+        height: 70,
         paddingBottom: 10,
     },
     tabButton: {
@@ -400,7 +409,7 @@ const styles = StyleSheet.create({
         height: 30,
     },
     tabLabel: {
-        fontSize: 18,
+        fontSize: 21,
         fontWeight: "600",
         color: "#777",
     },
@@ -422,13 +431,64 @@ const styles = StyleSheet.create({
     hidden: {
         display: "none",
     },
+    toastContainer: {
+        flexDirection: "row",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        borderRadius: 6,
+        backgroundColor: "#fff",
+        alignItems: "center",
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+    },
+    toastTextContainer: {
+        flex: 1,
+    },
+    toastMessage: {
+        color: "#000",
+        fontSize: 14,
+    },
+    toastSubMessage: {
+        color: "#e0e0e0",
+        marginTop: 2,
+        fontSize: 13,
+    },
+    toastAction: {
+        color: "#BB86FC", // Paper accent color
+        fontWeight: "600",
+        marginLeft: 16,
+    },
 });
+
+export const toastConfig: ToastConfig = {
+    snackbar: ({ text1, text2, props }) => (
+        <View style={styles.toastContainer}>
+            <View style={styles.toastTextContainer}>
+                <Text style={styles.toastMessage}>{text1}</Text>
+                {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
+            </View>
+
+            {props?.action ? (
+                <TouchableOpacity onPress={props.action.onPress}>
+                    <Text style={styles.toastAction}>{props.action.label}</Text>
+                </TouchableOpacity>
+            ) : null}
+        </View>
+    ),
+};
 
 export default function App() {
     return (
         <GestureHandlerRootView style={{flex: 1}}>
             <SafeAreaProvider>
-                <AppContent/>
+                <MenuProvider>
+                    <AppContent/>
+                    <Toast config={toastConfig} visibilityTime={1000} topOffset={120}  />
+                </MenuProvider>
             </SafeAreaProvider>
         </GestureHandlerRootView>
     );

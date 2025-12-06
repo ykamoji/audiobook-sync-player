@@ -1,10 +1,14 @@
 import React, {useRef} from 'react';
 import { Library } from './Library';
+import RNFS from 'react-native-fs';
 import { Track, Playlist, AppData, ProgressData } from '../utils/types';
 import { modelStyles } from "../assets/modelStyles";
 import { saveToNativeFilesystem } from '../utils/persistence';
-import {Dimensions, Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Keyboard} from "react-native";
+import {Dimensions, Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Keyboard, Share} from "react-native";
 import {ListIcon} from "./Icons.tsx";
+import {Pressable} from "react-native-gesture-handler";
+import Toast from 'react-native-toast-message';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface LibraryContainerProps {
     allTracks: Track[];
@@ -13,9 +17,11 @@ interface LibraryContainerProps {
     onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[]) => void;
     onViewMetadata: (track: Track) => void;
     onUpdate: () => void;
+    clearStorage: () => void;
     playlistManager: {
         savedPlaylists: Playlist[];
         createPlaylist: (name: string, initialTracks: Track[]) => void;
+        isPlaylistNameTaken: (name: string) => boolean;
         deletePlaylist: (id: string) => void;
         updatePlaylistName: (id: string, newName: string) => void;
         addToPlaylist: (playlistId: string, track: Track) => void;
@@ -27,12 +33,15 @@ interface LibraryContainerProps {
     nativeRootPath: string;
 }
 
+const ignoreKeys = ["filePaths", "colorMap"]
+
 export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                                                                       allTracks,
                                                                       progressMap,
                                                                       onSelectTrack,
                                                                       onViewMetadata,
                                                                       onUpdate,
+                                                                      clearStorage,
                                                                       playlistManager,
                                                                       nativeRootPath
                                                                   }) => {
@@ -54,7 +63,77 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
         if (saved) {
             setExportSuccess(true);
-            setTimeout(() => setExportSuccess(false), 1000);
+            setTimeout(() => {
+                setExportSuccess(false)
+                Toast.show({
+                    type:"snackbar",
+                    text1:"Saved in storage"
+                });
+            }, 1000);
+        }
+    };
+
+    const onClearStorage = async () => {
+        try {
+            await AsyncStorage.clear();
+
+            clearStorage()
+
+            setExportSuccess(true);
+            setTimeout(() => {
+                setExportSuccess(false)
+                Toast.show({
+                    type:"snackbar",
+                    text1:"Storage cleared"
+                });
+            }, 1000);
+        } catch (err) {
+            console.error("Clear error:", err);
+        }
+    };
+
+    const onDownloadData = async () => {
+        try {
+            const keys = await AsyncStorage.getAllKeys();
+            const stores = await AsyncStorage.multiGet(keys);
+
+            const data = {} as any;
+            stores.forEach(([key, value]) => {
+                if(!ignoreKeys.includes(key))
+                    data[key.replace("audiobook_","")] = JSON.parse(value!);
+            });
+
+            const path = `${RNFS.TemporaryDirectoryPath}/metadata.json`;
+
+            await RNFS.writeFile(path, JSON.stringify(data, null, 2), 'utf8');
+
+            await Share.share({
+                title:"Download",
+                url: "file://" + path,
+            });
+
+            try {
+                await RNFS.unlink(path);
+                // console.log("Temporary file deleted:", path);
+            } catch (e) {
+                console.log("Cleanup error:", e);
+            }
+
+            setExportSuccess(true);
+            setTimeout(() => {
+                setExportSuccess(false)
+                Toast.show({
+                    type:"snackbar",
+                    text1:"Data Exported"
+                });
+            }, 1000);
+
+        } catch (err) {
+            console.log(err);
+            Toast.show({
+                type:"snackbar",
+                text1:"Error exporting data"
+            });
         }
     };
 
@@ -67,18 +146,34 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
         if (action === "create") {
             const playlist_name = playlistChangeRef.current.trim();
-            playlistManager.createPlaylist(playlist_name, tracks);
+            const taken = playlistManager.isPlaylistNameTaken(playlist_name)
+            if(!taken) {
+                playlistManager.createPlaylist(playlist_name, tracks);
+                playlistChangeRef.current = "";
+                tracksChangeRef.current = [];
+                setShowModal(false)
+                Keyboard.dismiss();
+                onUpdate();
+            }
+            else{
+                Toast.show({
+                    type: "snackbar",
+                    text1: "Playlist with this name already exists"
+                })
+            }
         }
         else if (action === "add") {
             playlistManager.addMultipleToPlaylist(playlistId!, tracks);
+            Keyboard.dismiss();
+            onUpdate();
         }
         else if (action === "remove") {
             const names = tracks.map(t => t.name);
             playlistManager.removeMultipleFromPlaylist(playlistId!, names);
+            Keyboard.dismiss();
+            onUpdate();
         }
 
-        Keyboard.dismiss();
-        onUpdate();
     };
 
     let currentPlaylists = [] as Playlist[];
@@ -119,7 +214,6 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         </View>
     );
 
-
     return (
         <>
         <Library
@@ -132,6 +226,8 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
             // Exporting
             onExportData={handleExportData}
+            onClearStorage={onClearStorage}
+            onDownloadData={onDownloadData}
             exportSuccess={exportSuccess}
 
             // Playlist actions
@@ -140,9 +236,14 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             }}
             setShowModal={setShowModal}
         />
-
         <Modal visible={showModal} transparent animationType="slide">
-            <View style={modelStyles.backdrop}>
+            <View style={modelStyles.wrapper}>
+            <Pressable style={modelStyles.backdropWrapper}
+                       onPress={() => {
+                           playlistChangeRef.current = "";
+                           tracksChangeRef.current = [];
+                           setShowModal(false);
+                       }}/>
                 <View style={modelStyles.modalContainer}>
                     <View style={modelStyles.headerRow}>
                         <Text style={modelStyles.headerText}>Edit Playlist</Text>
@@ -154,7 +255,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                             <Text style={modelStyles.closeText}>Close</Text>
                         </TouchableOpacity>
                     </View>
-                    <ScrollView style={{ maxHeight: Dimensions.get('window').height * 0.6 }}>
+                    <ScrollView style={{ maxHeight: Dimensions.get('window').height * 0.6 }} keyboardShouldPersistTaps="handled">
                         {/* Create New Playlist */}
                         <View style={modelStyles.section}>
                             <TextInput
@@ -166,7 +267,11 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                             />
 
                             <TouchableOpacity
-                                onPress={()=> changeAlbumActions('create')}
+                                onPress={()=> {
+                                    if(playlistChangeRef.current.trim() !== "") {
+                                        changeAlbumActions('create')
+                                    }
+                                }}
                                 style={modelStyles.primaryButton}>
                                 <Text style={modelStyles.primaryButtonText}>Create & Add</Text>
                             </TouchableOpacity>

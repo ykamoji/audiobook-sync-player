@@ -17,6 +17,11 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
         ).then();
     }, [savedPlaylists, isStorageLoaded]);
 
+    const isPlaylistNameTaken = (name: string) => {
+        const lower = name.trim().toLowerCase();
+        return savedPlaylists.some(p => p.name.trim().toLowerCase() === lower);
+    };
+
     const createPlaylist = (name: string, initialTracks: Track[]) => {
         const newPlaylist: Playlist = {
             id: uuid.v4().toString(),
@@ -28,13 +33,13 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
         setSavedPlaylists(prev => [...prev, newPlaylist]);
     };
 
-    const deletePlaylist = (id: string) => {
-        setSavedPlaylists(prev => prev.filter(p => p.id !== id));
+    const deletePlaylist = (playlistId: string) => {
+        setSavedPlaylists(prev => prev.filter(p => p.id !== playlistId));
     };
 
-    const updatePlaylistName = (id: string, newName: string) => {
+    const updatePlaylistName = (playlistId: string, newName: string) => {
         setSavedPlaylists(prev =>
-            prev.map(p => (p.id === id ? { ...p, name: newName } : p))
+            prev.map(p => (p.id === playlistId ? { ...p, name: newName } : p))
         );
     };
 
@@ -91,6 +96,7 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
     return {
         savedPlaylists,
         setSavedPlaylists,
+        isPlaylistNameTaken,
         createPlaylist,
         deletePlaylist,
         updatePlaylistName,
