@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useCallback, useEffect} from 'react';
+import React, {useState, useMemo, useCallback, useEffect, useRef} from 'react';
 import { FlashList } from '@shopify/flash-list';
 import {
     View,
@@ -7,12 +7,11 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { Track, Playlist, ProgressData } from '../utils/types';
-import {
-    SaveIcon,
-} from './Icons';
 import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
 import {Menu, MenuOptions, MenuOption, MenuTrigger, MenuOptionsCustomStyle} from "react-native-popup-menu";
+import {MoreVertical} from "lucide-react-native";
+import Animated, {useAnimatedStyle, useSharedValue, withTiming} from "react-native-reanimated";
 
 interface LibraryProps {
     allTracks: Track[];
@@ -29,6 +28,55 @@ interface LibraryProps {
 }
 
 const ROW_HEIGHT = 88;
+
+
+// @ts-ignore
+export const SlideDownReanimated = ({ style, children, layouts }) => {
+    const translateY = useSharedValue(-12); // start 12px above
+    const opacity = useSharedValue(0);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [{ translateY: translateY.value }],
+    }));
+
+
+    const getPosition = () => {
+        if (!layouts) return {};
+        const { triggerLayout, optionsLayout, windowLayout } = layouts;
+        if (!triggerLayout || !optionsLayout || !windowLayout) return {};
+
+        let top = triggerLayout.y + triggerLayout.height;
+        let left = triggerLayout.x;
+
+        // keep menu inside screen horizontally
+        if (left + optionsLayout.width > windowLayout.width - 8) {
+            left = windowLayout.width - optionsLayout.width - 8;
+        }
+        if (left < 8) left = 8;
+
+        return {
+            position: "absolute",
+            top,
+            left,
+        };
+    };
+
+    // Run animation *once layouts exist*
+    useEffect(() => {
+        if (!layouts?.triggerLayout) return; // prevent early animation
+
+        translateY.value = withTiming(0, { duration: 500 });
+        opacity.value = withTiming(1, { duration: 250 });
+
+    }, [layouts]);
+
+    return (
+        <Animated.View style={[style, getPosition(), animatedStyle]}>
+            {children}
+        </Animated.View>
+    );
+};
 
 export const Library: React.FC<LibraryProps> = ({
                                                     allTracks,
@@ -111,6 +159,8 @@ export const Library: React.FC<LibraryProps> = ({
             allTracks]
     );
 
+
+
     // ----- Main render -----
 
     return (
@@ -134,22 +184,14 @@ export const Library: React.FC<LibraryProps> = ({
                     )}
                 </View>
                 <View style={styles.headerRight}>
-                    <Menu>
+                    <Menu renderer={SlideDownReanimated}>
                         <MenuTrigger>
                             <View style={styles.saveButton}>
                                 {exportSuccess ? (
                                     <SpinnerIcon size={20} color="#22c55e" />
                                 ) : (
-                                    <SaveIcon size={20} color="#9ca3af" />
+                                    <MoreVertical size={20} color="#9ca3af" />
                                 )}
-                                <Text
-                                    style={[
-                                        styles.saveText,
-                                        exportSuccess ? styles.saveTextSuccess : undefined,
-                                    ]}
-                                >
-                                    {exportSuccess ? '' : 'Options'}
-                                </Text>
                             </View>
                         </MenuTrigger>
 
@@ -333,6 +375,12 @@ const styles = StyleSheet.create({
         opacity: 0,
         pointerEvents: "none",
         position: "absolute",
+    },
+    menuContainer: {
+        backgroundColor: "#fff",
+        borderRadius: 14,
+        overflow: "hidden",
+        // paddingVertical: 6,
     }
 });
 

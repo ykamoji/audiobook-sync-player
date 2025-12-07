@@ -6,7 +6,7 @@ import {AppData, Playlist} from './types.ts';
  * Save metadata (progress, playlists, settings) to device storage.
  * Uses AsyncStorage
  */
-export const saveToNativeFilesystem = async (data: AppData, rootPath?: string) => {
+export const saveToNativeFilesystem = async (data: AppData) => {
     try {
         const { playlists, progress } = data
         await AsyncStorage.setItem("audiobook_progress", JSON.stringify(progress))

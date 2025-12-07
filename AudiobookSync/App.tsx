@@ -84,14 +84,15 @@ const AppContent: React.FC = () => {
     const {progressMap, initProgress, saveProgress, reloadProgress} =
         useProgressManager();
 
-    const {allTracks, setAllTracks, isLoading, nativeRootPath, handleDirectoryUpload} =
+    const {allTracks, setAllTracks, isLoading, handleDirectoryUpload} =
         useLibrary({
             onMetadataLoaded: (data: AppData) => applyMetadata(data),
             onUploadSuccess: () => setView("library"),
+            onReloadFromStorage: () => onReloadFromStorage()
         });
 
     useEffect(() => {
-        setupPlayer();
+        setupPlayer().then();
     }, []);
 
     const player = usePlayer({
@@ -142,24 +143,22 @@ const AppContent: React.FC = () => {
         setAllTracks([])
     }
 
-    // ------------------------------------------------
-    // Initial load
-    // ------------------------------------------------
-
-    useEffect(() => {
+    const onReloadFromStorage = () => {
         if (!isStorageLoaded){
             checkLocalStorageAvailable()
                 .then(response => {
                     if(response !== null)
-                        pickDirectory({}).then(r => {
+                        pickDirectory({}).then(() => {
                             loadStorage().then(() => setView('library'));
-                        }).then()
-                }).then()
+                        })
+                })
+            return true
         }
-    }, [isStorageLoaded]);
+        return false
+    }
 
     // ------------------------------------------------
-    // Metadata logic (unchanged)
+    // Metadata logic
     // ------------------------------------------------
     const getAssociatedPlaylists = (trackName: string) =>
         playlistManager.savedPlaylists
@@ -278,7 +277,6 @@ const AppContent: React.FC = () => {
                             playlistManager={playlistManager}
                             onUpdate={loadStorage}
                             clearStorage={clearStorage}
-                            nativeRootPath={nativeRootPath}
                         />
                     </SafeAreaView>
                 </View>
@@ -326,7 +324,6 @@ const AppContent: React.FC = () => {
                             onPrevious={player.previous}
                             onSkipForward={player.skipForward}
                             onSkipBackward={player.skipBackward}
-                            onExpand={() => setPlayerMode("full")}
                             onBack={() => closePlayer()}
                             onTogglePlay={player.togglePlay}
                             onSeek={player.seek}

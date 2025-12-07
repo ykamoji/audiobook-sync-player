@@ -54,7 +54,6 @@ interface PlayerViewProps {
     segmentMarkers: number[];
     onSegmentChange: (index: number) => void;
 
-    onExpand: () => void;
     isPlaying: boolean;
     onBack: () => void;              // now only for "full close" if you want it
     onTogglePlay: () => void;
@@ -87,7 +86,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           onSegmentChange,
                                                           isPlaying,
                                                           onBack,
-                                                          onExpand,
                                                           onTogglePlay,
                                                           onSeek,
                                                           onSubtitleClick,
@@ -191,16 +189,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             }
         });
 
-    // Tap on mini-player to expand back
-    const miniTapGesture = Gesture.Tap().onEnd(() => {
-        translateY.value = withSpring(0, {
-            damping: 20,
-            stiffness: 240,
-        });
-        progress.value = withSpring(0);
-        runOnJS(onExpand)();
-    });
-
     // ----- ANIMATED STYLES -----
     const containerStyle = useAnimatedStyle(() => {
         return {
@@ -238,39 +226,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         return { opacity };
     });
 
-    // Mini-player fade in
-    const miniStyle = useAnimatedStyle(() => {
-        const opacity = interpolate(progress.value, [0.2, 1], [0, 1], {extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',});
-        return { opacity };
-    });
-
-    // Mini-player vertical offset (sticks to bottom)
-    const miniContainerStyle = useAnimatedStyle(() => {
-        return {
-            transform: [
-                {
-                    translateY: interpolate(
-                        progress.value,
-                        [0, 1],
-                        [MINI_HEIGHT, 0],
-                        {extrapolateLeft: 'clamp',
-                            extrapolateRight: 'clamp',}
-                    ),
-                },
-            ],
-        };
-    });
-
-    // ChevronDown: collapse to mini (same as swipe)
-    const collapseToMini = () => {
-        translateY.value = withSpring(miniOffset, {
-            damping: 18,
-            stiffness: 220,
-        });
-        progress.value = withSpring(1);
-    };
-
     // ----------------------------------------------------
     // RENDER
     // ----------------------------------------------------
@@ -293,7 +248,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         <View style={styles.headerContainer}>
                             <TouchableOpacity
                                 onPress={() => {
-                                    collapseToMini();
                                     runOnJS(onBack)();
                                 }}
                                 style={styles.headerBackButton}>
@@ -399,50 +353,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                             />
                         </View>
                     </Animated.View>
-
-                    <GestureDetector gesture={miniTapGesture}>
-                        <Animated.View
-                            style={[
-                                styles.miniPlayerContainer,
-                                miniContainerStyle,
-                                miniStyle,
-                            ]}
-                        >
-                            <View style={styles.miniLeft}>
-                                {audioState.coverPath ? (
-                                    <Image
-                                        source={{ uri: audioState.coverPath }}
-                                        style={styles.miniCover}
-                                    />
-                                ) : (
-                                    <View style={styles.miniCoverPlaceholder}>
-                                        <Text style={styles.miniCoverText}>
-                                            {audioState.name.substring(0, 2).toUpperCase()}
-                                        </Text>
-                                    </View>
-                                )}
-                                <View style={styles.miniTextWrapper}>
-                                    <Text
-                                        style={styles.miniTitle}
-                                        numberOfLines={1}
-                                    >
-                                        {audioState.name}
-                                    </Text>
-                                    <Text style={styles.miniSubtitle}>
-                                        {formatTime(currentTime)} / {formatTime(duration)}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <TouchableOpacity onPress={onTogglePlay} style={styles.miniPlayButton}>
-                                {isPlaying ? (
-                                    <PauseIcon size={28} color="#fff" />
-                                ) : (
-                                    <PlayIcon size={28} color="#fff" />
-                                )}
-                            </TouchableOpacity>
-                        </Animated.View>
-                    </GestureDetector>
                 </Animated.View>
             </GestureDetector>
 

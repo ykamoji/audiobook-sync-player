@@ -29,8 +29,6 @@ interface LibraryContainerProps {
         removeFromPlaylist: (playlistId: string, trackName: string) => void;
         removeMultipleFromPlaylist: (playlistId: string, trackNames: string[]) => void;
     };
-
-    nativeRootPath: string;
 }
 
 const ignoreKeys = ["filePaths", "colorMap"]
@@ -42,8 +40,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                                                                       onViewMetadata,
                                                                       onUpdate,
                                                                       clearStorage,
-                                                                      playlistManager,
-                                                                      nativeRootPath
+                                                                      playlistManager
                                                                   }) => {
 
     const [exportSuccess, setExportSuccess] = React.useState(false);
@@ -59,7 +56,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         };
 
         // Use RN-only persistence (no Capacitor, no Web download)
-        const saved = await saveToNativeFilesystem(data, nativeRootPath);
+        const saved = await saveToNativeFilesystem(data);
 
         if (saved) {
             setExportSuccess(true);
