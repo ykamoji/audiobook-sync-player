@@ -15,9 +15,10 @@ import {
     CheckCircleIcon,
     CircleIcon,
     InfoIcon, PencilIcon, TrashIcon,
-} from "./Icons";
+} from "lucide-react-native";
 
 import { Track, Playlist, ProgressData } from "../utils/types";
+import {Divider} from "react-native-paper";
 
 interface TrackRowProps {
     track: Track;
@@ -182,7 +183,12 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                 <Text style={styles.mediumText}>
                                     {Math.floor(percentage)}%
                                 </Text>
-                            ) : null}
+                            ) : (
+                                // 👇 placeholder to keep layout identical
+                                <Text style={[styles.mediumText, {opacity: 0}]}>
+                                    100%
+                                </Text>
+                            )}
 
                             {playlistBadges}
                         </View>
@@ -199,7 +205,6 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     <MoreHorizontalIcon size={22} color="#aaa" />
                 </TouchableOpacity>
             )}
-            {/* Menu */}
             <Modal
                 visible={menuVisible}
                 transparent
@@ -345,7 +350,7 @@ const styles = StyleSheet.create({
         right: 20,
         top: 120,
         backgroundColor: "#2a2a2a",
-        borderRadius: 10,
+        borderRadius: 0,
         paddingVertical: 6,
         width: 200,
         borderWidth: 1,

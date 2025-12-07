@@ -1,10 +1,9 @@
 import React, {FC, useCallback, useEffect, useState} from "react";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
 import {ActionSheetIOS, StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {ChevronLeftIcon, PencilIcon} from "./Icons.tsx";
+import {ChevronLeftIcon, PencilIcon, Trash} from "lucide-react-native";
 import {TrackRow} from "./TrackRow.tsx";
 import {FlashList} from "@shopify/flash-list";
-import {TrashIcon} from "./Icons.tsx";
 
 interface AlbumContentProps {
     playlistTracks?: Track[];
@@ -165,7 +164,7 @@ export const AlbumContent: FC<AlbumContentProps> = ({
                         onPress={handlePlaylistDelete}
                         style={styles.iconButton}
                     >
-                        <TrashIcon size={18} color="#9ca3af"/>
+                        <Trash size={18} color="#9ca3af"/>
                     </TouchableOpacity>
                     </View>
                 </View>

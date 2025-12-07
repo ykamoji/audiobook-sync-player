@@ -7,11 +7,9 @@ import {
     PauseIcon,
     MoreHorizontalIcon,
     SkipBackIcon,
-    SkipForwardIcon,
-    ChaptersIcon,
-    Rewind10Icon,
-    Forward10Icon
-} from './Icons.tsx';
+    SkipForwardIcon, RewindIcon, ForwardIcon, MenuIcon, LucideMenu,
+} from 'lucide-react-native';
+import {Forward10Icon, Rewind10Icon} from "./Icons.tsx";
 
 interface ControlsProps {
     isPlaying: boolean;
@@ -80,7 +78,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Left – Chapters */}
                 <TouchableOpacity onPress={onOpenChapters} style={styles.sideButton}>
-                    <ChaptersIcon size={26} color="#aaa" />
+                    <LucideMenu size={26} color="#aaa" />
                 </TouchableOpacity>
 
                 {/* Previous */}
@@ -94,7 +92,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Rewind 10 */}
                 <TouchableOpacity onPress={onSkipBackward} style={styles.smallControl}>
-                    <Rewind10Icon size={32} color="#f97316" />
+                    <Rewind10Icon size={32} stroke="#f97316" />
                 </TouchableOpacity>
 
                 {/* Play / Pause */}
@@ -108,7 +106,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Forward 10 */}
                 <TouchableOpacity onPress={onSkipForward} style={styles.smallControl}>
-                    <Forward10Icon size={32} color="#f97316" />
+                    <Forward10Icon size={32} stroke="#f97316" />
                 </TouchableOpacity>
 
                 {/* Next */}

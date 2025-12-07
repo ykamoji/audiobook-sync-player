@@ -7,7 +7,7 @@ import {
     StyleSheet,
 } from "react-native";
 import { Playlist, Track, ProgressData } from "../utils/types";
-import { MusicIcon } from "./Icons";
+import { MusicIcon } from "lucide-react-native";
 
 interface PlaylistCardProps {
     playlist: Playlist;

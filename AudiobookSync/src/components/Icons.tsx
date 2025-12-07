@@ -1,120 +1,67 @@
 import React from "react";
-import {
-    Play,
-    Pause,
-    SkipBack,
-    SkipForward,
-    Rewind,
-    FastForward,
-    Upload,
-    Music,
-    FileText,
-    Folder,
-    List,
-    Library,
-    ChevronLeft,
-    ChevronDown,
-    Plus,
-    MoreHorizontal,
-    Trash2,
-    Circle,
-    CheckCircle,
-    Save,
-    Info,
-    X,
-    Repeat,
-    Headphones,
-    Edit3,
-    BookMarked
-} from "lucide-react-native";
+import Svg, { G, Path } from "react-native-svg";
 
 interface IconProps {
     size?: number;
     color?: string;
 }
 
-/* ========== BASIC PLAYER ICONS ========== */
+export const Rewind10Icon = ({ size = 24, stroke = "#FFF" }) => (
+    <Svg
+        width={size}
+        height={size}
+        viewBox="0 0 28 28"
+        fill="none"
+        stroke={stroke}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <G transform="scale(-1.2, 1.2) translate(-24, 0)" strokeWidth="1">
+            <Path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+            <Path d="M21 3v5h-5" />
+        </G>
 
-export const PlayIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Play size={size} color={color} />;
+        <G transform="translate(2, 2)" strokeWidth="1.5">
+            <Path d="M10 9v6" />
+            <Path
+                d="
+          M14 9
+          c1.2 0 2 1 2 3
+          s-0.8 3-2 3
+          c-1.2 0-2-1-2-3
+          s0.8-3 2-3
+        "
+            />
+        </G>
+    </Svg>
+);
 
-export const PauseIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Pause size={size} color={color} />;
+export const Forward10Icon = ({ size = 24, stroke = "#FFF" }) => (
+    <Svg
+        width={size}
+        height={size}
+        viewBox="0 0 28 28"
+        fill="none"
+        stroke={stroke}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <G transform="scale(1.2)" strokeWidth="1">
+            <Path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+            <Path d="M21 3v5h-5" />
+        </G>
 
-export const SkipBackIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <SkipBack size={size} color={color} />;
-
-export const SkipForwardIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <SkipForward size={size} color={color} />;
-
-export const Rewind10Icon = ({ size = 28, color = "#fff" }: IconProps) =>
-    <Rewind size={size} color={color} />;
-
-export const Forward10Icon = ({ size = 28, color = "#fff" }: IconProps) =>
-    <FastForward size={size} color={color} />;
-
-/* ========== UI ICONS ========== */
-
-export const UploadIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Upload size={size} color={color} />;
-
-export const MusicIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Music size={size} color={color} />;
-
-export const FileTextIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <FileText size={size} color={color} />;
-
-export const FolderIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Folder size={size} color={color} />;
-
-export const ListIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <List size={size} color={color} />;
-
-export const LibraryIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Library size={size} color={color} />;
-
-/* ========== NAV + ACTION ICONS ========== */
-
-export const ChevronLeftIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <ChevronLeft size={size} color={color} />;
-
-export const ChevronDownIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <ChevronDown size={size} color={color} />;
-
-export const PlusIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Plus size={size} color={color} />;
-
-export const MoreHorizontalIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <MoreHorizontal size={size} color={color} />;
-
-export const TrashIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Trash2 size={size} color={color} />;
-
-export const CircleIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Circle size={size} color={color} />;
-
-export const CheckCircleIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <CheckCircle size={size} color={color} />;
-
-export const SaveIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Save size={size} color={color} />;
-
-export const InfoIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Info size={size} color={color} />;
-
-export const XIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <X size={size} color={color} />;
-
-/* ========== SPECIAL ICONS ========== */
-
-export const RepeatIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Repeat size={size} color={color} />;
-
-export const HeadphoneIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Headphones size={size} color={color} />;
-
-export const PencilIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <Edit3 size={size} color={color} />;
-
-export const ChaptersIcon = ({ size = 24, color = "#fff" }: IconProps) =>
-    <BookMarked size={size} color={color} />;
+        <G transform="translate(2, 2)" strokeWidth="1.5">
+            <Path d="M10 9v6" />
+            <Path
+                d="
+          M14 9
+          c1.2 0 2 1 2 3
+          s-0.8 3-2 3
+          c-1.2 0-2-1-2-3
+          s0.8-3 2-3
+        "
+            />
+        </G>
+    </Svg>
+);

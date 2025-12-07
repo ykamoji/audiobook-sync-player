@@ -5,7 +5,7 @@ import { Track, Playlist, AppData, ProgressData } from '../utils/types';
 import { modelStyles } from "../assets/modelStyles";
 import { saveToNativeFilesystem } from '../utils/persistence';
 import {Dimensions, Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Keyboard, Share} from "react-native";
-import {ListIcon} from "./Icons.tsx";
+import {ListIcon} from "lucide-react-native";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from "@react-native-async-storage/async-storage";

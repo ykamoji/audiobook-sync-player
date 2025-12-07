@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { FolderIcon, HeadphoneIcon } from './Icons';
+import {FolderIcon, HeadphonesIcon} from 'lucide-react-native';
 
 interface SetupProps {
     onDirectoryUpload: () => void; // no event needed now
@@ -17,7 +17,7 @@ export const Setup: React.FC<SetupProps> = ({
 
             {/* Header */}
             <View style={styles.headerSection}>
-                <HeadphoneIcon size={64} color="#ff8300" />
+                <HeadphonesIcon size={64} color="#ff8300" />
                 <Text style={styles.title}>Audiobook Player</Text>
             </View>
 

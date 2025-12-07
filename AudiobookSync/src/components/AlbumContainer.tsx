@@ -11,6 +11,7 @@ interface AlbumsContainerProps {
     allTracks: Track[];
     progressMap: Record<string, ProgressData>;
     onUpdate: () => void;
+    closeAlbums: boolean;
     onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[]) => void;
     onViewMetadata: (track: Track) => void;
     playlistManager: {
@@ -30,6 +31,7 @@ interface AlbumsContainerProps {
 export const AlbumContainer : FC<AlbumsContainerProps> = ({
                                              allTracks,
                                              onUpdate,
+                                             closeAlbums,
                                              playlistManager,
                                              onSelectTrack,
                                              onViewMetadata,
@@ -63,6 +65,14 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
             setPlaylistTracks([]);
         }
     }, [selectedPlaylistId, allTracks, playlists]);
+
+    useEffect(() => {
+        if(closeAlbums && !!selectedPlaylist){
+            setPlaylistTracks([])
+            setSelectedPlaylistId(null)
+        }
+
+    }, [closeAlbums]);
 
     const handlePlaylistDelete = () => {
         ActionSheetIOS.showActionSheetWithOptions(

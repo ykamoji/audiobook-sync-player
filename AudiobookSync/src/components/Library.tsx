@@ -9,9 +9,8 @@ import {
 import { Track, Playlist, ProgressData } from '../utils/types';
 import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
-import {Menu, MenuOptions, MenuOption, MenuTrigger, MenuOptionsCustomStyle} from "react-native-popup-menu";
-import {MoreVertical} from "lucide-react-native";
-import Animated, {useAnimatedStyle, useSharedValue, withTiming} from "react-native-reanimated";
+import {Menu, Divider, MD3DarkTheme,} from "react-native-paper";
+import {Download, MoreVertical, SaveAll, Trash2} from "lucide-react-native";
 
 interface LibraryProps {
     allTracks: Track[];
@@ -30,54 +29,6 @@ interface LibraryProps {
 const ROW_HEIGHT = 88;
 
 
-// @ts-ignore
-export const SlideDownReanimated = ({ style, children, layouts }) => {
-    const translateY = useSharedValue(-12); // start 12px above
-    const opacity = useSharedValue(0);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        opacity: opacity.value,
-        transform: [{ translateY: translateY.value }],
-    }));
-
-
-    const getPosition = () => {
-        if (!layouts) return {};
-        const { triggerLayout, optionsLayout, windowLayout } = layouts;
-        if (!triggerLayout || !optionsLayout || !windowLayout) return {};
-
-        let top = triggerLayout.y + triggerLayout.height;
-        let left = triggerLayout.x;
-
-        // keep menu inside screen horizontally
-        if (left + optionsLayout.width > windowLayout.width - 8) {
-            left = windowLayout.width - optionsLayout.width - 8;
-        }
-        if (left < 8) left = 8;
-
-        return {
-            position: "absolute",
-            top,
-            left,
-        };
-    };
-
-    // Run animation *once layouts exist*
-    useEffect(() => {
-        if (!layouts?.triggerLayout) return; // prevent early animation
-
-        translateY.value = withTiming(0, { duration: 500 });
-        opacity.value = withTiming(1, { duration: 250 });
-
-    }, [layouts]);
-
-    return (
-        <Animated.View style={[style, getPosition(), animatedStyle]}>
-            {children}
-        </Animated.View>
-    );
-};
-
 export const Library: React.FC<LibraryProps> = ({
                                                     allTracks,
                                                     playlists,
@@ -94,6 +45,10 @@ export const Library: React.FC<LibraryProps> = ({
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
+
+    const [visible, setVisible] = useState(false);
+    const openMenu = () => setVisible(true);
+    const closeMenu = () => setVisible(false);
 
     const handleSelectAll = () => {
         if (selectedTrackIds.size === allTracks.length) {
@@ -184,33 +139,63 @@ export const Library: React.FC<LibraryProps> = ({
                     )}
                 </View>
                 <View style={styles.headerRight}>
-                    <Menu renderer={SlideDownReanimated}>
-                        <MenuTrigger>
-                            <View style={styles.saveButton}>
-                                {exportSuccess ? (
-                                    <SpinnerIcon size={20} color="#22c55e" />
-                                ) : (
-                                    <MoreVertical size={20} color="#9ca3af" />
-                                )}
-                            </View>
-                        </MenuTrigger>
+                    <Menu
+                        visible={visible}
+                        onDismiss={closeMenu}
+                        mode="elevated"
+                        theme={{
+                            ...MD3DarkTheme,
+                            colors: {
+                                ...MD3DarkTheme.colors,
+                                onSurface: "#CCC",
+                                onSurfaceVariant: "#CCC",
+                                surface: "#050505",
+                                elevation: { level2: "#050505" },
+                            },
+                        }}
+                        anchor={
+                            <TouchableOpacity onPress={openMenu}>
+                                <View style={styles.saveButton}>
+                                    {exportSuccess ? (
+                                        <SpinnerIcon size={20} color="#22c55e" />
+                                    ) : (
+                                        <MoreVertical size={20} color="#9ca3af" />
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+                        }
+                    >
+                        <Menu.Item
+                            onPress={() => {
+                                closeMenu();
+                                onExportData();
+                            }}
+                            titleStyle={{ color: "#CCC" }}
+                            title="Save Data"
+                            leadingIcon={() => <SaveAll size={18} color="#3D9D72" />}
+                        />
+                        <Divider />
 
-                        <MenuOptions customStyles={iosMenuStyles}>
-                            <MenuOption onSelect={onExportData}  customStyles={{ optionText: iosMenuStyles.optionText }}>
-                                <Text style={iosMenuStyles.optionText} >Save Data</Text>
-                            </MenuOption>
-                            <View style={{ height: 1, backgroundColor: "#E5E5EA" }} />
-                            <MenuOption
-                                onSelect={onDownloadData}
-                                customStyles={{ optionText: iosMenuStyles.optionText }}
-                            >
-                                <Text style={iosMenuStyles.optionText}>Download File</Text>
-                            </MenuOption>
-                            <View style={{ height: 1, backgroundColor: "#E5E5EA" }} />
-                            <MenuOption onSelect={onClearStorage}>
-                                <Text  style={[iosMenuStyles.optionText, { color: "#FF3B30" }]}>Clear Storage</Text>
-                            </MenuOption>
-                        </MenuOptions>
+                        <Menu.Item
+                            onPress={() => {
+                                closeMenu();
+                                onDownloadData();
+                            }}
+                            titleStyle={{ color: "#CCC" }}
+                            title="Download File"
+                            leadingIcon={() => <Download size={18} color="#0A84FF" />}
+                        />
+                        <Divider />
+
+                        <Menu.Item
+                            onPress={() => {
+                                closeMenu();
+                                onClearStorage();
+                            }}
+                            title="Clear Storage"
+                            titleStyle={{ color: "#CCC" }}
+                            leadingIcon={() => <Trash2 size={18} color="#FF3B30" />}
+                        />
                     </Menu>
                 </View>
             </View>
@@ -375,35 +360,5 @@ const styles = StyleSheet.create({
         opacity: 0,
         pointerEvents: "none",
         position: "absolute",
-    },
-    menuContainer: {
-        backgroundColor: "#fff",
-        borderRadius: 14,
-        overflow: "hidden",
-        // paddingVertical: 6,
     }
 });
-
-const iosMenuStyles: MenuOptionsCustomStyle = {
-    optionsContainer: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 14,
-        width: 180,
-        paddingVertical: 4,
-        shadowColor: "#000",
-        shadowOpacity: 0.12,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 3,
-        opacity: 0.97,
-    },
-    optionWrapper: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-    },
-    optionText: {
-        fontSize: 16,
-        fontWeight: "500",
-        color: "#007AFF", // iOS blue
-    }
-};

@@ -7,7 +7,7 @@ import {
     Image,
 } from 'react-native';
 
-import { PlayIcon, PauseIcon } from './Icons.tsx';
+import { PlayIcon, PauseIcon } from 'lucide-react-native';
 
 interface MiniPlayerProps {
     coverUrl: string;
@@ -34,6 +34,15 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
             style={styles.container}
             onPress={onOpen}
         >
+            {/* PROGRESS BAR */}
+            <View style={styles.progressTrack}>
+                <View
+                    style={[
+                        styles.progressFill,
+                        { width: `${Math.max(0, Math.min(progress, 100))}%` },
+                    ]}
+                />
+            </View>
             {/* LEFT: cover + text */}
             <View style={styles.left}>
                 {coverUrl ? (
@@ -50,9 +59,9 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
                     <Text style={styles.title} numberOfLines={1}>
                         {safeName}
                     </Text>
-                    <Text style={styles.subtitle} numberOfLines={1}>
-                        Tap to open player
-                    </Text>
+                    {/*<Text style={styles.subtitle} numberOfLines={1}>*/}
+                    {/*    Tap to open player*/}
+                    {/*</Text>*/}
                 </View>
             </View>
 
@@ -70,16 +79,6 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
                     <PlayIcon size={24} color="#fff" />
                 )}
             </TouchableOpacity>
-
-            {/* PROGRESS BAR */}
-            <View style={styles.progressTrack}>
-                <View
-                    style={[
-                        styles.progressFill,
-                        { width: `${Math.max(0, Math.min(progress, 100))}%` },
-                    ]}
-                />
-            </View>
         </TouchableOpacity>
     );
 };
@@ -140,8 +139,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: 0,
-        height: 2,
+        top: 0,
+        height: 3,
         backgroundColor: 'rgba(255,255,255,0.15)',
     },
     progressFill: {

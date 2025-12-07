@@ -2,8 +2,7 @@ import React, { FC, ReactNode, useMemo } from "react";
 import {
     StyleSheet,
     ViewStyle,
-    TouchableWithoutFeedback,
-    useWindowDimensions,
+    useWindowDimensions, View, TouchableWithoutFeedback,
 } from "react-native";
 import Animated, {
     useSharedValue,
@@ -13,7 +12,7 @@ import Animated, {
     runOnJS,
     Easing,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import {Gesture, GestureDetector, Pressable} from "react-native-gesture-handler";
 
 type Side = "bottom" | "right" | "left" | "auto";
 
@@ -119,9 +118,8 @@ export const SlideWindow: FC<SlideWindowProps> = ({
                 easing: Easing.out(Easing.cubic),
             });
 
-            offset.value = withTiming(sheetSize, {
-                duration: 300,
-                easing: Easing.out(Easing.cubic),
+            backdropOpacity.value = withTiming(0, {
+                duration: 200,
             });
         }
     }, [open, sheetSize]);
@@ -233,7 +231,7 @@ const styles = StyleSheet.create({
     backdrop: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: "rgba(0,0,0,0.6)",
-        zIndex: 90,
+        zIndex: 100,
     },
     container: {
         position: "absolute",

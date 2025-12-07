@@ -33,13 +33,14 @@ import {
     ChevronDownIcon,
     PlayIcon,
     PauseIcon,
-} from './Icons.tsx';
+} from 'lucide-react-native';
 
 import {
     AudioFileState,
     SubtitleFileState,
     SubtitleCue,
 } from '../utils/types';
+import {SlideWindow} from "./SlideWindow.tsx";
 
 interface PlayerViewProps {
     audioState: AudioFileState;
@@ -109,10 +110,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     const scrollAtTop = useRef(true);
 
     // ----- REANIMATED SHARED VALUES -----
-    // translateY: 0 = full screen, miniOffset = mini-player at bottom
     const translateY = useSharedValue(0);
-    const startY = useSharedValue(0);
-    const progress = useSharedValue(0); // 0 = full, 1 = mini
+    const progress = useSharedValue(0);
+
 
     const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom;
 
@@ -191,9 +191,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     // ----- ANIMATED STYLES -----
     const containerStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateY: translateY.value }],
-        };
+        return { transform: [{ translateY: translateY.value }], };
     });
 
     // Artwork morph (scale + move like Apple Music)
@@ -239,11 +237,11 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         {
                             paddingTop: insets.top,
                             paddingBottom: insets.bottom,
-                        },
+                        }
                     ]}
+                    pointerEvents={showChapters ? "none" : "auto"}
                 >
-                    {/* FULL PLAYER CONTENT */}
-                    <Animated.View style={fullContentStyle}>
+                    <Animated.View style={fullContentStyle} pointerEvents={showChapters ? "none" : "auto"}>
                         {/* Header */}
                         <View style={styles.headerContainer}>
                             <TouchableOpacity
@@ -251,7 +249,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                     runOnJS(onBack)();
                                 }}
                                 style={styles.headerBackButton}>
-                                <ChevronDownIcon />
+                                <ChevronDownIcon stroke={"#fff"} />
                             </TouchableOpacity>
 
                             <View style={styles.headerTextContainer}>
@@ -263,7 +261,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         </View>
 
                         {/* COVER ART */}
-                        <Animated.View style={[styles.coverContainer, artworkStyle]}>
+                        <Animated.View style={[styles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
                             {audioState.coverPath ? (
                                 <View style={styles.coverWrapper}>
                                     <Image
@@ -289,9 +287,11 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                             <ScrollView
                                 ref={scrollRef}
                                 style={styles.subtitlesScroll}
+                                pointerEvents={showChapters ? 'none' : 'auto'}
                                 contentContainerStyle={styles.subtitlesContent}
                                 scrollEventThrottle={16}
                                 onScroll={({ nativeEvent }) => {
+                                    if (showChapters) return;
                                     const y = nativeEvent.contentOffset.y;
                                     scrollAtTop.current = y <= 0;
                                 }}
@@ -356,90 +356,86 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 </Animated.View>
             </GestureDetector>
 
-            {/* CHAPTERS MODAL (unchanged) */}
-            {showChapters && (
-                <View style={styles.chaptersOverlayRoot} pointerEvents="box-none">
-                    <TouchableOpacity
-                        style={styles.chaptersBackdrop}
-                        onPress={() => setShowChapters(false)}
-                    />
+            <SlideWindow style={styles.chaptersOverlayRoot}
+                         open={showChapters}
+                         side={"left"}
+                         width={"70%"}
+                         onClose={() => setShowChapters(false)}>
 
-                    <View style={[styles.chaptersSheet, { paddingBottom: insets.bottom }]}>
-                        <View style={styles.chaptersHeader}>
-                            <View style={styles.chaptersHeaderLeft}>
-                                <ListIcon />
-                                <Text style={styles.chaptersTitle}>{audioState.name}</Text>
-                            </View>
-
-                            <TouchableOpacity
-                                onPress={() => setShowChapters(false)}
-                                style={styles.chaptersCloseButton}
-                            >
-                                <XIcon />
-                            </TouchableOpacity>
+                <View style={[styles.chaptersSheet, {paddingTop: insets.top}]}>
+                    <View style={styles.chaptersHeader}>
+                        <View style={styles.chaptersHeaderLeft}>
+                            <Text style={styles.chaptersTitle}>{audioState.name}</Text>
                         </View>
 
-                        <ScrollView
-                            style={styles.chaptersList}
-                            contentContainerStyle={styles.chaptersListContent}
+                        <TouchableOpacity
+                            onPress={() => setShowChapters(false)}
+                            style={styles.chaptersCloseButton}
                         >
-                            {Array.from({ length: totalSegments }).map((_, i) => {
-                                let dynDuration = 0;
-
-                                if (subtitleState.cues.length > 0) {
-                                    const startIdx = i * CUES_PER_SEGMENT;
-                                    const endIdx = Math.min(
-                                        (i + 1) * CUES_PER_SEGMENT - 1,
-                                        subtitleState.cues.length - 1
-                                    );
-
-                                    if (startIdx < subtitleState.cues.length && endIdx >= startIdx) {
-                                        dynDuration =
-                                            subtitleState.cues[endIdx].end -
-                                            subtitleState.cues[startIdx].start;
-                                    }
-                                } else if (duration > 0) {
-                                    dynDuration = duration;
-                                }
-
-                                const isActive = currentSegmentIndex === i;
-
-                                return (
-                                    <TouchableOpacity
-                                        key={i}
-                                        style={[
-                                            styles.chapterItem,
-                                            isActive && styles.chapterItemActive,
-                                        ]}
-                                        onPress={() => {
-                                            onSegmentChange(i);
-                                            setShowChapters(false);
-                                        }}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.chapterIndex,
-                                                isActive && styles.chapterIndexActive,
-                                            ]}
-                                        >
-                                            1.{i + 1}
-                                        </Text>
-
-                                        <Text
-                                            style={[
-                                                styles.chapterDuration,
-                                                isActive && styles.chapterDurationActive,
-                                            ]}
-                                        >
-                                            {formatTime(dynDuration)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
+                            <XIcon size={24} color="#9ca3af" />
+                        </TouchableOpacity>
                     </View>
+
+                    <ScrollView
+                        style={styles.chaptersList}
+                        contentContainerStyle={styles.chaptersListContent}
+                    >
+                        {Array.from({length: totalSegments}).map((_, i) => {
+                            let dynDuration = 0;
+
+                            if (subtitleState.cues.length > 0) {
+                                const startIdx = i * CUES_PER_SEGMENT;
+                                const endIdx = Math.min(
+                                    (i + 1) * CUES_PER_SEGMENT - 1,
+                                    subtitleState.cues.length - 1
+                                );
+
+                                if (startIdx < subtitleState.cues.length && endIdx >= startIdx) {
+                                    dynDuration =
+                                        subtitleState.cues[endIdx].end -
+                                        subtitleState.cues[startIdx].start;
+                                }
+                            } else if (duration > 0) {
+                                dynDuration = duration;
+                            }
+
+                            const isActive = currentSegmentIndex === i;
+
+                            return (
+                                <TouchableOpacity
+                                    key={i}
+                                    style={[
+                                        styles.chapterItem,
+                                        isActive && styles.chapterItemActive,
+                                    ]}
+                                    onPress={() => {
+                                        onSegmentChange(i);
+                                        setShowChapters(false);
+                                    }}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.chapterIndex,
+                                            isActive && styles.chapterIndexActive,
+                                        ]}
+                                    >
+                                        1.{i + 1}
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.chapterDuration,
+                                            isActive && styles.chapterDurationActive,
+                                        ]}
+                                    >
+                                        {formatTime(dynDuration)}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
                 </View>
-            )}
+            </SlideWindow>
         </>
     );
 };
@@ -624,21 +620,14 @@ const styles = StyleSheet.create({
     miniPlayButton: {
         padding: 8,
     },
-
-    // Chapters
     chaptersOverlayRoot: {
         ...StyleSheet.absoluteFillObject,
-        justifyContent: 'flex-end',
-    },
-    chaptersBackdrop: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'flex-start',
     },
     chaptersSheet: {
-        backgroundColor: '#111111',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingTop: 8,
+        paddingTop: 8
     },
     chaptersHeader: {
         flexDirection: 'row',
@@ -656,7 +645,7 @@ const styles = StyleSheet.create({
     },
     chaptersTitle: {
         marginLeft: 8,
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: '700',
         color: 'white',
     },
@@ -685,7 +674,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f97316',
     },
     chapterIndex: {
-        fontSize: 13,
+        fontSize: 20,
         color: '#e5e7eb',
         fontWeight: '600',
     },
@@ -693,7 +682,7 @@ const styles = StyleSheet.create({
         color: '#111827',
     },
     chapterDuration: {
-        fontSize: 11,
+        fontSize: 16,
         color: '#6b7280',
     },
     chapterDurationActive: {

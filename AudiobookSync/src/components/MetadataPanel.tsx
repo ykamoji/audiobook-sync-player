@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { XIcon } from './Icons';
+import { XIcon } from 'lucide-react-native';
 import { formatBytes, formatDate, formatDuration } from '../utils/formatting';
 import { SlideWindow } from './SlideWindow';
 
@@ -20,7 +20,7 @@ interface MetadataPanelProps {
 }
 
 export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) => {
-    const insets = useSafeAreaInsets();
+
     const isOpen = !!data;
 
     return (
@@ -28,24 +28,23 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
             open={isOpen}
             onClose={onClose}
             side="bottom"
-            height="50%"
+            height="70%"
         >
             <View
                 style={[
                     styles.container,
                     {
-                        paddingTop: insets.top + 12,
-                        paddingBottom: insets.bottom + 12,
+                        paddingTop: 10,
+                        paddingBottom: 10,
                     },
                 ]}
             >
                 <View style={styles.headerRow}>
-                    <Text style={styles.title}>Metadata</Text>
+                    <Text style={styles.title}>Details</Text>
                     <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                         <XIcon size={24} color="#9ca3af" />
                     </TouchableOpacity>
                 </View>
-
                 {data && (
                     <View style={styles.sectionList}>
                         {/* File name */}
