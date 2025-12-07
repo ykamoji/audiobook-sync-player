@@ -21,7 +21,7 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withSpring,
-    runOnJS,
+    runOnJS, interpolate,
 } from "react-native-reanimated";
 import { Provider as PaperProvider } from 'react-native-paper';
 import {MiniPlayer} from "./components/MiniPlayer";
@@ -38,22 +38,31 @@ import {savePlaylist, checkLocalStorageAvailable} from "./utils/persistence";
 import {AlbumContainer} from "./components/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 
+let isPlayerInitialized = false;
+
 export const setupPlayer = async () => {
-    await TrackPlayer.setupPlayer();
-    await TrackPlayer.updateOptions({
-        capabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.SkipToNext,
-            Capability.SkipToPrevious,
-            Capability.SeekTo,
-        ],
-        compactCapabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.SkipToNext,
-        ],
-    });
+
+    if (isPlayerInitialized) return;
+    isPlayerInitialized = true;
+    try {
+        await TrackPlayer.setupPlayer();
+        await TrackPlayer.updateOptions({
+            capabilities: [
+                Capability.Play,
+                Capability.Pause,
+                Capability.SkipToNext,
+                Capability.SkipToPrevious,
+                Capability.SeekTo,
+            ],
+            compactCapabilities: [
+                Capability.Play,
+                Capability.Pause,
+                Capability.SkipToNext,
+            ],
+        });
+    }catch (e) {
+
+    }
 };
 
 type ViewName = "setup" | "library" | "albums";
@@ -209,21 +218,47 @@ const MainContent: React.FC = () => {
 
     const translateY = useSharedValue(0);
 
-    const openPlayer = () => {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 180 });
-    };
-
     const closePlayer = () => {
         translateY.value = withSpring(300, { damping: 20, stiffness: 180 });
         runOnJS(setPlayerMode)("mini");
     };
 
 
-// ------------------ ANIMATED STYLE ------------------
     const sheetStyle = useAnimatedStyle(() => ({
         transform: [
             { translateY: translateY.value },
         ],
+    }));
+
+    const bottomBarTranslateY = useSharedValue(0);
+
+    useEffect(() => {
+        if (playerMode === "full") {
+            bottomBarTranslateY.value = withSpring(120, {
+                damping: 22,
+                stiffness: 80,
+                mass: 0.7,
+            });
+        } else {
+            bottomBarTranslateY.value = withSpring(0, {
+                damping: 15,
+                stiffness: 150,
+                mass: 0.5,
+            });
+        }
+    }, [playerMode]);
+
+    const bottomBarStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: bottomBarTranslateY.value }],
+        opacity: interpolate(
+            bottomBarTranslateY.value,
+            [0, 110],
+            [1, 0],
+            {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+            }
+        ),
     }));
 
 
@@ -252,7 +287,7 @@ const MainContent: React.FC = () => {
                     ]}
                 >
                     <SafeAreaView
-                        edges={["top"]}
+                        edges={['top']}
                         style={styles.safeAreaTopWrap}
                     >
                         <LibraryContainer
@@ -274,7 +309,7 @@ const MainContent: React.FC = () => {
                     ]}
                 >
                     <SafeAreaView
-                        edges={["top"]}
+                        edges={['top']}
                         style={styles.safeAreaTopWrap}
                     >
                         <AlbumContainer
@@ -288,7 +323,6 @@ const MainContent: React.FC = () => {
                         />
                     </SafeAreaView>
                 </View>
-
             </View>
             {playerMode === "full" && player.audioState.name && (
                     <Animated.View
@@ -327,7 +361,7 @@ const MainContent: React.FC = () => {
             />
 
             {/* Bottom Bar */}
-            <View style={styles.bottomBar}>
+            <Animated.View style={[styles.bottomBar, bottomBarStyle]}>
                 {showMiniPlayer && (
                     <MiniPlayer
                         coverUrl={player.audioState.coverPath || ""}
@@ -345,7 +379,6 @@ const MainContent: React.FC = () => {
                         }}
                     />
                 )}
-
                 <View style={styles.tabRow}>
                     <TabButton
                         label="Sync"
@@ -363,7 +396,7 @@ const MainContent: React.FC = () => {
                         onPress={() => setView("albums")}
                     />
                 </View>
-            </View>
+            </Animated.View>
         </View>
     );
 };
@@ -391,7 +424,7 @@ const styles = StyleSheet.create({
     mainContent: {
         flex: 1,
     },
-    /** Screen switching (zero re-mount lag) */
+
     screen: {
         position: "absolute",
         top: 0,

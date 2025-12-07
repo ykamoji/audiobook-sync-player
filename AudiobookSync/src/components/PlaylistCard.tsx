@@ -1,13 +1,18 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {useState, useEffect, useMemo, useRef} from "react";
 import {
     View,
     Text,
-    Image,
     TouchableOpacity,
     StyleSheet,
 } from "react-native";
 import { Playlist, Track, ProgressData } from "../utils/types";
 import { MusicIcon } from "lucide-react-native";
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    runOnJS,
+} from "react-native-reanimated";
 
 interface PlaylistCardProps {
     playlist: Playlist;
@@ -22,6 +27,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
                                                               progressMap,
                                                               onClick,
                                                           }) => {
+
     const { covers, playlistProgress, totalTracks } = useMemo(() => {
         const images: string[] = [];
         let totalPercentage = 0;
@@ -48,27 +54,41 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
     // Starting offset so each playlist rotates differently
     const [offset, setOffset] = useState(() => Math.floor(Math.random() * 100));
 
+    const opacity = useSharedValue(1);
+    const [imageSrc, setImageSrc] = useState(covers[0] ?? null);
+
     useEffect(() => {
         if (covers.length <= 1) return;
 
         const interval = setInterval(() => {
-            setOffset((prev) => (prev + 1) % covers.length);
-        }, 8000);
+            const nextOffset = (offset + 1) % covers.length;
+            const nextImage = covers[nextOffset];
+
+            opacity.value = withTiming(0.5, { duration: 250 }, () => {
+                runOnJS(setImageSrc)(nextImage);
+                opacity.value = withTiming(1, { duration: 300 });
+            });
+
+            setOffset(nextOffset);
+
+        }, 4000);
 
         return () => clearInterval(interval);
-    }, [covers.length]);
+    }, [covers, offset]);
 
+    const animatedStyle = useAnimatedStyle(() => {
+        return { opacity: opacity.value };
+    });
 
-    const currentCover = covers.length > 0 ? covers[offset % covers.length] : null;
 
     return (
         <TouchableOpacity onPress={onClick} activeOpacity={0.85} style={styles.card}>
             {/* Cover Image */}
             <View style={styles.coverContainer}>
-                {currentCover ? (
-                    <Image
-                        source={{ uri: currentCover }}
-                        style={styles.coverImage}
+                {imageSrc ? (
+                    <Animated.Image
+                        source={{ uri: imageSrc }}
+                        style={[styles.coverImage, animatedStyle]}
                         resizeMode="cover"
                     />
                 ) : (
@@ -107,10 +127,8 @@ const styles = StyleSheet.create({
 
     coverContainer: {
         width: "100%",
-        aspectRatio: 2,
-        borderRadius: 14,
+        aspectRatio: 1,
         overflow: "hidden",
-        backgroundColor: "#333",
     },
 
     coverImage: {

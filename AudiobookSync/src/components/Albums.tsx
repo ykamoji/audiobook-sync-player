@@ -13,6 +13,7 @@ interface AlbumsProps {
     allTracks: Track[];
     progressMap: Record<string, ProgressData>;
     onUpdate: () => void;
+    closeAlbums: boolean;
     onPlaylistSelection: (id:string) => void,
     playlistManager: {
         savedPlaylists: Playlist[];
@@ -32,6 +33,7 @@ export const Albums : FC<AlbumsProps> = ({
                                                  playlists,
                                                  allTracks,
                                                  onUpdate,
+                                                 closeAlbums,
                                                  onPlaylistSelection,
                                                  playlistManager,
                                                  progressMap}) =>{
@@ -60,6 +62,7 @@ export const Albums : FC<AlbumsProps> = ({
 
     return (
         <>
+      {closeAlbums && (<>
         <View style={styles.playlistsContainer}>
             { playlists.length >= 0 && (
             <FlatList
@@ -131,7 +134,7 @@ export const Albums : FC<AlbumsProps> = ({
                         </View>
                     </View>
                 </View>
-            </Modal>
+            </Modal></>)}
         </>
     )
 };
@@ -165,7 +168,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     playlistsListContent: {
-        paddingHorizontal: 16,
-        paddingBottom: 80,
+        paddingHorizontal: 5,
     }
 })

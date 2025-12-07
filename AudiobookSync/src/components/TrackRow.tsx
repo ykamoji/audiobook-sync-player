@@ -235,7 +235,6 @@ const styles = StyleSheet.create({
     rowContainer: {
         width: "100%",
         paddingVertical: 4,
-
     },
 
     mainRow: {
@@ -272,7 +271,7 @@ const styles = StyleSheet.create({
 
     trackTitle: {
         color: "white",
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "600",
     },
 
@@ -311,12 +310,12 @@ const styles = StyleSheet.create({
     completedLabel: {
         color: "#4CAF50",
         fontWeight: "600",
-        fontSize: 12,
+        fontSize: 16,
     },
 
     mediumText: {
         color: "#aaa",
-        fontSize: 12,
+        fontSize: 16,
     },
 
     badgesRow: {
@@ -330,7 +329,7 @@ const styles = StyleSheet.create({
     playlistBadge: {
         color: "#FF8300",
         opacity: 0.6,
-        fontSize: 10,
+        fontSize: 13,
         marginLeft: 6,
     },
 
@@ -367,6 +366,6 @@ const styles = StyleSheet.create({
     menuText: {
         color: "white",
         marginLeft: 10,
-        fontSize: 14,
+        fontSize: 16,
     },
 });

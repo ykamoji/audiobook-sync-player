@@ -196,20 +196,34 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     // Artwork morph (scale + move like Apple Music)
     const artworkStyle = useAnimatedStyle(() => {
-        const scale = interpolate(progress.value, [0, 1], [1, 0.45], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',
-        });
-        const translateX = interpolate(progress.value, [0, 1], [0, -SCREEN_WIDTH * 0.18], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',
-        });
-        const translateY = interpolate(
+        const shrinkProgress = interpolate(
             progress.value,
+            [0.5, 1.0],
+            [0, 1],
+            {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
+        );
+
+        const scale = interpolate(shrinkProgress, [0, 1], [1, 0.45], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+        });
+
+        const translateX = interpolate(shrinkProgress, [0, 1], [0, -SCREEN_WIDTH * 0.18], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+        });
+
+        const translateY = interpolate(
+            shrinkProgress,
             [0, 1],
             [0, -SCREEN_HEIGHT * 0.16],
-            {extrapolateLeft: 'clamp',
-                extrapolateRight: 'clamp',}
+            {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
         );
 
         return {
@@ -235,15 +249,35 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         styles.root,
                         containerStyle,
                         {
-                            paddingTop: insets.top,
-                            paddingBottom: insets.bottom,
+                            // paddingTop: insets.top,
+                            // paddingBottom: insets.bottom,
                         }
                     ]}
                     pointerEvents={showChapters ? "none" : "auto"}
                 >
                     <Animated.View style={fullContentStyle} pointerEvents={showChapters ? "none" : "auto"}>
+                        {/* COVER ART */}
+                        <View style={{overflow:"hidden"}}>
+                            <Animated.View style={[styles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
+                                {audioState.coverPath ? (
+                                    <View style={styles.coverWrapper}>
+                                        <Image
+                                            source={{ uri: audioState.coverPath }}
+                                            style={styles.coverImage}
+                                        />
+                                    </View>
+                                ) : (
+                                    <View style={styles.coverPlaceholder}>
+                                        <Text style={styles.coverPlaceholderText}>
+                                            {audioState.name.substring(0, 2).toUpperCase()}
+                                        </Text>
+                                    </View>
+                                )}
+                            </Animated.View>
+                        </View>
+
                         {/* Header */}
-                        <View style={styles.headerContainer}>
+                        <View style={[styles.headerContainer, { paddingTop:insets.top }]}>
                             <TouchableOpacity
                                 onPress={() => {
                                     runOnJS(onBack)();
@@ -259,25 +293,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 </Text>
                             </View>
                         </View>
-
-                        {/* COVER ART */}
-                        <Animated.View style={[styles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
-                            {audioState.coverPath ? (
-                                <View style={styles.coverWrapper}>
-                                    <Image
-                                        source={{ uri: audioState.coverPath }}
-                                        style={styles.coverImage}
-                                    />
-                                    <View style={styles.coverBorder} />
-                                </View>
-                            ) : (
-                                <View style={styles.coverPlaceholder}>
-                                    <Text style={styles.coverPlaceholderText}>
-                                        {audioState.name.substring(0, 2).toUpperCase()}
-                                    </Text>
-                                </View>
-                            )}
-                        </Animated.View>
 
                         {/* SUBTITLES */}
                         <View
@@ -359,7 +374,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             <SlideWindow style={styles.chaptersOverlayRoot}
                          open={showChapters}
                          side={"left"}
-                         width={"70%"}
+                         width={"75%"}
                          onClose={() => setShowChapters(false)}>
 
                 <View style={[styles.chaptersSheet, {paddingTop: insets.top}]}>
@@ -455,9 +470,10 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
     },
     headerContainer: {
-        paddingHorizontal: 16,
-        paddingTop: 4,
-        paddingBottom: 8,
+        position: "absolute",
+        top: 0,
+        left: 15,
+        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -471,40 +487,37 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     nowPlayingLabel: {
-        fontSize: 10,
+        fontSize: 20,
         textTransform: 'uppercase',
         color: '#f97316',
         letterSpacing: 1.5,
-        fontWeight: '600',
+        fontWeight: '800',
     },
     trackTitle: {
         marginTop: 2,
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: '700',
         color: '#e5e7eb',
     },
     coverContainer: {
-        marginTop: 12,
+        marginTop: 0,
+        width: '100%',
+        overflow: 'hidden',
         alignItems: 'center',
         justifyContent: 'center',
-        height: SCREEN_HEIGHT * 0.4,
-        minHeight: 260,
+        // height: SCREEN_HEIGHT * 0.4,
+        minHeight: 0,
     },
     coverWrapper: {
-        width: '60%',
+        width: '99%',
         aspectRatio: 1,
-        borderRadius: 12,
+        // borderRadius: 1,
         overflow: 'hidden',
     },
     coverImage: {
         width: '100%',
         height: '100%',
-    },
-    coverBorder: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 12,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 0,
     },
     coverPlaceholder: {
         width: '50%',
@@ -522,7 +535,7 @@ const styles = StyleSheet.create({
     subtitlesContainer: {
         flex: 1,
         marginTop: 8,
-        minHeight: 150,
+        minHeight: 300,
     },
     subtitlesScroll: {
         flex: 1,
@@ -530,7 +543,7 @@ const styles = StyleSheet.create({
     subtitlesContent: {
         paddingHorizontal: 24,
         paddingTop: 16,
-        paddingBottom: 140,
+        // paddingBottom: 140,
     },
     cueContainer: {
         marginBottom: 18,
@@ -562,7 +575,7 @@ const styles = StyleSheet.create({
         borderTopColor: 'rgba(255,255,255,0.1)',
         paddingTop: 8,
         paddingHorizontal: 8,
-        paddingBottom: 4,
+        paddingBottom: 4
     },
 
     // Mini-player styles

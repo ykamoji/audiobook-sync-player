@@ -115,14 +115,15 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
             styles.container,
             selectedPlaylistId !== null && styles.hiddenScreen
         ]}>
-        <Albums
-            playlists={playlists}
-            allTracks={allTracks}
-            progressMap={progressMap}
-            onUpdate={onUpdate}
-            onPlaylistSelection={setSelectedPlaylistId}
-            playlistManager={playlistManager}
-        />
+            <Albums
+                playlists={playlists}
+                allTracks={allTracks}
+                progressMap={progressMap}
+                closeAlbums={closeAlbums}
+                onUpdate={onUpdate}
+                onPlaylistSelection={setSelectedPlaylistId}
+                playlistManager={playlistManager}
+            />
         </View>
         <View style={[
             { flex: 1 },

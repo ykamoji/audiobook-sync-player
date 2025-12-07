@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: '700',
         color: '#ffffff',
     },
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     },
     label: {
         color: '#f97316', // audible-orange vibe
-        fontSize: 11,
+        fontSize: 18,
         fontWeight: '600',
         letterSpacing: 1,
         textTransform: 'uppercase',
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     },
     value: {
         color: '#e5e7eb',
-        fontSize: 14,
+        fontSize: 16,
     },
     playlistTagsRow: {
         flexDirection: 'row',
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.2)',
     },
     playlistTagText: {
-        fontSize: 11,
+        fontSize: 16,
         color: '#f3f4f6',
     },
 });

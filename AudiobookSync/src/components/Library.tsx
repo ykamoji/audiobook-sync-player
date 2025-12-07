@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     listContent: {
-        paddingBottom: 80,
+        paddingBottom: 20,
         paddingHorizontal: 12,
     },
     iconButton: {
@@ -314,7 +314,6 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'stretch',
         justifyContent: 'center',
-        paddingBottom: 40,
     },
     bulkBar: {
         position: 'absolute',

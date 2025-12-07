@@ -92,21 +92,21 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Rewind 10 */}
                 <TouchableOpacity onPress={onSkipBackward} style={styles.smallControl}>
-                    <Rewind10Icon size={32} stroke="#f97316" />
+                    <Rewind10Icon size={42} stroke="#f97316" />
                 </TouchableOpacity>
 
                 {/* Play / Pause */}
                 <TouchableOpacity onPress={onPlayPause} style={styles.playButton}>
                     {isPlaying ? (
-                        <PauseIcon size={42} color="#000" />
+                        <PauseIcon size={38} color="#000" />
                     ) : (
-                        <PlayIcon size={42} color="#000" />
+                        <PlayIcon size={38} color="#000" />
                     )}
                 </TouchableOpacity>
 
                 {/* Forward 10 */}
                 <TouchableOpacity onPress={onSkipForward} style={styles.smallControl}>
-                    <Forward10Icon size={32} stroke="#f97316" />
+                    <Forward10Icon size={42} stroke="#f97316" />
                 </TouchableOpacity>
 
                 {/* Next */}
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
+        gap:6,
         marginTop: 6,
     },
 
@@ -165,7 +165,9 @@ const styles = StyleSheet.create({
 
     smallControl: {
         padding: 6,
-        borderRadius: 30,
+        height: 54,
+        width: 54,
+        // borderRadius: 10,
     },
 
     playButton: {
