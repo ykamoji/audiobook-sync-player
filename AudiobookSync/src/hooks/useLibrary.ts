@@ -1,15 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import DocumentPicker, { types } from 'react-native-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { Track, AppData } from '../utils/types';
 import { scanNativePath } from '../utils/fileScanner';
+import RNFS from "react-native-fs";
 
 
 interface UseLibraryProps {
     onMetadataLoaded: (data: AppData) => void;
     onUploadSuccess: () => void;
-    onReloadFromStorage: () => boolean;
+    onReloadFromStorage: () => Promise<boolean>;
 }
 
 export const useLibrary = ({
@@ -25,7 +25,7 @@ export const useLibrary = ({
 
         try {
 
-            const reloaded = onReloadFromStorage()
+            const reloaded = await onReloadFromStorage()
 
             if (!reloaded) {
 
@@ -58,8 +58,6 @@ export const useLibrary = ({
                 if (resultMetadata) onMetadataLoaded(resultMetadata);
 
                 setAllTracks(resultTracks);
-
-                // release = await RNBlobUtil.ios.startAccessingSecurityScopedResource(uri);
 
                 // Save color map (converted to plain object)
                 await AsyncStorage.setItem(

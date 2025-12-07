@@ -17,7 +17,7 @@ export const Setup: React.FC<SetupProps> = ({
 
             {/* Header */}
             <View style={styles.headerSection}>
-                <HeadphonesIcon size={64} color="#ff8300" />
+                <HeadphonesIcon size={100} color="#ff8300" />
                 <Text style={styles.title}>Audiobook Player</Text>
             </View>
 
@@ -28,10 +28,10 @@ export const Setup: React.FC<SetupProps> = ({
                 activeOpacity={0.8}
             >
                 <View style={styles.iconWrapper}>
-                    <FolderIcon size={40} color="#ff8300" />
+                    <FolderIcon size={48} color="#ff8300" />
                 </View>
 
-                <Text style={styles.uploadTitle}>Start Syncing</Text>
+                <Text style={styles.uploadTitle}>Sync</Text>
 
                 {isLoading && (
                     <Text style={styles.loadingText}>Scanning files...</Text>
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        fontSize: 32,
+        fontSize: 48,
         fontWeight: 'bold',
         color: '#fff',
         marginTop: 16
@@ -65,12 +65,8 @@ const styles = StyleSheet.create({
 
     uploadBox: {
         width: '100%',
-        paddingVertical: 40,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.15)',
+        paddingTop: 140,
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.02)'
     },
 
     iconWrapper: {

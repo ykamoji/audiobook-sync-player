@@ -56,26 +56,3 @@ export const loadInitialNativeMetadata = async (): Promise<any | null> => {
         return null;
     }
 };
-
-/**
- * Read subtitle .txt/.srt files from RN filesystem.
- * Works with paths returned by DocumentPicker (content:// URIs need handling).
- */
-export const readNativeTextFile = async (path: string): Promise<string> => {
-    try {
-        // Handles file:// paths
-        if (path.startsWith("file://")) {
-            return await RNFS.readFile(path.replace("file://", ""), 'utf8');
-        }
-
-        // Handles content:// paths (Android)
-        if (path.startsWith("content://")) {
-            return await RNFS.readFile(path, 'utf8');
-        }
-
-        throw new Error("Unsupported file path: " + path);
-    } catch (error) {
-        console.error("Failed to read native text file", error);
-        throw error;
-    }
-};

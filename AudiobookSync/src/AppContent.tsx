@@ -1,42 +1,27 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {SafeAreaView, SafeAreaProvider} from "react-native-safe-area-context";
-import {
-    View,
-    StyleSheet,
-    StatusBar,
-    TouchableOpacity,
-    Text,
-} from "react-native";
+import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
+import {StatusBar, StyleSheet, Text, TouchableOpacity, View,} from "react-native";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import RNFS from "react-native-fs";
-import { pickDirectory  } from "react-native-document-picker";
+import {pickDirectory} from "react-native-document-picker";
 import {Setup} from "./components/Setup";
 import {LibraryContainer} from "./components/LibraryContainer";
 import {PlayerContainer} from "./components/PlayerContainer";
-import {
-    MetadataPanel,
-    MetadataPanelData,
-} from "./components/MetadataPanel";
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    runOnJS, interpolate,
-} from "react-native-reanimated";
-import { Provider as PaperProvider } from 'react-native-paper';
+import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
+import Animated, {interpolate, runOnJS, useAnimatedStyle, useSharedValue, withSpring,} from "react-native-reanimated";
+import {Provider as PaperProvider} from 'react-native-paper';
 import {MiniPlayer} from "./components/MiniPlayer";
-import {Track, AppData} from "./utils/types";
-import {loadInitialNativeMetadata} from "./utils/persistence";
+import {AppData, Track} from "./utils/types";
+import {checkLocalStorageAvailable, loadInitialNativeMetadata, savePlaylist} from "./utils/persistence";
 import {usePlaylistManager} from "./hooks/usePlaylistManager";
 import {useProgressManager} from "./hooks/useProgressManager";
 import {useLibrary} from "./hooks/useLibrary";
 import {usePlayer} from "./hooks/usePlayer";
 import TrackPlayer, {Capability} from "react-native-track-player";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {scanNativePath} from "./utils/fileScanner.ts";
-import {savePlaylist, checkLocalStorageAvailable} from "./utils/persistence";
 import {AlbumContainer} from "./components/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
+import { Library, ListMusic, RefreshCw } from "lucide-react-native";
 
 let isPlayerInitialized = false;
 
@@ -150,19 +135,15 @@ const MainContent: React.FC = () => {
         setAllTracks([])
     }
 
-    const onReloadFromStorage = () => {
-        if (!isStorageLoaded){
-            checkLocalStorageAvailable()
-                .then((response) => {
-                    if(response !== null)
-                        pickDirectory({}).then(() => {
-                            loadStorage().then(() => setView('library'));
-                        })
-                })
-            return true
-        }
-        return false
-    }
+    const onReloadFromStorage = async () => {
+        if (isStorageLoaded) return false;
+        const result = await checkLocalStorageAvailable();
+        if (result === null) return false
+        await pickDirectory({});
+        await loadStorage();
+        setView("library");
+        return true;
+    };
 
     // ------------------------------------------------
     // Metadata logic
@@ -382,16 +363,19 @@ const MainContent: React.FC = () => {
                 <View style={styles.tabRow}>
                     <TabButton
                         label="Sync"
+                        icon={RefreshCw}
                         active={view === "setup"}
                         onPress={() => setView("setup")}
                     />
                     <TabButton
                         label="Library"
+                        icon={Library}
                         active={view === "library"}
                         onPress={() => setView("library")}
                     />
                     <TabButton
                         label="Playlists"
+                        icon={ListMusic}
                         active={view === "albums"}
                         onPress={() => setView("albums")}
                     />
@@ -403,13 +387,22 @@ const MainContent: React.FC = () => {
 
 const TabButton: React.FC<{
     label: string;
+    icon: any;
     active: boolean;
     onPress: () => void;
-}> = ({label, active, onPress}) => (
+}> = ({ label, icon: Icon, active, onPress }) => (
     <TouchableOpacity style={styles.tabButton} onPress={onPress}>
-        <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-            {label}
-        </Text>
+        <View style={styles.iconRow}>
+            <Icon
+                size={24}
+                color={active ? "#fff" : "#888"}
+                style={{ marginRight: 6 }}
+            />
+            <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                {label}
+            </Text>
+        </View>
+
         <View
             style={[styles.tabUnderline, active && styles.tabUnderlineActive]}
         />
@@ -424,7 +417,6 @@ const styles = StyleSheet.create({
     mainContent: {
         flex: 1,
     },
-
     screen: {
         position: "absolute",
         top: 0,
@@ -461,8 +453,8 @@ const styles = StyleSheet.create({
     tabRow: {
         flexDirection: "row",
         justifyContent: "space-around",
-        paddingTop: 15,
-        height: 70,
+        paddingTop: 20,
+        height: 80,
         paddingBottom: 10,
     },
     tabButton: {
@@ -471,7 +463,7 @@ const styles = StyleSheet.create({
         height: 30,
     },
     tabLabel: {
-        fontSize: 21,
+        fontSize: 20,
         fontWeight: "600",
         color: "#777",
     },
@@ -486,6 +478,10 @@ const styles = StyleSheet.create({
     },
     tabUnderlineActive: {
         backgroundColor: "#FF8300",
+    },
+    iconRow: {
+        flexDirection: "row",
+        alignItems: "center",
     },
     screenContainer: {
         flex: 1,
