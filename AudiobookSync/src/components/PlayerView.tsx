@@ -89,6 +89,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                       }) => {
     const insets = useSafeAreaInsets();
 
+    const firstLoad = useRef(true);
+
     // UI
     const [showChapters, setShowChapters] = useState(false);
 
@@ -124,7 +126,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     }
 
     // ----- AUTO-SCROLL TO ACTIVE CUE -----
-    const scrollToActiveCue = () => {
+    const scrollToActiveCue = (animated = true) => {
         if (!scrollRef.current || !displayedCues.length) return;
         if (currentCueIndex < 0) return;
 
@@ -136,13 +138,25 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             scrollRef.current.getInnerViewNode(),
             (x, y, w, h) => {
                 const targetY = Math.max(0, y - 150);
-                scrollRef.current?.scrollTo({ y: targetY, animated: true });
+                scrollRef.current?.scrollTo({ y: targetY, animated: animated });
             },
             () => {}
         );
     };
 
     useEffect(() => {
+        firstLoad.current = true;
+    }, [audioState.name]);
+
+    useEffect(() => {
+        if (currentCueIndex < 0) return;
+
+        if (firstLoad.current) {
+            firstLoad.current = false;
+            scrollToActiveCue(false);
+        } else {
+            scrollToActiveCue(true);
+        }
         scrollToActiveCue();
     }, [currentCueIndex, currentSegmentIndex, displayedCues]);
 
@@ -264,7 +278,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     useEffect(() => {
         // fade OUT old image completely
-        artworkOpacity.value = withTiming(0.2, { duration: 150 }, () => {
+        artworkOpacity.value = withTiming(0.5, { duration: 150 }, () => {
             // after fade-out completes → fade new image IN
             artworkOpacity.value = withTiming(1, { duration: 250 });
         });
@@ -340,6 +354,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         >
                             <ScrollView
                                 ref={scrollRef}
+                                key={audioState.name}
                                 style={styles.subtitlesScroll}
                                 pointerEvents={showChapters ? 'none' : 'auto'}
                                 contentContainerStyle={styles.subtitlesContent}
@@ -355,7 +370,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                     return (
                                         <View
                                             key={cue.id}
-                                            // onLayout={onSubtitleLayout(cue.id)}
                                             ref={(ref) => { cueRefs.current[cue.id] = ref }}
                                             style={[
                                                 styles.cueContainer,

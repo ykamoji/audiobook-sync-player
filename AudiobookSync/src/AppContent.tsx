@@ -286,6 +286,8 @@ const MainContent: React.FC = () => {
         };
     });
 
+    const showMiniPlayer = !!player.audioState.name
+
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content"/>
@@ -386,16 +388,17 @@ const MainContent: React.FC = () => {
                 data={metadataPanelData}
                 onClose={() => setMetadataPanelData(null)}
             />
-            <Animated.View style={[miniPlayerAnimatedStyle]}>
-                <MiniPlayer
-                    coverUrl={player.audioState.coverPath || ""}
-                    name={player.audioState.name}
-                    isPlaying={player.isPlaying}
-                    onTogglePlay={player.togglePlay}
-                    progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}
-                    onOpen={handleTransition}
-                />
-            </Animated.View>
+            {showMiniPlayer &&(
+                <Animated.View style={[miniPlayerAnimatedStyle]}>
+                    <MiniPlayer
+                        coverUrl={player.audioState.coverPath || ""}
+                        name={player.audioState.name}
+                        isPlaying={player.isPlaying}
+                        onTogglePlay={player.togglePlay}
+                        progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}
+                        onOpen={handleTransition}/>
+                </Animated.View>
+                )}
             {/* Bottom Bar */}
             <Animated.View style={[styles.bottomBar, bottomBarStyle]}>
                 <View style={styles.tabRow}>
