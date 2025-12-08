@@ -80,14 +80,14 @@ export const PlayerContainer: React.FC<PlayerContainerProps> = ({
     }
 
     // -------- 3. Slice cues for current segment --------
-    const displayedCues = useMemo(() => {
-        if (!subtitleState.cues.length) return [];
-
-        const start = currentSegmentIndex * CUES_PER_SEGMENT;
-        const end = start + CUES_PER_SEGMENT;
-
-        return subtitleState.cues.slice(start, end);
-    }, [subtitleState.cues, currentSegmentIndex]);
+    // const displayedCues = useMemo(() => {
+    //     if (!subtitleState.cues.length) return [];
+    //
+    //     const start = currentSegmentIndex * CUES_PER_SEGMENT;
+    //     const end = start + CUES_PER_SEGMENT;
+    //
+    //     return subtitleState.cues.slice(start, end);
+    // }, [subtitleState.cues, currentSegmentIndex]);
 
     // -------- 4. Total segments --------
     const totalSegments = subtitleState.cues.length
@@ -110,15 +110,15 @@ export const PlayerContainer: React.FC<PlayerContainerProps> = ({
     }, [subtitleState.cues, totalSegments]);
 
     // -------- Local cue index (relative within segment) --------
-    const relativeCueIndex =
-        currentCueIndex !== -1 ? currentCueIndex % CUES_PER_SEGMENT : -1;
+    // const relativeCueIndex =
+    //     currentCueIndex !== -1 ? currentCueIndex % CUES_PER_SEGMENT : -1;
 
     return (
         <PlayerView
             audioState={audioState}
             subtitleState={subtitleState}
-            displayedCues={displayedCues}
-            currentCueIndex={relativeCueIndex}
+            displayedCues={subtitleState.cues}
+            currentCueIndex={currentCueIndex}
             currentTime={currentTime}
             duration={duration}
 

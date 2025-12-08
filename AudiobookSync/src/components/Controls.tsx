@@ -7,7 +7,8 @@ import {
     PauseIcon,
     MoreHorizontalIcon,
     SkipBackIcon,
-    SkipForwardIcon, RewindIcon, ForwardIcon, MenuIcon, LucideMenu,
+    SkipForwardIcon,
+    LucideMenu,
 } from 'lucide-react-native';
 import {Forward10Icon, Rewind10Icon} from "./Icons.tsx";
 
@@ -16,7 +17,7 @@ interface ControlsProps {
     onPlayPause: () => void;
     progress: number;
     duration: number;
-    segmentMarkers?: number[];
+    segmentMarkers: number[];
     currentTime: number;
     onSeek: (value: number) => void;
     onOpenMetadata: () => void;
@@ -46,6 +47,7 @@ export const Controls: React.FC<ControlsProps> = ({
                                                       onOpenMetadata,
                                                       onOpenChapters,
                                                       onNext,
+                                                      segmentMarkers,
                                                       onPrevious,
                                                       onSkipForward,
                                                       onSkipBackward,
@@ -65,8 +67,18 @@ export const Controls: React.FC<ControlsProps> = ({
                     minimumTrackTintColor="#f97316"
                     maximumTrackTintColor="#555"
                     thumbTintColor="#fff"
+                    trackStyle={{
+                        zIndex:0
+                    }}
                 />
-
+                <View style={styles.markerContainer}>
+                    {duration > 0 && segmentMarkers!.map((time, i) =>
+                            <View
+                                key={i}
+                                style={[styles.marker, { left: `${(time / duration) * 100 }%` }]}
+                            />
+                    )}
+                </View>
                 <View style={styles.timeRow}>
                     <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
                     <Text style={styles.timeText}>{formatTime(duration)}</Text>
@@ -182,4 +194,21 @@ const styles = StyleSheet.create({
     disabled: {
         opacity: 0.3,
     },
+    markerContainer: {
+        position: 'absolute',
+        top: 13,
+        bottom: 0,
+        width: '100%',
+        zIndex: -1,
+    },
+    marker: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: 2,
+        height: 13,
+        backgroundColor: '#F86600',
+        zIndex: -1,
+        pointerEvents: 'none',
+    }
 });

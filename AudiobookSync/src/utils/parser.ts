@@ -107,8 +107,3 @@ export const parseSubtitleText = (text: string): SubtitleCue[] => {
 
   return cues;
 };
-
-export const parseSubtitles = async (file: File): Promise<SubtitleCue[]> => {
-  const text = await file.text();
-  return parseSubtitleText(text);
-};

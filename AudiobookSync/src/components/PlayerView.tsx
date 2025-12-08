@@ -101,9 +101,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     // Scroll refs
     const scrollRef = useRef<ScrollView | null>(null);
-    const cuePositionsRef = useRef<Record<string, number>>({});
     const containerHeightRef = useRef<number>(0);
     const scrollAtTop = useRef(true);
+    const cueRefs = useRef<Record<string, View | null>>({});
 
     // ----- REANIMATED SHARED VALUES -----
     const translateY = useSharedValue(0);
@@ -115,30 +115,26 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     // ----- AUTO-SCROLL TO ACTIVE CUE -----
     const scrollToActiveCue = () => {
         if (!scrollRef.current || !displayedCues.length) return;
-        if (currentCueIndex < 0 || currentCueIndex >= displayedCues.length) return;
+        if (currentCueIndex < 0) return;
 
         const cue = displayedCues[currentCueIndex];
-        const y = cuePositionsRef.current[cue.id];
-        if (y == null) return;
+        const ref = cueRefs.current[cue.id];
+        if (!ref) return;
 
-        const containerHeight =
-            containerHeightRef.current || SCREEN_HEIGHT * 0.4;
-
-        const targetY = Math.max(0, y - containerHeight * 0.4);
-
-        scrollRef.current.scrollTo({
-            y: targetY,
-            animated: true,
-        });
+        ref.measureLayout(
+            scrollRef.current.getInnerViewNode(),
+            (x, y, w, h) => {
+                const targetY = Math.max(0, y - 150);
+                scrollRef.current?.scrollTo({ y: targetY, animated: true });
+            },
+            () => {}
+        );
     };
 
     useEffect(() => {
         scrollToActiveCue();
     }, [currentCueIndex, currentSegmentIndex, displayedCues]);
 
-    const onSubtitleLayout = (cueId: string) => (e: LayoutChangeEvent) => {
-        cuePositionsRef.current[cueId] = e.nativeEvent.layout.y;
-    };
 
     const onSubtitleContainerLayout = (e: LayoutChangeEvent) => {
         containerHeightRef.current = e.nativeEvent.layout.height;
@@ -348,7 +344,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                     return (
                                         <View
                                             key={cue.id}
-                                            onLayout={onSubtitleLayout(cue.id)}
+                                            // onLayout={onSubtitleLayout(cue.id)}
+                                            ref={(ref) => { cueRefs.current[cue.id] = ref }}
                                             style={[
                                                 styles.cueContainer,
                                                 isActive && styles.cueContainerActive,

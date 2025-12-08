@@ -1,16 +1,17 @@
 import {useEffect, useRef, useState} from 'react';
 import TrackPlayer, {
-    Event,
     State,
+    Event,
     usePlaybackState,
     useProgress,
     useTrackPlayerEvents,
 } from 'react-native-track-player';
 
-import {releaseSecureAccess} from 'react-native-document-picker'
 
-import {AudioFileState, ProgressData, SubtitleCue, SubtitleFileState, Track} from '../utils/types';
-import {loadTrackMedia} from '../utils/mediaLoader';
+import { releaseSecureAccess } from 'react-native-document-picker'
+
+import { AudioFileState, SubtitleFileState, Track, ProgressData } from '../utils/types';
+import { loadTrackMedia } from '../utils/mediaLoader';
 
 const CUES_PER_SEGMENT = 100;
 
@@ -28,7 +29,6 @@ export const usePlayer = ({
                               progressMap,
                               saveProgress,
                           }: UsePlayerProps) => {
-
 
     /** ─────────────────────────────────────────────
      *  TRACK PLAYER HOOKS
@@ -52,8 +52,6 @@ export const usePlayer = ({
         path: null,
         cues: [],
         name: '',
-        cueIndexMap: null,
-        bucketSize: 0.25,
     });
 
     const [isPlaying, setIsPlaying] = useState(false);
@@ -69,36 +67,14 @@ export const usePlayer = ({
         setIsPlaying(playback === State.Playing);
     }, [playback]);
 
-
-    function buildCueIndexMap(cues:SubtitleCue[], duration:number, bucketSize = 0.5) {
-        const bucketCount = Math.ceil(duration / bucketSize);
-        const map = new Array(bucketCount).fill(-1);
-
-        let cueIndex = 0;
-
-        for (let i = 0; i < bucketCount; i++) {
-            const time = i * bucketSize;
-
-            // advance cueIndex until cue covers this time
-            while (
-                cueIndex < cues.length - 1 &&
-                !(time >= cues[cueIndex].start && time <= cues[cueIndex].end)
-                ) {
-                // if this cue ends before time → move to next
-                if (time > cues[cueIndex].end) cueIndex++;
-                else break;
-            }
-
-            map[i] = cueIndex;
-        }
-
-        return { map, bucketSize };
-    }
-
     /** ─────────────────────────────────────────────
      *  LOAD + PLAY A TRACK
      *  ───────────────────────────────────────────── */
     const playTrack = async (track: Track, index: number, newPlaylist: Track[]) => {
+
+        if(track.name === audioState.name) {
+            return;
+        }
         segmentHistoryRef.current = {};
         setCurrentTrackIndex(index);
         setPlaylist(newPlaylist);
@@ -122,32 +98,16 @@ export const usePlayer = ({
         const { audioState: audioMeta, subtitleState: subMeta } = await loadTrackMedia(track);
 
         setAudioState(audioMeta);
+        setSubtitleState(subMeta);
 
         /** TrackPlayer loading */
         await TrackPlayer.reset();
 
         await TrackPlayer.add({
             id: track.id,
-            url: audioMeta.path!,
+            url: audioMeta.path!,            // IMPORTANT: use `.url`
             title: audioMeta.name,
             artwork: audioMeta.coverUrl || undefined,
-        });
-
-        const trackDuration = await TrackPlayer.getDuration();
-
-        let cueIndexMap = null;
-        let bucketSize = 0.5;
-
-        if (subMeta.cues.length > 0 && trackDuration > 0) {
-            const result = buildCueIndexMap(subMeta.cues, trackDuration, 0.25);
-            cueIndexMap = result.map;
-            bucketSize = result.bucketSize;
-        }
-
-        setSubtitleState({
-            ...subMeta,
-            cueIndexMap,
-            bucketSize,
         });
 
         /** Resume saved position */
@@ -171,17 +131,30 @@ export const usePlayer = ({
         const d = duration;
 
         if (!audioState.name || d === 0) return;
-        let cueIndex = 0;
 
-        if (subtitleState.cueIndexMap && subtitleState.bucketSize) {
-            const bucket = Math.floor(t / subtitleState.bucketSize);
-            cueIndex = subtitleState.cueIndexMap[bucket] ?? 0;
+        /** Segment index calculation from subtitles */
+        let currentSeg = 0;
+
+        if (subtitleState.cues.length > 0) {
+            const cueIndex = subtitleState.cues.findIndex(
+                (c) => t >= c.start && t <= c.end
+            );
+
+            let targetIndex = cueIndex;
+
+            if (targetIndex === -1) {
+                const next = subtitleState.cues.findIndex((c) => c.start > t);
+                if (next > 0) targetIndex = next - 1;
+                else if (next === 0) targetIndex = 0;
+                else targetIndex = subtitleState.cues.length - 1;
+            }
+
+            currentSeg = Math.floor(targetIndex / CUES_PER_SEGMENT);
         }
-
-        const currentSeg = Math.floor(cueIndex / CUES_PER_SEGMENT);
 
         segmentHistoryRef.current[currentSeg] = t;
 
+        /** Save every 1 second */
         if (Date.now() - lastSaveRef.current > 1000) {
             saveProgress(audioState.name, t, d, segmentHistoryRef.current);
             lastSaveRef.current = Date.now();
@@ -197,16 +170,20 @@ export const usePlayer = ({
         const newTime = (percentage / 100) * duration;
         await TrackPlayer.seekTo(newTime);
 
-        let cueIndex = 0;
+        /** Update history */
+        if (subtitleState.cues.length > 0) {
+            let cueIndex = subtitleState.cues.findIndex(
+                (c) => newTime >= c.start && newTime <= c.end
+            );
 
-        if (subtitleState.cueIndexMap && subtitleState.bucketSize) {
-            const bucket = Math.floor(newTime / subtitleState.bucketSize);
-            cueIndex = subtitleState.cueIndexMap[bucket] ?? 0;
+            if (cueIndex === -1) {
+                const next = subtitleState.cues.findIndex((c) => c.start > newTime);
+                cueIndex = next > 0 ? next - 1 : subtitleState.cues.length - 1;
+            }
+
+            const seg = Math.floor(cueIndex / CUES_PER_SEGMENT);
+            segmentHistoryRef.current[seg] = newTime;
         }
-
-        const seg = Math.floor(cueIndex / CUES_PER_SEGMENT);
-
-        segmentHistoryRef.current[seg] = newTime;
 
         saveProgress(audioState.name, newTime, duration, segmentHistoryRef.current);
     };

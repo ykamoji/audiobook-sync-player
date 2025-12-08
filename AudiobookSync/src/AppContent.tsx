@@ -24,11 +24,11 @@ import {usePlaylistManager} from "./hooks/usePlaylistManager";
 import {useProgressManager} from "./hooks/useProgressManager";
 import {useLibrary} from "./hooks/useLibrary";
 import {usePlayer} from "./hooks/usePlayer";
-import TrackPlayer, {Capability} from "react-native-track-player";
+import TrackPlayer, {Capability, IOSCategory, IOSCategoryOptions, IOSCategoryMode} from 'react-native-track-player';
 import {scanNativePath} from "./utils/fileScanner.ts";
 import {AlbumContainer} from "./components/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
-import { Library, ListMusic, RefreshCw } from "lucide-react-native";
+import {Library, ListMusic, RefreshCw} from "lucide-react-native";
 
 let isPlayerInitialized = false;
 
@@ -36,8 +36,19 @@ export const setupPlayer = async () => {
 
     if (isPlayerInitialized) return;
     isPlayerInitialized = true;
+
     try {
-        await TrackPlayer.setupPlayer();
+        await TrackPlayer.setupPlayer(
+            {
+                iosCategory:IOSCategory.Playback,
+                iosCategoryMode: IOSCategoryMode.SpokenAudio,
+                iosCategoryOptions: [
+                    IOSCategoryOptions.AllowBluetooth,
+                    IOSCategoryOptions.AllowBluetoothA2DP,
+                    IOSCategoryOptions.AllowAirPlay,
+                ]
+            }
+        );
         await TrackPlayer.updateOptions({
             capabilities: [
                 Capability.Play,
