@@ -6,7 +6,6 @@ import RNFS from "react-native-fs";
 import {pickDirectory} from "react-native-document-picker";
 import {Setup} from "./components/Setup";
 import {LibraryContainer} from "./components/LibraryContainer";
-import {PlayerContainer} from "./components/PlayerContainer";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
 import Animated, {
     interpolate,
@@ -29,13 +28,9 @@ import {scanNativePath} from "./utils/fileScanner.ts";
 import {AlbumContainer} from "./components/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
-
-let isPlayerInitialized = false;
+import {PlayerView} from "./components/PlayerView.tsx";
 
 export const setupPlayer = async () => {
-
-    if (isPlayerInitialized) return;
-    isPlayerInitialized = true;
 
     try {
         await TrackPlayer.setupPlayer(
@@ -64,7 +59,7 @@ export const setupPlayer = async () => {
             ],
         });
     }catch (e) {
-
+        // console.error(e);
     }
 };
 
@@ -361,14 +356,12 @@ const MainContent: React.FC = () => {
                             { paddingTop: insets.top },
                         ]}
                     >
-                        <PlayerContainer
+                        <PlayerView
                             audioState={player.audioState}
                             subtitleState={player.subtitleState}
                             isPlaying={player.isPlaying}
                             currentTime={player.currentTime}
                             duration={player.duration}
-                            currentTrackIndex={player.currentTrackIndex}
-                            playlistLength={player.playlist.length}
                             onNext={player.next}
                             onPrevious={player.previous}
                             onSkipForward={player.skipForward}
@@ -379,6 +372,11 @@ const MainContent: React.FC = () => {
                             onSubtitleClick={player.jumpToTime}
                             onOpenMetadata={handleOpenMetadata}
                             onSegmentChange={player.changeSegment}
+                            displayedCues={player.subtitleState.cues}
+                            totalSegments={player.subtitleState.totalSegments}
+                            segmentMarkers={player.subtitleState.markers}
+                            hasNext={player.currentTrackIndex < player.playlist.length - 1}
+                            hasPrevious={player.currentTrackIndex > 0}
                         />
                     </Animated.View>
             )}

@@ -66,7 +66,7 @@ export const Controls: React.FC<ControlsProps> = ({
                     onSlidingComplete={(values) => onSeek(values[0])}
                     minimumTrackTintColor="#f97316"
                     maximumTrackTintColor="#555"
-                    thumbTintColor="#fff"
+                    thumbTintColor="#F86600"
                     trackStyle={{
                         zIndex:0
                     }}
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
 
     timeText: {
         color: '#aaa',
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: '500',
     },
 
@@ -196,19 +196,17 @@ const styles = StyleSheet.create({
     },
     markerContainer: {
         position: 'absolute',
-        top: 13,
+        top: 18,
         bottom: 0,
         width: '100%',
-        zIndex: -1,
     },
     marker: {
         position: 'absolute',
         top: 0,
         bottom: 0,
-        width: 2,
-        height: 13,
+        width: 4,
+        height: 4,
         backgroundColor: '#F86600',
-        zIndex: -1,
         pointerEvents: 'none',
     }
 });

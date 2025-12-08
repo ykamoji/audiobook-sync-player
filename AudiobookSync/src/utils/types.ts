@@ -42,8 +42,8 @@ export interface SubtitleFileState {
     cues: SubtitleCue[];
     name: string;
 
-    cueIndexMap?: number[] | null;
-    bucketSize?: number;
+    markers:number[]
+    totalSegments: number
 }
 
 export interface ProgressData {

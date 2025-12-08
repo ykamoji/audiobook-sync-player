@@ -8,7 +8,7 @@ import {
     LayoutChangeEvent,
     Dimensions,
 } from 'react-native';
-
+import { findCueIndex } from '../utils/mediaLoader';
 import {
     Gesture,
     GestureDetector,
@@ -22,15 +22,12 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { Controls } from './Controls';
 import {
     XIcon,
     ChevronDownIcon,
 } from 'lucide-react-native';
-
 import {
     AudioFileState,
     SubtitleFileState,
@@ -42,17 +39,15 @@ interface PlayerViewProps {
     audioState: AudioFileState;
     subtitleState: SubtitleFileState;
     displayedCues: SubtitleCue[];
-    currentCueIndex: number;
     currentTime: number;
     duration: number;
-
-    currentSegmentIndex: number;
     totalSegments: number;
+
     segmentMarkers: number[];
     onSegmentChange: (index: number) => void;
 
     isPlaying: boolean;
-    onBack: () => void;              // now only for "full close" if you want it
+    onBack: () => void;
     onTogglePlay: () => void;
     onSeek: (percentage: number) => void;
     onSubtitleClick: (time: number) => void;
@@ -74,10 +69,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           audioState,
                                                           subtitleState,
                                                           displayedCues,
-                                                          currentCueIndex,
                                                           currentTime,
                                                           duration,
-                                                          currentSegmentIndex,
                                                           totalSegments,
                                                           segmentMarkers,
                                                           onSegmentChange,
@@ -111,6 +104,24 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
 
     const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom;
+
+    const currentCueIndex = findCueIndex(subtitleState.cues, currentTime)
+
+    let currentSegmentIndex = 0;
+
+    if (currentCueIndex !== -1) {
+        currentSegmentIndex = Math.floor(currentCueIndex / CUES_PER_SEGMENT);
+    } else if (subtitleState.cues.length > 0) {
+        const nextCue = subtitleState.cues.findIndex(c => c.start > currentTime);
+        const fallbackIndex =
+            nextCue > 0
+                ? nextCue - 1
+                : nextCue === 0
+                    ? 0
+                    : subtitleState.cues.length - 1;
+
+        currentSegmentIndex = Math.floor(fallbackIndex / CUES_PER_SEGMENT);
+    }
 
     // ----- AUTO-SCROLL TO ACTIVE CUE -----
     const scrollToActiveCue = () => {
