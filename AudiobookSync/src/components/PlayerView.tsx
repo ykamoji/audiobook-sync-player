@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Image,
     LayoutChangeEvent,
     Dimensions,
 } from 'react-native';
@@ -29,10 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Controls } from './Controls';
 import {
     XIcon,
-    ListIcon,
     ChevronDownIcon,
-    PlayIcon,
-    PauseIcon,
 } from 'lucide-react-native';
 
 import {
