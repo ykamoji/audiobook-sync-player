@@ -8,7 +8,14 @@ import {Setup} from "./components/Setup";
 import {LibraryContainer} from "./components/LibraryContainer";
 import {PlayerContainer} from "./components/PlayerContainer";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
-import Animated, {interpolate, runOnJS, useAnimatedStyle, useSharedValue, withSpring,} from "react-native-reanimated";
+import Animated, {
+    interpolate,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from "react-native-reanimated";
 import {Provider as PaperProvider} from 'react-native-paper';
 import {MiniPlayer} from "./components/MiniPlayer";
 import {AppData, Track} from "./utils/types";
@@ -188,22 +195,30 @@ const MainContent: React.FC = () => {
         handleTransition()
     };
 
+
+    const miniPlayerVisible = useSharedValue(0);
+
+    const translateY = useSharedValue(300);
+
     const handleTransition = useCallback(() => {
-        translateY.value = 300;
         setPlayerMode("full");
-        translateY.value = withSpring(0, { damping: 20, stiffness: 180 });
+        translateY.value = withSpring(0, {
+            stiffness: 70,
+            damping: 25,
+            mass: 1.1,
+        });
     },[])
 
-    const showMiniPlayer =
-        (view !== "setup" || !!player.audioState.coverUrl) && playerMode === "mini";
-
-    const translateY = useSharedValue(0);
-
     const closePlayer = () => {
+        // Start fading in MiniPlayer immediately
+        miniPlayerVisible.value = withTiming(1, { duration: 150 });
+
+        // Collapse full player
         translateY.value = withSpring(300, { damping: 20, stiffness: 180 });
+
+        // After collapse, actually change UI mode
         runOnJS(setPlayerMode)("mini");
     };
-
 
     const sheetStyle = useAnimatedStyle(() => ({
         transform: [
@@ -222,26 +237,48 @@ const MainContent: React.FC = () => {
             });
         } else {
             bottomBarTranslateY.value = withSpring(0, {
-                damping: 15,
-                stiffness: 150,
+                damping: 20,
+                stiffness: 250,
                 mass: 0.5,
             });
         }
     }, [playerMode]);
 
     const bottomBarStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: bottomBarTranslateY.value }],
+        transform: [{
+            translateY: interpolate(
+                bottomBarTranslateY.value,
+                [0, 50],
+                [0, 120],
+                { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+            )
+        }],
         opacity: interpolate(
             bottomBarTranslateY.value,
-            [0, 110],
+            [0, 30],
             [1, 0],
-            {
-                extrapolateLeft: 'clamp',
-                extrapolateRight: 'clamp',
-            }
-        ),
+            { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+        )
     }));
 
+
+    const miniPlayerAnimatedStyle = useAnimatedStyle(() => {
+        // Fade from translateY when dragging
+        const dragOpacity = interpolate(
+            translateY.value,
+            [0, 150, 300],
+            [0, 0.1, 1],
+            { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+        );
+
+        // Fade from closing gesture (fires instantly)
+        const forcedOpacity = miniPlayerVisible.value;
+
+        return {
+            opacity: Math.max(dragOpacity, forcedOpacity),
+            transform: [{ scale: 0.9 + 0.1 * forcedOpacity }],
+        };
+    });
 
     return (
         <View style={styles.root}>
@@ -340,26 +377,18 @@ const MainContent: React.FC = () => {
                 data={metadataPanelData}
                 onClose={() => setMetadataPanelData(null)}
             />
-
+            <Animated.View style={[miniPlayerAnimatedStyle]}>
+                <MiniPlayer
+                    coverUrl={player.audioState.coverPath || ""}
+                    name={player.audioState.name}
+                    isPlaying={player.isPlaying}
+                    onTogglePlay={player.togglePlay}
+                    progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}
+                    onOpen={handleTransition}
+                />
+            </Animated.View>
             {/* Bottom Bar */}
             <Animated.View style={[styles.bottomBar, bottomBarStyle]}>
-                {showMiniPlayer && (
-                    <MiniPlayer
-                        coverUrl={player.audioState.coverPath || ""}
-                        name={player.audioState.name}
-                        // albumName={}
-                        isPlaying={player.isPlaying}
-                        onTogglePlay={player.togglePlay}
-                        progress={
-                            player.duration > 0
-                                ? (player.currentTime / player.duration) * 100
-                                : 0
-                        }
-                        onOpen={() => {
-                            handleTransition()
-                        }}
-                    />
-                )}
                 <View style={styles.tabRow}>
                     <TabButton
                         label="Sync"

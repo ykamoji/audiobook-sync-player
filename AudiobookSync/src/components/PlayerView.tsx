@@ -191,14 +191,28 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     // ----- ANIMATED STYLES -----
     const containerStyle = useAnimatedStyle(() => {
-        return { transform: [{ translateY: translateY.value }], };
+        // Fade the background slowly near the end
+        const alpha = interpolate(
+            translateY.value,
+            [200, 250],
+            [1, 0],
+            {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
+        );
+
+        return {
+            transform: [{ translateY: translateY.value }],
+            backgroundColor: `rgba(0,0,0,${alpha})`,
+        };
     });
 
     // Artwork morph (scale + move like Apple Music)
     const artworkStyle = useAnimatedStyle(() => {
         const shrinkProgress = interpolate(
             progress.value,
-            [0.5, 1.0],
+            [0.3, 1.0],
             [0, 1],
             {
                 extrapolateLeft: "clamp",
@@ -233,9 +247,30 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     // Main header/subtitle/controls fade out as it collapses
     const fullContentStyle = useAnimatedStyle(() => {
-        const opacity = interpolate(progress.value, [0, 0.8], [1, 0], {extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',});
+        const opacity = interpolate(progress.value,
+            [0, 0.9],
+            [1, 0],
+            {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+            });
         return { opacity };
+    });
+
+    const artworkOpacity = useSharedValue(1);
+
+    useEffect(() => {
+        // fade OUT old image completely
+        artworkOpacity.value = withTiming(0.2, { duration: 150 }, () => {
+            // after fade-out completes → fade new image IN
+            artworkOpacity.value = withTiming(1, { duration: 250 });
+        });
+    }, [audioState.coverPath]);
+
+    const artworkOpacityStyle = useAnimatedStyle(() => {
+        return {
+            opacity: artworkOpacity.value,
+        };
     });
 
     // ----------------------------------------------------
@@ -255,13 +290,13 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                     ]}
                     pointerEvents={showChapters ? "none" : "auto"}
                 >
-                    <Animated.View style={fullContentStyle} pointerEvents={showChapters ? "none" : "auto"}>
+                    <Animated.View style={[fullContentStyle,artworkOpacityStyle]} pointerEvents={showChapters ? "none" : "auto"}>
                         {/* COVER ART */}
                         <View style={{overflow:"hidden"}}>
                             <Animated.View style={[styles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
                                 {audioState.coverPath ? (
                                     <View style={styles.coverWrapper}>
-                                        <Image
+                                        <Animated.Image
                                             source={{ uri: audioState.coverPath }}
                                             style={styles.coverImage}
                                         />
@@ -280,6 +315,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         <View style={[styles.headerContainer, { paddingTop:insets.top }]}>
                             <TouchableOpacity
                                 onPress={() => {
+
                                     runOnJS(onBack)();
                                 }}
                                 style={styles.headerBackButton}>
