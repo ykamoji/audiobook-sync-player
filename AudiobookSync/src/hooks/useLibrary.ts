@@ -53,17 +53,17 @@ export const useLibrary = ({
 
                 const resultTracks = scan.tracks;
                 const resultMetadata = scan.metadata;
-                const resultColorMap = scan.colorMap;
+                // const resultColorMap = scan.colorMap;
 
                 if (resultMetadata) onMetadataLoaded(resultMetadata);
 
                 setAllTracks(resultTracks);
 
-                // Save color map (converted to plain object)
-                await AsyncStorage.setItem(
-                    'colorMap',
-                    JSON.stringify(Object.fromEntries(resultColorMap))
-                );
+                // // Save color map (converted to plain object)
+                // await AsyncStorage.setItem(
+                //     'colorMap',
+                //     JSON.stringify(Object.fromEntries(resultColorMap))
+                // );
 
                 if (resultTracks.length > 0) {
                     onUploadSuccess();

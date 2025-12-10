@@ -15,7 +15,8 @@ import {
 } from 'react-native-gesture-handler';
 
 import Animated, {
-    interpolate,
+    Easing,
+    interpolate, interpolateColor,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
@@ -34,19 +35,12 @@ import {
     SubtitleCue,
 } from '../utils/types';
 import {SlideWindow} from "./SlideWindow.tsx";
+import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface PlayerViewProps {
-    audioState: AudioFileState;
-    subtitleState: SubtitleFileState;
-    displayedCues: SubtitleCue[];
     currentTime: number;
     duration: number;
-    totalSegments: number;
-
-    segmentMarkers: number[];
     onSegmentChange: (index: number) => void;
-
-    isPlaying: boolean;
     onBack: () => void;
     onTogglePlay: () => void;
     onSeek: (percentage: number) => void;
@@ -56,8 +50,6 @@ interface PlayerViewProps {
     onSkipForward: () => void;
     onSkipBackward: () => void;
     onOpenMetadata: () => void;
-    hasNext: boolean;
-    hasPrevious: boolean;
 }
 
 const CUES_PER_SEGMENT = 100;
@@ -66,15 +58,9 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MINI_HEIGHT = 80;
 
 export const PlayerView: React.FC<PlayerViewProps> = ({
-                                                          audioState,
-                                                          subtitleState,
-                                                          displayedCues,
                                                           currentTime,
                                                           duration,
-                                                          totalSegments,
-                                                          segmentMarkers,
                                                           onSegmentChange,
-                                                          isPlaying,
                                                           onBack,
                                                           onTogglePlay,
                                                           onSeek,
@@ -84,9 +70,19 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           onSkipForward,
                                                           onSkipBackward,
                                                           onOpenMetadata,
-                                                          hasNext,
-                                                          hasPrevious,
                                                       }) => {
+
+    const { state } =  usePlayerContext()
+
+    const { currentTrackIndex, playlist, isPlaying, audioState, subtitleState } = state
+
+    const displayedCues = subtitleState.cues
+    const totalSegments = subtitleState.totalSegments
+    const segmentMarkers = subtitleState.markers
+    const hasNext = currentTrackIndex < playlist.length - 1
+    const hasPrevious = currentTrackIndex > 0
+
+
     const insets = useSafeAreaInsets();
 
     const firstLoad = useRef(true);
@@ -208,20 +204,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
     // ----- ANIMATED STYLES -----
     const containerStyle = useAnimatedStyle(() => {
-        // Fade the background slowly near the end
-        const alpha = interpolate(
-            translateY.value,
-            [200, 250],
-            [1, 0],
-            {
-                extrapolateLeft: "clamp",
-                extrapolateRight: "clamp",
-            }
-        );
-
         return {
             transform: [{ translateY: translateY.value }],
-            backgroundColor: `rgba(0,0,0,${alpha})`,
         };
     });
 
@@ -229,7 +213,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     const artworkStyle = useAnimatedStyle(() => {
         const shrinkProgress = interpolate(
             progress.value,
-            [0.3, 1.0],
+            [0.7, 0.88],
             [0, 1],
             {
                 extrapolateLeft: "clamp",
@@ -237,18 +221,20 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             }
         );
 
-        const scale = interpolate(shrinkProgress, [0, 1], [1, 0.45], {
+        const fastShrink = Easing.in(Easing.linear)(shrinkProgress);
+
+        const scale = interpolate(fastShrink, [0, 1], [1, 0.45], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
         });
 
-        const translateX = interpolate(shrinkProgress, [0, 1], [0, -SCREEN_WIDTH * 0.18], {
+        const translateX = interpolate(fastShrink, [0, 1], [0, -SCREEN_WIDTH * 0.18], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
         });
 
         const translateY = interpolate(
-            shrinkProgress,
+            fastShrink,
             [0, 1],
             [0, -SCREEN_HEIGHT * 0.16],
             {
@@ -258,20 +244,43 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         );
 
         return {
-            transform: [{ translateX }, { translateY }, { scale }],
+            transform: [{ translateX }, { translateY }, { scale }]
         };
     });
 
     // Main header/subtitle/controls fade out as it collapses
-    const fullContentStyle = useAnimatedStyle(() => {
-        const opacity = interpolate(progress.value,
-            [0, 0.9],
-            [1, 0],
+    const bgStyle = useAnimatedStyle(() => {
+        // Same shrink math you already trust
+        const shrinkProgress = interpolate(
+            progress.value,
+            [0.7, 0.88],
+            [0, 1],
             {
-                extrapolateLeft: 'clamp',
-                extrapolateRight: 'clamp',
-            });
-        return { opacity };
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
+        );
+
+        const fastShrink = Easing.in(Easing.linear)(shrinkProgress);
+
+        // Fade VERY near the end
+        const fade = interpolate(
+            fastShrink,
+            [0.95, 1], // last 5%
+            [0, 1],
+            {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
+        );
+
+        return {
+            backgroundColor: interpolateColor(
+                fade,
+                [0, 1],
+                ["rgb(0,0,0)", `rgb(${audioState.colorScheme})`]
+            ),
+        };
     });
 
     const artworkOpacity = useSharedValue(1);
@@ -307,9 +316,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                     ]}
                     pointerEvents={showChapters ? "none" : "auto"}
                 >
-                    <Animated.View style={[fullContentStyle,artworkOpacityStyle]} pointerEvents={showChapters ? "none" : "auto"}>
+                    <Animated.View style={[]} pointerEvents={showChapters ? "none" : "auto"}>
                         {/* COVER ART */}
-                        <View style={{overflow:"hidden"}}>
+                        <Animated.View style={[{overflow:"hidden"}, bgStyle]}>
                             <Animated.View style={[styles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
                                 {audioState.coverPath ? (
                                     <View style={styles.coverWrapper}>
@@ -326,7 +335,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                     </View>
                                 )}
                             </Animated.View>
-                        </View>
+                        </Animated.View>
 
                         {/* Header */}
                         <View style={[styles.headerContainer, { paddingTop:insets.top }]}>
@@ -630,21 +639,6 @@ const styles = StyleSheet.create({
         paddingTop: 8,
         paddingHorizontal: 8,
         paddingBottom: 4
-    },
-
-    // Mini-player styles
-    miniPlayerContainer: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: MINI_HEIGHT,
-        backgroundColor: '#111',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: 'rgba(255,255,255,0.15)',
     },
     miniLeft: {
         flexDirection: 'row',

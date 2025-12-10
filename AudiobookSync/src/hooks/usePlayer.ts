@@ -7,10 +7,10 @@ import TrackPlayer, {
     useTrackPlayerEvents,
 } from 'react-native-track-player';
 
-
 import { releaseSecureAccess } from 'react-native-document-picker'
+import { usePlayerContext } from "../services/PlayerContext";
 
-import { AudioFileState, SubtitleFileState, Track, ProgressData } from '../utils/types';
+import { Track, ProgressData } from '../utils/types';
 import { loadTrackMedia, getSegmentIndex, getSegmentBounds, findCueIndex  } from '../utils/mediaLoader';
 
 interface UsePlayerProps {
@@ -37,24 +37,10 @@ export const usePlayer = ({
     /** ─────────────────────────────────────────────
      *  UI STATE
      *  ───────────────────────────────────────────── */
-    const [playlist, setPlaylist] = useState<Track[]>([]);
-    const [currentTrackIndex, setCurrentTrackIndex] = useState(-1);
 
-    const [audioState, setAudioState] = useState<AudioFileState>({
-        path: null,
-        name: '',
-        coverUrl: null,
-    });
+    const { state, dispatch } = usePlayerContext();
 
-    const [subtitleState, setSubtitleState] = useState<SubtitleFileState>({
-        path: null,
-        cues: [],
-        name: '',
-        markers:[],
-        totalSegments:0
-    });
-
-    const [isPlaying, setIsPlaying] = useState(false);
+    const { playlist, currentTrackIndex, audioState, subtitleState, isPlaying } = state;
 
     /** Resume + history tracking */
     const lastSaveRef = useRef(0);
@@ -63,9 +49,15 @@ export const usePlayer = ({
 
     /** Sync RNTP → UI */
     useEffect(() => {
-        // @ts-ignore
-        setIsPlaying(playback === State.Playing);
-    }, [playback]);
+        const next = playback === State.Playing;
+
+        if (next !== state.isPlaying) {
+            dispatch({
+                type: "SET_PLAYING",
+                playing: next,
+            });
+        }
+    }, [playback, state.isPlaying, dispatch]);
 
 
     /* Release access when audio path changes */
@@ -86,8 +78,7 @@ export const usePlayer = ({
         }
 
         segmentHistoryRef.current = {};
-        setCurrentTrackIndex(index);
-        setPlaylist(newPlaylist);
+
 
         /** Restore progress */
         const saved = progressMap[track.name];
@@ -107,11 +98,6 @@ export const usePlayer = ({
         /** Load local media */
         const { audioState: audioMeta, subtitleState: subMeta } = await loadTrackMedia(track);
 
-        setAudioState(audioMeta);
-
-        // console.log(subMeta.markers)
-
-        setSubtitleState(subMeta);
 
         /** TrackPlayer loading */
         await TrackPlayer.reset();
@@ -128,6 +114,17 @@ export const usePlayer = ({
             await TrackPlayer.seekTo(resumeRef.current);
             resumeRef.current = 0;
         }
+
+        dispatch({
+            type: "LOAD_TRACK",
+            playlist: newPlaylist,
+            index,
+            audio: audioMeta,
+            subtitle: subMeta,
+        });
+
+        await TrackPlayer.play()
+
 
     }, [audioState.name, progressMap]);
 
@@ -177,8 +174,6 @@ export const usePlayer = ({
      *  SUBTITLE CLICK
      *  ───────────────────────────────────────────── */
     const jumpToTime = async (time: number) => {
-        await TrackPlayer.seekTo(time);
-        if (!isPlaying) TrackPlayer.play();
         seek((time / duration) * 100);
     };
 
@@ -203,9 +198,10 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     const togglePlay = () => {
         isPlaying ? TrackPlayer.pause() : TrackPlayer.play();
+        setTimeout( () => {
+            saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
+        }, 100)
     };
-
-    const pause = () => TrackPlayer.pause();
 
     const next = async () => {
         const nextIndex = currentTrackIndex + 1;
@@ -233,11 +229,13 @@ export const usePlayer = ({
     };
 
     const skipForward = async () => {
-        await TrackPlayer.seekTo(Math.min(position + 10, duration));
+        const new_position = Math.min(position + 10, duration)
+        await seek((new_position/duration) * 100);
     };
 
     const skipBackward = async () => {
-        await TrackPlayer.seekTo(Math.max(position - 10, 0));
+        const new_position = Math.max(position - 10, 0)
+        await seek((new_position/duration) * 100);
     };
 
     /** ─────────────────────────────────────────────
@@ -254,7 +252,6 @@ export const usePlayer = ({
 
         playTrack,
         togglePlay,
-        pause,
         seek,
         changeSegment,
         jumpToTime,

@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {
     View,
     Text,
@@ -9,55 +9,33 @@ import {
 
 import { PlayIcon, PauseIcon } from 'lucide-react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {usePlayerContext} from "../services/PlayerContext.tsx";
+import {white} from "react-native-paper/lib/typescript/styles/themes/v2/colors";
 
 interface MiniPlayerProps {
-    coverUrl: string;
-    name: string;
-    isPlaying: boolean;
     progress: number; // 0–100
     onTogglePlay: () => void;
     onOpen: () => void;
 }
 
 export const MiniPlayer: React.FC<MiniPlayerProps> = ({
-                                                          coverUrl,
-                                                          name,
-                                                          isPlaying,
                                                           progress,
                                                           onTogglePlay,
                                                           onOpen,
                                                       }) => {
-    const safeName = name || 'Now Playing';
 
-    const [colorMap, setColorMap] = useState({});
+    const { state } = usePlayerContext()
 
-    useEffect(() => {
-        const loadColors = async () => {
-            try {
-                const data = await AsyncStorage.getItem("colorMap");
-                setColorMap(JSON.parse(data || "{}"));
-            } catch (e) {
-                setColorMap({});
-            }
-        };
-        loadColors().then();
-    }, []);
+    const { audioState, isPlaying } = state
 
-    let bgStyle = "rgba(255,131,0,0.60)";
+    const safeName = audioState.name || 'Now Playing';
 
-    if (coverUrl && colorMap) {
-        const key = name + ".png";
-        // @ts-ignore
-        if (colorMap[key]) {
-            // @ts-ignore
-            bgStyle = `rgba(${colorMap[key]}, 0.65)`;
-        }
-    }
+    let bgStyle = "rgba(" + (audioState.colorScheme ?? [255,131,0]) + ",0.60)";
+
 
     return (
         <TouchableOpacity
-            activeOpacity={0.9}
-            style={[styles.container, { backgroundColor: bgStyle}]}
+            style={[styles.container, {backgroundColor: bgStyle }]}
             onPress={onOpen}
         >
             {/* PROGRESS BAR */}
@@ -71,8 +49,8 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
             </View>
             {/* LEFT: cover + text */}
             <View style={styles.left}>
-                {coverUrl ? (
-                    <Image source={{ uri: coverUrl }} style={styles.cover} />
+                {audioState.coverPath ? (
+                    <Image source={{ uri: audioState.coverPath }} style={styles.cover} />
                 ) : (
                     <View style={styles.coverPlaceholder}>
                         <Text style={styles.coverPlaceholderText}>
@@ -111,11 +89,11 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        height: 68,
+        height: 70,
         backgroundColor: '#111',
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: 'rgba(255,131,0,0.60)',
     },
@@ -125,9 +103,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cover: {
-        width: 46,
-        height: 46,
+        width: 60,
+        height: 60,
         borderRadius: 8,
+        marginLeft: 5,
         marginRight: 10,
     },
     coverPlaceholder: {

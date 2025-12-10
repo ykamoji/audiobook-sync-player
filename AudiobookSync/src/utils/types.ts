@@ -14,6 +14,7 @@ export interface Track {
     audioPath: string;        // Required
     subtitlePath?: string;    // Optional
     coverPath?: string;       // Optional
+    colorScheme?: string;
 }
 
 export interface Playlist {
@@ -34,6 +35,8 @@ export interface AudioFileState {
 
     /** Cover image path */
     coverPath?: string | null;
+
+    colorScheme?: string | null;
 }
 
 export interface SubtitleFileState {

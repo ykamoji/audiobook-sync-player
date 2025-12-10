@@ -15,6 +15,7 @@ export const loadTrackMedia = async (
         path: track.audioPath || null,
         name: track.name,
         coverPath: track.coverPath || null,
+        colorScheme: track.colorScheme || null,
     };
 
     // 2. Subtitles
@@ -46,10 +47,12 @@ export const loadTrackMedia = async (
                 }
             }
 
+            const file_name = (track.subtitlePath.split('/').pop())?.split('.')[0] || '';
+
             subtitleState = {
                 path: track.subtitlePath,
                 cues,
-                name: 'subtitle',
+                name: file_name,
                 markers,
                 totalSegments
             };

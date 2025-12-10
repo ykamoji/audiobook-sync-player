@@ -31,7 +31,7 @@ interface LibraryContainerProps {
     };
 }
 
-const ignoreKeys = ["filePaths", "colorMap"]
+const ignoreKeys = ["filePaths"]
 
 export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                                                                       allTracks,

@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useCallback, useRef} from "react";
+import React, {useState, useMemo, useCallback, useRef, useEffect} from "react";
 import {
     View,
     Text,
@@ -18,7 +18,9 @@ import {
 } from "lucide-react-native";
 
 import { Track, Playlist, ProgressData } from "../utils/types";
-import {Divider} from "react-native-paper";
+
+import Animated, {useAnimatedStyle, useSharedValue, withDelay, withRepeat, withTiming} from "react-native-reanimated";
+import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface TrackRowProps {
     track: Track;
@@ -36,6 +38,35 @@ interface TrackRowProps {
     onViewMetadata: (track: Track) => void;
     style?: ViewStyle;
 }
+
+const Bar = ({ delay }: { delay: number }) => {
+    const height = useSharedValue(6);
+
+    useEffect(() => {
+        height.value = withDelay(
+            delay,
+            withRepeat(
+                withTiming(22, { duration: 400 }),
+                -1,
+                true
+            )
+        );
+    }, [delay]);
+
+    const style = useAnimatedStyle(() => ({
+        height: height.value,
+    }));
+
+    return <Animated.View style={[styles.bar, style]} />;
+};
+
+const PlayingIndicator = () => (
+    <View style={styles.equalizer}>
+        <Bar delay={0} />
+        <Bar delay={150} />
+        <Bar delay={300} />
+    </View>
+);
 
 export const TrackRow: React.FC<TrackRowProps> = ({
                                                    track,
@@ -121,6 +152,13 @@ export const TrackRow: React.FC<TrackRowProps> = ({
         closeMenu();
     }, [onViewMetadata, track, closeMenu]);
 
+
+    const { state } = usePlayerContext()
+
+    const { isPlaying, audioState } = state
+
+    const showLive = isPlaying && audioState.name === track.name
+
     return (
         <View ref={rowRef} style={[styles.rowContainer, style]}>
             <TouchableOpacity
@@ -162,37 +200,37 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     >
                         {displayName}
                     </Text>
-
-                    <View style={styles.metaRow}>
-                        {!isSelectionMode && percentage > 0 && (
-                            <View style={styles.progressBarBackground}>
-                                <View
-                                    style={[
-                                        styles.progressBarFill,
-                                        isCompleted && styles.completedBar,
-                                        { width: `${percentage}%` },
-                                    ]}
-                                />
-                            </View>
-                        )}
-
-                        <View style={styles.metaDetails}>
-                            {isCompleted ? (
-                                <Text style={styles.completedLabel}>Completed</Text>
-                            ) : percentage > 0 ? (
-                                <Text style={styles.mediumText}>
-                                    {Math.floor(percentage)}%
-                                </Text>
-                            ) : (
-                                // 👇 placeholder to keep layout identical
-                                <Text style={[styles.mediumText, {opacity: 0}]}>
-                                    100%
-                                </Text>
-                            )}
-
-                            {playlistBadges}
+                    { showLive ?
+                        <View style={styles.live}>
+                            <PlayingIndicator />
                         </View>
-                    </View>
+                        :
+                        (!isSelectionMode && percentage > 0 && (
+                            <View style={styles.metaRow}>
+                                <View style={styles.progressBarBackground}>
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            isCompleted && styles.completedBar,
+                                            {width: `${percentage}%`},
+                                        ]}/>
+                                </View><View style={styles.metaDetails}>
+                                {isCompleted ? (
+                                    <Text style={styles.completedLabel}>Completed</Text>
+                                ) : percentage > 0 ? (
+                                    <Text style={styles.mediumText}>
+                                        {Math.floor(percentage)}%
+                                    </Text>
+                                ) : (
+                                    // 👇 placeholder to keep layout identical
+                                    <Text style={[styles.mediumText, {opacity: 0}]}>
+                                        100%
+                                    </Text>
+                                )}
+                                {playlistBadges}
+                            </View>
+                            </View>
+                        ))}
                 </View>
             </TouchableOpacity>
 
@@ -240,7 +278,7 @@ const styles = StyleSheet.create({
     mainRow: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#1a1a1a",
+        // backgroundColor: "#1a1a1a",
         padding: 12,
         borderRadius: 10,
     },
@@ -368,4 +406,19 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 16,
     },
+
+    equalizer: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 3,
+        height: 24,
+    },
+    bar: {
+        width: 3,
+        backgroundColor: '#ff8300',
+        borderRadius: 2,
+    },
+    live:{
+        marginTop: 6,
+    }
 });

@@ -114,8 +114,6 @@ export const Library: React.FC<LibraryProps> = ({
             allTracks]
     );
 
-
-
     // ----- Main render -----
 
     return (
@@ -289,7 +287,6 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingBottom: 20,
-        paddingHorizontal: 12,
     },
     iconButton: {
         padding: 6,

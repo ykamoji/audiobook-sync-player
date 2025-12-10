@@ -135,7 +135,8 @@ export const scanNativePath = async (
             name: base,
             audioPath: path,
             subtitlePath:subtitlePath,
-            coverPath: coverPath
+            coverPath: coverPath,
+            colorScheme: colorMap.get(base + '.png')
         });
     });
 

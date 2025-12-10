@@ -29,6 +29,7 @@ import {AlbumContainer} from "./components/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
 import {PlayerView} from "./components/PlayerView.tsx";
+import { PlayerProvider } from "./services/PlayerProvider.tsx";
 
 export const setupPlayer = async () => {
 
@@ -38,7 +39,6 @@ export const setupPlayer = async () => {
                 iosCategory:IOSCategory.Playback,
                 iosCategoryMode: IOSCategoryMode.SpokenAudio,
                 iosCategoryOptions: [
-                    IOSCategoryOptions.AllowBluetooth,
                     IOSCategoryOptions.AllowBluetoothA2DP,
                     IOSCategoryOptions.AllowAirPlay,
                 ]
@@ -86,8 +86,7 @@ const MainContent: React.FC = () => {
     // --- Custom Hooks ---
     const playlistManager = usePlaylistManager(isStorageLoaded);
 
-    const {progressMap, initProgress, saveProgress, reloadProgress} =
-        useProgressManager();
+    const {progressMap, initProgress, saveProgress, reloadProgress} = useProgressManager();
 
     const {allTracks, setAllTracks, isLoading, handleDirectoryUpload} =
         useLibrary({
@@ -198,7 +197,7 @@ const MainContent: React.FC = () => {
         specificPlaylist?: Track[]
     ) => {
         player.playTrack(track, index, specificPlaylist || [track]).then();
-        handleTransition()
+        player.togglePlay()
     };
 
 
@@ -213,7 +212,7 @@ const MainContent: React.FC = () => {
             damping: 25,
             mass: 1.1,
         });
-    },[])
+    },[translateY.value])
 
     const closePlayer = () => {
         // Start fading in MiniPlayer immediately
@@ -242,7 +241,7 @@ const MainContent: React.FC = () => {
                 mass: 0.7,
             });
         } else {
-            bottomBarTranslateY.value = withSpring(0, {
+            bottomBarTranslateY.value = withSpring(10, {
                 damping: 20,
                 stiffness: 250,
                 mass: 0.5,
@@ -282,7 +281,7 @@ const MainContent: React.FC = () => {
 
         return {
             opacity: Math.max(dragOpacity, forcedOpacity),
-            transform: [{ scale: 0.9 + 0.1 * forcedOpacity }],
+            // transform: [{ scale: 0.9 + 0.1 * forcedOpacity }],
         };
     });
 
@@ -350,7 +349,7 @@ const MainContent: React.FC = () => {
                     </SafeAreaView>
                 </View>
             </View>
-            {playerMode === "full" && player.audioState.name && (
+            {playerMode === "full" && (
                     <Animated.View
                         style={[
                             styles.playerOverlay,
@@ -359,9 +358,6 @@ const MainContent: React.FC = () => {
                         ]}
                     >
                         <PlayerView
-                            audioState={player.audioState}
-                            subtitleState={player.subtitleState}
-                            isPlaying={player.isPlaying}
                             currentTime={player.currentTime}
                             duration={player.duration}
                             onNext={player.next}
@@ -374,11 +370,6 @@ const MainContent: React.FC = () => {
                             onSubtitleClick={player.jumpToTime}
                             onOpenMetadata={handleOpenMetadata}
                             onSegmentChange={player.changeSegment}
-                            displayedCues={player.subtitleState.cues}
-                            totalSegments={player.subtitleState.totalSegments}
-                            segmentMarkers={player.subtitleState.markers}
-                            hasNext={player.currentTrackIndex < player.playlist.length - 1}
-                            hasPrevious={player.currentTrackIndex > 0}
                         />
                     </Animated.View>
             )}
@@ -389,11 +380,8 @@ const MainContent: React.FC = () => {
                 onClose={() => setMetadataPanelData(null)}
             />
             {showMiniPlayer &&(
-                <Animated.View style={[miniPlayerAnimatedStyle]}>
+                <Animated.View style={[miniPlayerAnimatedStyle, {  } ]}>
                     <MiniPlayer
-                        coverUrl={player.audioState.coverPath || ""}
-                        name={player.audioState.name}
-                        isPlaying={player.isPlaying}
                         onTogglePlay={player.togglePlay}
                         progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}
                         onOpen={handleTransition}/>
@@ -584,7 +572,9 @@ export default function AppContent() {
         <GestureHandlerRootView style={{flex: 1}}>
             <SafeAreaProvider>
                 <PaperProvider>
-                    <MainContent/>
+                    <PlayerProvider>
+                        <MainContent/>
+                    </PlayerProvider>
                     <Toast config={toastConfig} visibilityTime={1000} topOffset={120}  />
                 </PaperProvider>
             </SafeAreaProvider>
