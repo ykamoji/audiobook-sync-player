@@ -14,7 +14,7 @@ export interface Track {
     audioPath: string;        // Required
     subtitlePath?: string;    // Optional
     coverPath?: string;       // Optional
-    colorScheme?: string;
+    colorScheme?: object;
     audioSize: number;
 }
 

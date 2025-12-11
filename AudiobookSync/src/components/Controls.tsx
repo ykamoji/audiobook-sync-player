@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     },
 
     disabled: {
-        opacity: 0,
+        opacity: 0.6,
     },
     markerContainer: {
         position: 'absolute',

@@ -2,7 +2,7 @@ import React, {useRef} from 'react';
 import { Library } from './Library';
 import RNFS from 'react-native-fs';
 import { Track, Playlist, AppData, ProgressData } from '../utils/types';
-import { modelStyles } from "../assets/modelStyles";
+import { modelStyles } from "../utils/modelStyles.ts";
 import { saveToNativeFilesystem } from '../utils/persistence';
 import {Dimensions, Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Keyboard, Share} from "react-native";
 import {ListIcon} from "lucide-react-native";

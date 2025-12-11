@@ -20,7 +20,7 @@ import {
 import { Track, Playlist, ProgressData } from "../utils/types";
 
 import {usePlayerContext} from "../services/PlayerContext.tsx";
-import {PlayingIndicator} from "../assets/PlayingIndicator.tsx";
+import {PlayingIndicator} from "../services/PlayingIndicator.tsx";
 
 interface TrackRowProps {
     track: Track;
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     },
 
     progressBarBackground: {
-        height: 2,
+        height: 1,
         backgroundColor: "#444",
         width: "80%",
         overflow: "hidden",
@@ -379,5 +379,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     live:{
+        marginTop: 10,
     }
 });

@@ -41,7 +41,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -67,5 +67,12 @@
 	<string>Light</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>CabinCondensed-Bold.ttf</string>
+		<string>CabinCondensed-Medium.ttf</string>
+		<string>CabinCondensed-Regular.ttf</string>
+		<string>CabinCondensed-SemiBold.ttf</string>
+	</array>
 </dict>
 </plist>

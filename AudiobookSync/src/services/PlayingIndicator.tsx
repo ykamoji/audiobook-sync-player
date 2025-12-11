@@ -9,7 +9,7 @@ const Bar = ({ delay }: { delay: number }) => {
         height.value = withDelay(
             delay,
             withRepeat(
-                withTiming(15, { duration: 400 }),
+                withTiming(20, { duration: 400 }),
                 -1,
                 true
             )

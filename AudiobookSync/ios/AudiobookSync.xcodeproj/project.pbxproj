@@ -12,8 +12,12 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		4CC1558DA9461CF8F8D34C6C /* libPods-AudiobookSync-AudiobookSyncTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDDC39851C1697C875EB3B1F /* libPods-AudiobookSync-AudiobookSyncTests.a */; };
+		799F350987CF4962B37BD291 /* CabinCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6E99E2D01B794407BCAAABAF /* CabinCondensed-Bold.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		8F22A7F6612840C0997B6E3D /* CabinCondensed-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EBDB92A4800646B28F56F586 /* CabinCondensed-Regular.ttf */; };
+		AA5C2EDABC584E3FB8C837AC /* CabinCondensed-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0786849D4D954C96AE420728 /* CabinCondensed-Medium.ttf */; };
 		CFFBC5B871B6D808216BBC93 /* libPods-AudiobookSync.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BBCBDB52BB802F0EF4ECBCFA /* libPods-AudiobookSync.a */; };
+		E2768949EBA74D9EA57A3A17 /* CabinCondensed-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 01BD9E574AF84942A8615B96 /* CabinCondensed-SemiBold.ttf */; };
 		FA6880C07550752353E8E88E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +35,8 @@
 		00E356EE1AD99517003FC87E /* AudiobookSyncTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AudiobookSyncTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* AudiobookSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudiobookSyncTests.m; sourceTree = "<group>"; };
+		01BD9E574AF84942A8615B96 /* CabinCondensed-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "CabinCondensed-SemiBold.ttf"; path = "../src/assets/fonts/CabinCondensed-SemiBold.ttf"; sourceTree = "<group>"; };
+		0786849D4D954C96AE420728 /* CabinCondensed-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "CabinCondensed-Medium.ttf"; path = "../src/assets/fonts/CabinCondensed-Medium.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* AudiobookSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudiobookSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = AudiobookSync/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = AudiobookSync/AppDelegate.mm; sourceTree = "<group>"; };
@@ -41,11 +47,13 @@
 		2146F6BC2DFCD97F634F8F72 /* Pods-AudiobookSync.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AudiobookSync.release.xcconfig"; path = "Target Support Files/Pods-AudiobookSync/Pods-AudiobookSync.release.xcconfig"; sourceTree = "<group>"; };
 		2DC5EB803D6447778ECABDC7 /* SplashScreen.storyboard */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = SplashScreen.storyboard; path = AudiobookSync/SplashScreen.storyboard; sourceTree = "<group>"; };
 		62A0D479BE985957347E9F13 /* Pods-AudiobookSync-AudiobookSyncTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AudiobookSync-AudiobookSyncTests.release.xcconfig"; path = "Target Support Files/Pods-AudiobookSync-AudiobookSyncTests/Pods-AudiobookSync-AudiobookSyncTests.release.xcconfig"; sourceTree = "<group>"; };
+		6E99E2D01B794407BCAAABAF /* CabinCondensed-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "CabinCondensed-Bold.ttf"; path = "../src/assets/fonts/CabinCondensed-Bold.ttf"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AudiobookSync/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A0D7FC0DC4D8951FCD19832B /* Pods-AudiobookSync.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AudiobookSync.debug.xcconfig"; path = "Target Support Files/Pods-AudiobookSync/Pods-AudiobookSync.debug.xcconfig"; sourceTree = "<group>"; };
 		AF97BF312EE2C98A00F42B67 /* AudiobookSync-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AudiobookSync-Bridging-Header.h"; sourceTree = "<group>"; };
 		BBCBDB52BB802F0EF4ECBCFA /* libPods-AudiobookSync.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AudiobookSync.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3369926BC312C852307F011 /* Pods-AudiobookSync-AudiobookSyncTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AudiobookSync-AudiobookSyncTests.debug.xcconfig"; path = "Target Support Files/Pods-AudiobookSync-AudiobookSyncTests/Pods-AudiobookSync-AudiobookSyncTests.debug.xcconfig"; sourceTree = "<group>"; };
+		EBDB92A4800646B28F56F586 /* CabinCondensed-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "CabinCondensed-Regular.ttf"; path = "../src/assets/fonts/CabinCondensed-Regular.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		EDDC39851C1697C875EB3B1F /* libPods-AudiobookSync-AudiobookSyncTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AudiobookSync-AudiobookSyncTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -103,6 +111,17 @@
 			name = AudiobookSync;
 			sourceTree = "<group>";
 		};
+		22015FE276564EA087D244BB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6E99E2D01B794407BCAAABAF /* CabinCondensed-Bold.ttf */,
+				0786849D4D954C96AE420728 /* CabinCondensed-Medium.ttf */,
+				EBDB92A4800646B28F56F586 /* CabinCondensed-Regular.ttf */,
+				01BD9E574AF84942A8615B96 /* CabinCondensed-SemiBold.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -129,6 +148,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				22015FE276564EA087D244BB /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -251,6 +271,10 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				FA6880C07550752353E8E88E /* PrivacyInfo.xcprivacy in Resources */,
+				799F350987CF4962B37BD291 /* CabinCondensed-Bold.ttf in Resources */,
+				AA5C2EDABC584E3FB8C837AC /* CabinCondensed-Medium.ttf in Resources */,
+				8F22A7F6612840C0997B6E3D /* CabinCondensed-Regular.ttf in Resources */,
+				E2768949EBA74D9EA57A3A17 /* CabinCondensed-SemiBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,13 +327,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync/Pods-AudiobookSync-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync/Pods-AudiobookSync-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -346,13 +366,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync-AudiobookSyncTests/Pods-AudiobookSync-AudiobookSyncTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync-AudiobookSyncTests/Pods-AudiobookSync-AudiobookSyncTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -367,13 +383,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync-AudiobookSyncTests/Pods-AudiobookSync-AudiobookSyncTests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync-AudiobookSyncTests/Pods-AudiobookSync-AudiobookSyncTests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -388,13 +400,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync/Pods-AudiobookSync-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AudiobookSync/Pods-AudiobookSync-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -496,7 +504,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5598TM8N23;
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_BITCODE = NO;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				INFOPLIST_FILE = AudiobookSync/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = AudiobookSync;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -534,6 +544,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5598TM8N23;
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				INFOPLIST_FILE = AudiobookSync/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = AudiobookSync;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -632,7 +644,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -706,7 +721,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

@@ -21,7 +21,6 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Controls } from './Controls';
@@ -29,11 +28,6 @@ import {
     XIcon,
     ChevronDownIcon,
 } from 'lucide-react-native';
-import {
-    AudioFileState,
-    SubtitleFileState,
-    SubtitleCue,
-} from '../utils/types';
 import {SlideWindow} from "./SlideWindow.tsx";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
 
@@ -578,7 +572,7 @@ const styles = StyleSheet.create({
         borderRadius: 0,
     },
     coverPlaceholder: {
-        width: '50%',
+        width: '100%',
         aspectRatio: 1,
         borderRadius: 12,
         backgroundColor: '#1f2933',
@@ -596,25 +590,26 @@ const styles = StyleSheet.create({
         minHeight: 300,
     },
     subtitlesScroll: {
-        flex: 1,
+        flex: 1
     },
     subtitlesContent: {
         paddingHorizontal: 24,
         paddingTop: 16,
-        // paddingBottom: 140,
     },
     cueContainer: {
         marginBottom: 18,
     },
     cueContainerActive: {},
     cueText: {
-        fontSize: 14,
+        fontSize: 17,
         lineHeight: 20,
         textAlign: 'left',
+        letterSpacing: 0.5,
+        fontFamily: 'CabinCondensed-Medium',
     },
     cueTextActive: {
         color: '#f97316',
-        fontWeight: '700',
+        fontFamily: 'CabinCondensed-Semibold',
     },
     cueTextInactive: {
         color: '#9ca3af',

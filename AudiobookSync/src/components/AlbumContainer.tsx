@@ -2,7 +2,7 @@ import {ActionSheetIOS, Alert, Modal, Text, TextInput, TouchableOpacity, View} f
 import React, {FC, useEffect, useRef, useState} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
-import {modelStyles} from "../assets/modelStyles.ts";
+import {modelStyles} from "../utils/modelStyles.ts";
 import {Albums} from "./Albums.tsx";
 import {AlbumContent} from "./AlbumContent.tsx";
 import {Pressable} from "react-native-gesture-handler";

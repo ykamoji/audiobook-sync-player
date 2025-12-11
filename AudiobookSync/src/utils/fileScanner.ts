@@ -135,6 +135,7 @@ export const scanNativePath = async (
             }
         }
 
+
         let trackData:Track = {
             id: uuid.v4().toString(),
             coverFile: undefined,
@@ -142,7 +143,7 @@ export const scanNativePath = async (
             audioPath: path,
             subtitlePath:subtitlePath,
             coverPath: coverPath,
-            colorScheme: colorMap.get(base + '.png'),
+            colorScheme: colorMap.get(base + '.png') as Object ?? [255, 131, 0],
             audioSize: 0
         };
 
