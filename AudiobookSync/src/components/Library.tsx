@@ -15,7 +15,7 @@ import {Download, MoreVertical, SaveAll, Trash2} from "lucide-react-native";
 interface LibraryProps {
     allTracks: Track[];
     playlists: Playlist[];
-    onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[]) => void;
+    onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[], option?:number) => void;
     progressMap: Record<string, ProgressData>;
     handleAlbumActions: (track: Track[]) => void;
     setShowModal: (showModal: boolean) => void;

@@ -16,11 +16,12 @@ import {
     CircleIcon,
     InfoIcon, PencilIcon, TrashIcon,
 } from "lucide-react-native";
-
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Track, Playlist, ProgressData } from "../utils/types";
 
 import {usePlayerContext} from "../services/PlayerContext.tsx";
 import {PlayingIndicator} from "../services/PlayingIndicator.tsx";
+import {runOnJS} from "react-native-reanimated";
 
 interface TrackRowProps {
     track: Track;
@@ -31,7 +32,7 @@ interface TrackRowProps {
     isSelectionMode: boolean;
     progressMap: Record<string, ProgressData>;
     associatedPlaylists: Playlist[];
-    onSelectTrack: (track: Track, index: number, list: Track[]) => void;
+    onSelectTrack: (track: Track, index: number, list: Track[], option?:number) => void;
     onToggleSelection: (trackId: string) => void;
     onLongPress: () => void;
     onEditToPlaylist: (track: Track, callback:() => void) => void;
@@ -92,11 +93,11 @@ export const TrackRow: React.FC<TrackRowProps> = ({
     }, [isInsidePlaylist, associatedPlaylists]);
 
 
-    const handlePress = useCallback(() => {
+    const handlePress = useCallback((option:number) => {
         if (isSelectionMode) {
             onToggleSelection(track.id);
         } else {
-            onSelectTrack(track, index, list);
+            onSelectTrack(track, index, list, option);
         }
     }, [isSelectionMode, onToggleSelection, onSelectTrack, track, index, list]);
 
@@ -132,11 +133,18 @@ export const TrackRow: React.FC<TrackRowProps> = ({
 
     const showLive =  isPlaying && audioState.name === track.name
 
+    const doubleTap = Gesture.Tap()
+        .numberOfTaps(2)
+        .onEnd(() => {
+            runOnJS(handlePress)(2)
+        });
+
     return (
         <View ref={rowRef} style={[styles.rowContainer, style]}>
+            <GestureDetector gesture={doubleTap}>
             <TouchableOpacity
                 style={[styles.mainRow, isSelected && styles.selectedRow]}
-                onPress={handlePress}
+                onPress={()=> handlePress(1)}
                 onLongPress={() => {
                     onLongPress();
                     onToggleSelection(track.id);
@@ -206,6 +214,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                         ))}
                 </View>
             </TouchableOpacity>
+            </GestureDetector>
 
             {!isSelectionMode && (
                 <TouchableOpacity

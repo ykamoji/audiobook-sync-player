@@ -190,10 +190,13 @@ const MainContent: React.FC = () => {
     const playTrackWrapper = (
         track: Track,
         index: number,
-        specificPlaylist?: Track[]
+        specificPlaylist?: Track[],
+        option?: number
     ) => {
         player.playTrack(track, index, specificPlaylist || [track]).then();
-        player.togglePlay()
+        if(option == 2){
+            handleTransition()
+        }
     };
 
 
@@ -374,14 +377,14 @@ const MainContent: React.FC = () => {
                 data={metadataPanelData}
                 onClose={() => setMetadataPanelData(null)}
             />
-            {showMiniPlayer &&(
-                <Animated.View style={[miniPlayerAnimatedStyle, {marginBottom:-25}]}>
-                    <MiniPlayer
-                        onTogglePlay={player.togglePlay}
-                        progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}
-                        onOpen={handleTransition}/>
-                </Animated.View>
-                )}
+            {/*{showMiniPlayer &&(*/}
+            {/*    <Animated.View style={[miniPlayerAnimatedStyle, {marginBottom:-25}]}>*/}
+            {/*        <MiniPlayer*/}
+            {/*            onTogglePlay={player.togglePlay}*/}
+            {/*            progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}*/}
+            {/*            onOpen={handleTransition}/>*/}
+            {/*    </Animated.View>*/}
+            {/*    )}*/}
             {/* Bottom Bar */}
             <Animated.View style={[styles.bottomBar, bottomBarStyle, {paddingBottom: insets.bottom - 15}]}>
                 <View style={styles.tabRow}>

@@ -222,7 +222,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             extrapolateRight: "clamp",
         });
 
-        const translateX = interpolate(fastShrink, [0, 1], [0, -SCREEN_WIDTH * 0.18], {
+        const translateX = interpolate(
+            fastShrink,
+            [0, 1],
+            [0, -SCREEN_WIDTH * 0.25], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
         });

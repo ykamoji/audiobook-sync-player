@@ -14,7 +14,7 @@ interface LibraryContainerProps {
     allTracks: Track[];
     progressMap: Record<string, ProgressData>;
 
-    onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[]) => void;
+    onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[], option?:number) => void;
     onViewMetadata: (track: Track) => void;
     onUpdate: () => void;
     clearStorage: () => void;

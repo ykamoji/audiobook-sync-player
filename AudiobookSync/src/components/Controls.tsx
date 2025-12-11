@@ -8,7 +8,7 @@ import {
     MoreHorizontalIcon,
     SkipBackIcon,
     SkipForwardIcon,
-    LucideMenu,
+    LucideMenu
 } from 'lucide-react-native';
 import {Forward10Icon, Rewind10Icon} from "./Icons.tsx";
 
@@ -99,7 +99,7 @@ export const Controls: React.FC<ControlsProps> = ({
                     onPress={onPrevious}
                     style={[styles.smallControl, {paddingTop:10} , !hasPrevious && styles.disabled]}
                 >
-                    <SkipBackIcon size={24} color="#ddd" />
+                    <SkipBackIcon size={24} style={{marginLeft:10}} color="#ddd" />
                 </TouchableOpacity>
 
                 {/* Rewind 10 */}
@@ -172,12 +172,14 @@ const styles = StyleSheet.create({
 
     sideButton: {
         paddingHorizontal: 8,
+        // backgroundColor:"white"
     },
 
     smallControl: {
         padding: 6,
         height: 48,
         width: 48,
+        // backgroundColor:"white"
     },
 
     playButton: {

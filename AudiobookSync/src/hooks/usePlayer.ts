@@ -43,6 +43,7 @@ export const usePlayer = ({
     const { playlist, currentTrackIndex, audioState, subtitleState, isPlaying } = state;
 
     /** Resume + history tracking */
+    const playingRef = useRef(false);
     const resumeRef = useRef(0);
     const segmentHistoryRef = useRef<Record<number, number>>({});
 
@@ -73,14 +74,22 @@ export const usePlayer = ({
     const playTrack = useCallback(async (track: Track, index: number, newPlaylist: Track[]) => {
 
         if(track.name === audioState.name) {
-            return;
+            if (playingRef.current) {
+                playingRef.current = false;
+                await TrackPlayer.pause()
+                saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
+            }
+            else {
+                playingRef.current = true;
+                await TrackPlayer.play()
+            }
+            return playingRef.current;
         }
 
         // Save current progress
         saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
 
         segmentHistoryRef.current = {};
-
 
         /** Restore progress */
         const saved = progressMap[track.name];
@@ -125,8 +134,9 @@ export const usePlayer = ({
             subtitle: subMeta,
         });
 
-        await TrackPlayer.play()
-
+        if(playingRef.current) {
+            await TrackPlayer.play()
+        }
 
     }, [audioState.name, progressMap]);
 
@@ -160,7 +170,7 @@ export const usePlayer = ({
         const segment = getSegmentIndex(cueIndex);
         segmentHistoryRef.current[segment] = newTime;
 
-        saveProgress(audioState.name, newTime, duration, segmentHistoryRef.current);
+        // saveProgress(audioState.name, newTime, duration, segmentHistoryRef.current);
 
     }, [duration, subtitleState.cues, audioState.name]);
 
@@ -183,7 +193,7 @@ export const usePlayer = ({
         await TrackPlayer.seekTo(target);
         segmentHistoryRef.current[index] = target;
 
-        saveProgress(audioState.name, target, duration, segmentHistoryRef.current);
+        // saveProgress(audioState.name, target, duration, segmentHistoryRef.current);
 
     },[duration, subtitleState.cues, audioState.name]);
 
@@ -192,9 +202,7 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     const togglePlay = () => {
         isPlaying ? TrackPlayer.pause() : TrackPlayer.play();
-        setTimeout( () => {
-            saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
-        }, 100)
+        saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
     };
 
     const next = async () => {
