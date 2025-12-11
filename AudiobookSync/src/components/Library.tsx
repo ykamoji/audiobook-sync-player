@@ -190,7 +190,7 @@ export const Library: React.FC<LibraryProps> = ({
                                 closeMenu();
                                 onClearStorage();
                             }}
-                            title="Clear Storage"
+                            title="Clear Data"
                             titleStyle={{ color: "#CCC" }}
                             leadingIcon={() => <Trash2 size={18} color="#FF3B30" />}
                         />
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#050505',
     },
     header: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 18,
         paddingVertical: 12,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -262,11 +262,11 @@ const styles = StyleSheet.create({
         gap: 12,
     } as any,
     selectAllText: {
-        fontSize: 20,
+        fontSize: 14,
         color: '#9ca3af',
     },
     selectToggleText: {
-        fontSize: 20,
+        fontSize: 14,
         color: '#f97316',
         fontWeight: '600',
     },
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
         gap: 6,
     } as any,
     saveText: {
-        fontSize: 20,
+        fontSize: 14,
         color: '#9ca3af',
     },
     saveTextSuccess: {
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
         padding: 6,
     },
     selectText: {
-        fontSize: 20,
+        fontSize: 16,
         color: '#f97316',
         fontWeight: '600',
     },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         color: '#6b7280',
-        fontSize: 24,
+        fontSize: 16,
         textAlign: 'center',
     },
     emptyFull: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     bulkRemoveText: {
         color: '#f87171',
         fontWeight: '600',
-        fontSize: 13,
+        fontSize: 12,
     },
     bulkAddButton: {
         paddingHorizontal: 18,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     bulkAddText: {
         color: '#000000',
         fontWeight: '700',
-        fontSize: 13,
+        fontSize: 12,
     },
     bulkHidden:{
         opacity: 0,

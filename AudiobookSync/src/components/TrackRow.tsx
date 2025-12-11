@@ -19,8 +19,8 @@ import {
 
 import { Track, Playlist, ProgressData } from "../utils/types";
 
-import Animated, {useAnimatedStyle, useSharedValue, withDelay, withRepeat, withTiming} from "react-native-reanimated";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
+import {PlayingIndicator} from "../assets/PlayingIndicator.tsx";
 
 interface TrackRowProps {
     track: Track;
@@ -39,34 +39,7 @@ interface TrackRowProps {
     style?: ViewStyle;
 }
 
-const Bar = ({ delay }: { delay: number }) => {
-    const height = useSharedValue(6);
 
-    useEffect(() => {
-        height.value = withDelay(
-            delay,
-            withRepeat(
-                withTiming(22, { duration: 400 }),
-                -1,
-                true
-            )
-        );
-    }, [delay]);
-
-    const style = useAnimatedStyle(() => ({
-        height: height.value,
-    }));
-
-    return <Animated.View style={[styles.bar, style]} />;
-};
-
-const PlayingIndicator = () => (
-    <View style={styles.equalizer}>
-        <Bar delay={0} />
-        <Bar delay={150} />
-        <Bar delay={300} />
-    </View>
-);
 
 export const TrackRow: React.FC<TrackRowProps> = ({
                                                    track,
@@ -153,11 +126,11 @@ export const TrackRow: React.FC<TrackRowProps> = ({
     }, [onViewMetadata, track, closeMenu]);
 
 
-    const { state } = usePlayerContext()
+    const { state } = usePlayerContext();
 
-    const { isPlaying, audioState } = state
+    const { isPlaying, audioState } = state;
 
-    const showLive = isPlaying && audioState.name === track.name
+    const showLive =  isPlaying && audioState.name === track.name
 
     return (
         <View ref={rowRef} style={[styles.rowContainer, style]}>
@@ -168,7 +141,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     onLongPress();
                     onToggleSelection(track.id);
                 }}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
             >
                 {/* Thumbnail / Checkbox */}
                 <View style={styles.thumbnailBox}>
@@ -288,8 +261,8 @@ const styles = StyleSheet.create({
     },
 
     thumbnailBox: {
-        width: 60,
-        height: 60,
+        width: 65,
+        height: 65,
         borderRadius: 6,
         backgroundColor: "#333",
         justifyContent: "center",
@@ -309,7 +282,7 @@ const styles = StyleSheet.create({
 
     trackTitle: {
         color: "white",
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: "600",
     },
 
@@ -322,9 +295,8 @@ const styles = StyleSheet.create({
     },
 
     progressBarBackground: {
-        height: 4,
+        height: 2,
         backgroundColor: "#444",
-        borderRadius: 2,
         width: "80%",
         overflow: "hidden",
     },
@@ -353,7 +325,7 @@ const styles = StyleSheet.create({
 
     mediumText: {
         color: "#aaa",
-        fontSize: 16,
+        fontSize: 10,
     },
 
     badgesRow: {
@@ -367,7 +339,7 @@ const styles = StyleSheet.create({
     playlistBadge: {
         color: "#FF8300",
         opacity: 0.6,
-        fontSize: 13,
+        fontSize: 10,
         marginLeft: 6,
     },
 
@@ -406,19 +378,6 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 16,
     },
-
-    equalizer: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        gap: 3,
-        height: 24,
-    },
-    bar: {
-        width: 3,
-        backgroundColor: '#ff8300',
-        borderRadius: 2,
-    },
     live:{
-        marginTop: 6,
     }
 });

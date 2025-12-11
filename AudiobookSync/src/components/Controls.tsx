@@ -90,49 +90,49 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Left – Chapters */}
                 <TouchableOpacity onPress={onOpenChapters} style={styles.sideButton}>
-                    <LucideMenu size={26} color="#aaa" />
+                    <LucideMenu size={22} color="#aaa" />
                 </TouchableOpacity>
 
                 {/* Previous */}
                 <TouchableOpacity
                     disabled={!hasPrevious}
                     onPress={onPrevious}
-                    style={[styles.smallControl, !hasPrevious && styles.disabled]}
+                    style={[styles.smallControl, {paddingTop:10} , !hasPrevious && styles.disabled]}
                 >
-                    <SkipBackIcon size={32} color="#ddd" />
+                    <SkipBackIcon size={24} color="#ddd" />
                 </TouchableOpacity>
 
                 {/* Rewind 10 */}
                 <TouchableOpacity onPress={onSkipBackward} style={styles.smallControl}>
-                    <Rewind10Icon size={42} stroke="#f97316" />
+                    <Rewind10Icon size={36} stroke="#f97316" />
                 </TouchableOpacity>
 
                 {/* Play / Pause */}
                 <TouchableOpacity onPress={onPlayPause} style={styles.playButton}>
                     {isPlaying ? (
-                        <PauseIcon size={38} color="#000" />
+                        <PauseIcon size={30} color="#000" />
                     ) : (
-                        <PlayIcon size={38} color="#000" />
+                        <PlayIcon size={30} color="#000" />
                     )}
                 </TouchableOpacity>
 
                 {/* Forward 10 */}
                 <TouchableOpacity onPress={onSkipForward} style={styles.smallControl}>
-                    <Forward10Icon size={42} stroke="#f97316" />
+                    <Forward10Icon size={36} stroke="#f97316" />
                 </TouchableOpacity>
 
                 {/* Next */}
                 <TouchableOpacity
                     disabled={!hasNext}
                     onPress={onNext}
-                    style={[styles.smallControl, !hasNext && styles.disabled]}
+                    style={[styles.smallControl,  {paddingTop:10}, !hasNext && styles.disabled]}
                 >
-                    <SkipForwardIcon size={32} color="#ddd" />
+                    <SkipForwardIcon size={24} color="#ddd" />
                 </TouchableOpacity>
 
                 {/* Metadata */}
                 <TouchableOpacity onPress={onOpenMetadata} style={styles.sideButton}>
-                    <MoreHorizontalIcon size={26} color="#aaa" />
+                    <MoreHorizontalIcon size={22} color="#aaa" />
                 </TouchableOpacity>
             </View>
         </View>
@@ -142,13 +142,12 @@ export const Controls: React.FC<ControlsProps> = ({
 const styles = StyleSheet.create({
     root: {
         width: '100%',
-        paddingVertical: 12,
-        paddingHorizontal: 14,
+        // paddingVertical: 12,
+        paddingHorizontal: 8,
     },
 
     sliderContainer: {
         width: '100%',
-        marginBottom: 8,
     },
 
     timeRow: {
@@ -159,7 +158,7 @@ const styles = StyleSheet.create({
 
     timeText: {
         color: '#aaa',
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: '500',
     },
 
@@ -167,32 +166,31 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap:6,
+        gap:8,
         marginTop: 6,
     },
 
     sideButton: {
-        padding: 6,
+        paddingHorizontal: 8,
     },
 
     smallControl: {
         padding: 6,
-        height: 54,
-        width: 54,
-        // borderRadius: 10,
+        height: 48,
+        width: 48,
     },
 
     playButton: {
-        width: 70,
-        height: 70,
-        borderRadius: 40,
+        width: 60,
+        height: 60,
+        borderRadius: 60,
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     disabled: {
-        opacity: 0.3,
+        opacity: 0,
     },
     markerContainer: {
         position: 'absolute',

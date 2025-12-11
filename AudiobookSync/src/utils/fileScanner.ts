@@ -25,6 +25,12 @@ const sortTracks = (tracks: Track[]) =>
         return a.name.localeCompare(b.name, undefined, { numeric: true });
     });
 
+const getFileSize = async (path: string): Promise<number> => {
+    const cleanPath = decodeURI(path.replace("file://", ""));
+    const stat = await RNFS.stat(cleanPath);
+    return Number(stat.size);
+};
+
 /**
  * scanNativePath()
  * ------------------------
@@ -129,15 +135,22 @@ export const scanNativePath = async (
             }
         }
 
-        tracks.push({
+        let trackData:Track = {
             id: uuid.v4().toString(),
             coverFile: undefined,
             name: base,
             audioPath: path,
             subtitlePath:subtitlePath,
             coverPath: coverPath,
-            colorScheme: colorMap.get(base + '.png')
-        });
+            colorScheme: colorMap.get(base + '.png'),
+            audioSize: 0
+        };
+
+        getFileSize(path).then(size => {
+            trackData.audioSize = size;
+        })
+
+        tracks.push(trackData)
     });
 
     // console.log(tracks)

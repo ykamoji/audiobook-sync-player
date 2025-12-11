@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { XIcon } from 'lucide-react-native';
-import { formatBytes, formatDate, formatDuration } from '../utils/formatting';
+import {formatBytes, formatDate, formatDuration, formatProgress} from '../utils/formatting';
 import { SlideWindow } from './SlideWindow';
 
 export interface MetadataPanelData {
     name: string;
     fileSize: number;
-    lastModified: number;
+    progress: number;
     duration: number;
     associatedPlaylists?: string[];
 }
@@ -74,17 +74,15 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
                             <Text style={styles.label}>Duration</Text>
                             <Text style={styles.value}>{formatDuration(data.duration)}</Text>
                         </View>
-
+                        {/* Progress */}
+                        <View style={styles.section}>
+                            <Text style={styles.label}>Progress</Text>
+                            <Text style={styles.value}>{formatProgress(data.progress)}</Text>
+                        </View>
                         {/* File size */}
                         <View style={styles.section}>
                             <Text style={styles.label}>File Size</Text>
                             <Text style={styles.value}>{formatBytes(data.fileSize || 0)}</Text>
-                        </View>
-
-                        {/* Last modified */}
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Last Modified</Text>
-                            <Text style={styles.value}>{formatDate(data.lastModified || 0)}</Text>
                         </View>
                     </View>
                 )}
@@ -123,15 +121,15 @@ const styles = StyleSheet.create({
     },
     label: {
         color: '#f97316', // audible-orange vibe
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
         letterSpacing: 1,
-        textTransform: 'uppercase',
+        textTransform: 'capitalize',
         marginBottom: 4,
     },
     value: {
         color: '#e5e7eb',
-        fontSize: 16,
+        fontSize: 12,
     },
     playlistTagsRow: {
         flexDirection: 'row',

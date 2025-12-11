@@ -15,6 +15,7 @@ export interface Track {
     subtitlePath?: string;    // Optional
     coverPath?: string;       // Optional
     colorScheme?: string;
+    audioSize: number;
 }
 
 export interface Playlist {

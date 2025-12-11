@@ -283,21 +283,21 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         };
     });
 
-    const artworkOpacity = useSharedValue(1);
-
-    useEffect(() => {
-        // fade OUT old image completely
-        artworkOpacity.value = withTiming(0.5, { duration: 150 }, () => {
-            // after fade-out completes → fade new image IN
-            artworkOpacity.value = withTiming(1, { duration: 250 });
-        });
-    }, [audioState.coverPath]);
-
-    const artworkOpacityStyle = useAnimatedStyle(() => {
-        return {
-            opacity: artworkOpacity.value,
-        };
-    });
+    // const artworkOpacity = useSharedValue(1);
+    //
+    // useEffect(() => {
+    //     // fade OUT old image completely
+    //     artworkOpacity.value = withTiming(0.5, { duration: 150 }, () => {
+    //         // after fade-out completes → fade new image IN
+    //         artworkOpacity.value = withTiming(1, { duration: 250 });
+    //     });
+    // }, [audioState.coverPath]);
+    //
+    // const artworkOpacityStyle = useAnimatedStyle(() => {
+    //     return {
+    //         opacity: artworkOpacity.value,
+    //     };
+    // });
 
     // ----------------------------------------------------
     // RENDER
@@ -341,7 +341,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         <View style={[styles.headerContainer, { paddingTop:insets.top }]}>
                             <TouchableOpacity
                                 onPress={() => {
-
                                     runOnJS(onBack)();
                                 }}
                                 style={styles.headerBackButton}>
@@ -436,11 +435,11 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
             <SlideWindow style={styles.chaptersOverlayRoot}
                          open={showChapters}
-                         side={"left"}
-                         width={"75%"}
+                         side={"bottom"}
+                         height={"60%"}
                          onClose={() => setShowChapters(false)}>
 
-                <View style={[styles.chaptersSheet, {paddingTop: insets.top}]}>
+                <View style={[styles.chaptersSheet, {}]}>
                     <View style={styles.chaptersHeader}>
                         <View style={styles.chaptersHeaderLeft}>
                             <Text style={styles.chaptersTitle}>{audioState.name}</Text>
@@ -454,10 +453,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView
-                        style={styles.chaptersList}
-                        contentContainerStyle={styles.chaptersListContent}
-                    >
+                    <View style={[styles.chaptersList, styles.chaptersListContent]}>
                         {Array.from({length: totalSegments}).map((_, i) => {
                             let dynDuration = 0;
 
@@ -511,7 +507,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 </TouchableOpacity>
                             );
                         })}
-                    </ScrollView>
+                    </View>
                 </View>
             </SlideWindow>
         </>
@@ -550,15 +546,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     nowPlayingLabel: {
-        fontSize: 20,
-        textTransform: 'uppercase',
+        fontSize: 14,
+        textTransform: 'capitalize',
         color: '#f97316',
-        letterSpacing: 1.5,
         fontWeight: '800',
     },
     trackTitle: {
         marginTop: 2,
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: '700',
         color: '#e5e7eb',
     },
@@ -613,10 +608,9 @@ const styles = StyleSheet.create({
     },
     cueContainerActive: {},
     cueText: {
-        fontSize: 20,
-        lineHeight: 28,
-        textAlign: 'center',
-        fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 20,
+        textAlign: 'left',
     },
     cueTextActive: {
         color: '#f97316',
@@ -634,8 +628,6 @@ const styles = StyleSheet.create({
         color: '#6b7280',
     },
     controlsContainer: {
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: 'rgba(255,255,255,0.1)',
         paddingTop: 8,
         paddingHorizontal: 8,
         paddingBottom: 4
@@ -682,13 +674,13 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     chaptersOverlayRoot: {
-        ...StyleSheet.absoluteFillObject,
+        // ...StyleSheet.absoluteFillObject,
         justifyContent: 'flex-start',
     },
     chaptersSheet: {
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingTop: 8
+        paddingTop: 8,
     },
     chaptersHeader: {
         flexDirection: 'row',
@@ -719,7 +711,7 @@ const styles = StyleSheet.create({
         maxHeight: SCREEN_HEIGHT * 0.4,
     },
     chaptersListContent: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 5,
         paddingVertical: 8,
     },
     chapterItem: {
@@ -727,7 +719,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 12,
+        // borderRadius: 12,
         marginBottom: 6,
         backgroundColor: 'rgba(255,255,255,0.05)',
     },

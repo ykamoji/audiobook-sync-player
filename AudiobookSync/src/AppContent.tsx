@@ -66,12 +66,6 @@ export const setupPlayer = async () => {
 type ViewName = "setup" | "library" | "albums";
 type PlayerMode = "mini" | "full";
 
-const getFileSize = async (path: string): Promise<number> => {
-    const cleanPath = decodeURI(path.replace("file://", ""));
-    const stat = await RNFS.stat(cleanPath);
-    return Number(stat.size);
-};
-
 const MainContent: React.FC = () => {
     const insets = useSafeAreaInsets();
 
@@ -170,9 +164,13 @@ const MainContent: React.FC = () => {
         let targetTrack = track as Track | null;
 
         if (targetTrack !== undefined && targetTrack?.name === undefined) {
+
+            const audioSize = allTracks.find((track) => track.name === player.audioState.name)?.audioSize
+
             targetTrack = player.audioState.name ? {
                 name: player.audioState.name,
-                audioPath: player.audioState.path
+                audioPath: player.audioState.path,
+                audioSize: audioSize,
             } as Track : null
         }
 
@@ -180,12 +178,10 @@ const MainContent: React.FC = () => {
 
         const progress = progressMap[targetTrack.name];
 
-        const stats = await getFileSize(targetTrack.audioPath).then()
-
         setMetadataPanelData({
             name: targetTrack.name,
-            fileSize: stats,
-            lastModified: Date.now(),
+            fileSize: targetTrack.audioSize,
+            progress: targetTrack.name === player.audioState.name ? player.currentTime : progress.currentTime,
             duration: progress?.duration || (track ? 0 : player.duration),
             associatedPlaylists: getAssociatedPlaylists(targetTrack.name),
         });
@@ -281,7 +277,6 @@ const MainContent: React.FC = () => {
 
         return {
             opacity: Math.max(dragOpacity, forcedOpacity),
-            // transform: [{ scale: 0.9 + 0.1 * forcedOpacity }],
         };
     });
 
@@ -380,7 +375,7 @@ const MainContent: React.FC = () => {
                 onClose={() => setMetadataPanelData(null)}
             />
             {showMiniPlayer &&(
-                <Animated.View style={[miniPlayerAnimatedStyle, {  } ]}>
+                <Animated.View style={[miniPlayerAnimatedStyle, {marginBottom:-25}]}>
                     <MiniPlayer
                         onTogglePlay={player.togglePlay}
                         progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}
@@ -388,7 +383,7 @@ const MainContent: React.FC = () => {
                 </Animated.View>
                 )}
             {/* Bottom Bar */}
-            <Animated.View style={[styles.bottomBar, bottomBarStyle]}>
+            <Animated.View style={[styles.bottomBar, bottomBarStyle, {paddingBottom: insets.bottom - 15}]}>
                 <View style={styles.tabRow}>
                     <TabButton
                         label="Sync"
@@ -420,10 +415,10 @@ const TabButton: React.FC<{
     active: boolean;
     onPress: () => void;
 }> = ({ label, icon: Icon, active, onPress }) => (
-    <TouchableOpacity style={styles.tabButton} onPress={onPress}>
+    <TouchableOpacity style={styles.tabButton} onPress={onPress}  activeOpacity={0.8}>
         <View style={styles.iconRow}>
             <Icon
-                size={24}
+                size={20}
                 color={active ? "#fff" : "#888"}
                 style={{ marginRight: 6 }}
             />
@@ -431,10 +426,6 @@ const TabButton: React.FC<{
                 {label}
             </Text>
         </View>
-
-        <View
-            style={[styles.tabUnderline, active && styles.tabUnderlineActive]}
-        />
     </TouchableOpacity>
 );
 
@@ -477,14 +468,13 @@ const styles = StyleSheet.create({
     bottomBar: {
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: "#222",
-        backgroundColor: "#111",
+        backgroundColor: "#111"
     },
     tabRow: {
         flexDirection: "row",
         justifyContent: "space-around",
-        paddingTop: 20,
-        height: 80,
-        paddingBottom: 10,
+        paddingTop: 15,
+        height: 75,
     },
     tabButton: {
         alignItems: "center",
@@ -492,24 +482,15 @@ const styles = StyleSheet.create({
         height: 30,
     },
     tabLabel: {
-        fontSize: 20,
+        fontSize: 12,
         fontWeight: "600",
         color: "#777",
     },
     tabLabelActive: {
         color: "#ffffff",
     },
-    tabUnderline: {
-        marginTop: 4,
-        height: 2,
-        width: "100%",
-        backgroundColor: "transparent",
-    },
-    tabUnderlineActive: {
-        backgroundColor: "#FF8300",
-    },
     iconRow: {
-        flexDirection: "row",
+        flexDirection: "column",
         alignItems: "center",
     },
     screenContainer: {

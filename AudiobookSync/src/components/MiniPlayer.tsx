@@ -7,10 +7,8 @@ import {
     Image,
 } from 'react-native';
 
-import { PlayIcon, PauseIcon } from 'lucide-react-native';
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { PlayIcon, PauseIcon, LucidePause } from 'lucide-react-native';
 import {usePlayerContext} from "../services/PlayerContext.tsx";
-import {white} from "react-native-paper/lib/typescript/styles/themes/v2/colors";
 
 interface MiniPlayerProps {
     progress: number; // 0–100
@@ -37,6 +35,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
         <TouchableOpacity
             style={[styles.container, {backgroundColor: bgStyle }]}
             onPress={onOpen}
+            activeOpacity={1}
         >
             {/* PROGRESS BAR */}
             <View style={styles.progressTrack}>
@@ -78,9 +77,9 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
                 style={styles.playButton}
             >
                 {isPlaying ? (
-                    <PauseIcon size={24} color="#fff" />
+                    <PauseIcon size={20} color="#fff" />
                 ) : (
-                    <PlayIcon size={24} color="#fff" />
+                    <PlayIcon size={20} color="#fff" />
                 )}
             </TouchableOpacity>
         </TouchableOpacity>
@@ -103,8 +102,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cover: {
-        width: 60,
-        height: 60,
+        width: 50,
+        height: 50,
         borderRadius: 8,
         marginLeft: 5,
         marginRight: 10,
@@ -128,7 +127,7 @@ const styles = StyleSheet.create({
     },
     title: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
     subtitle: {
@@ -138,14 +137,15 @@ const styles = StyleSheet.create({
     },
     playButton: {
         padding: 8,
+        paddingHorizontal: 12,
         borderRadius: 999,
     },
     progressTrack: {
         position: 'absolute',
         left: 0,
         right: 0,
-        top: -4,
-        height: 4,
+        top: -2,
+        height: 2,
     },
     progressFill: {
         height: '100%',

@@ -1,17 +1,17 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import TrackPlayer, {
-    State,
     Event,
+    State,
     usePlaybackState,
     useProgress,
     useTrackPlayerEvents,
 } from 'react-native-track-player';
 
-import { releaseSecureAccess } from 'react-native-document-picker'
-import { usePlayerContext } from "../services/PlayerContext";
+import {releaseSecureAccess} from 'react-native-document-picker'
+import {usePlayerContext} from "../services/PlayerContext";
 
-import { Track, ProgressData } from '../utils/types';
-import { loadTrackMedia, getSegmentIndex, getSegmentBounds, findCueIndex  } from '../utils/mediaLoader';
+import {ProgressData, Track} from '../utils/types';
+import {findCueIndex, getSegmentBounds, getSegmentIndex, loadTrackMedia} from '../utils/mediaLoader';
 
 interface UsePlayerProps {
     progressMap: Record<string, ProgressData>;
@@ -43,7 +43,6 @@ export const usePlayer = ({
     const { playlist, currentTrackIndex, audioState, subtitleState, isPlaying } = state;
 
     /** Resume + history tracking */
-    const lastSaveRef = useRef(0);
     const resumeRef = useRef(0);
     const segmentHistoryRef = useRef<Record<number, number>>({});
 
@@ -76,6 +75,9 @@ export const usePlayer = ({
         if(track.name === audioState.name) {
             return;
         }
+
+        // Save current progress
+        saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
 
         segmentHistoryRef.current = {};
 
@@ -134,9 +136,7 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     useTrackPlayerEvents([Event.PlaybackProgressUpdated], () => {
         const t = position;
-        const d = duration;
-
-        if (!audioState.name || d === 0) return;
+        if (!audioState.name || duration === 0) return;
 
         /** Segment index calculation from subtitles */
         const cues = subtitleState.cues;
@@ -145,12 +145,6 @@ export const usePlayer = ({
         const segmentIndex = getSegmentIndex(cueIndex);
 
         segmentHistoryRef.current[segmentIndex] = t;
-
-        /** Save every 1 second */
-        if (Date.now() - lastSaveRef.current > 1000) {
-            saveProgress(audioState.name, t, d, segmentHistoryRef.current);
-            lastSaveRef.current = Date.now();
-        }
     });
 
     /** ─────────────────────────────────────────────
