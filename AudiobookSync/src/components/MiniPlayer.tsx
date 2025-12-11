@@ -38,14 +38,14 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
             activeOpacity={1}
         >
             {/* PROGRESS BAR */}
-            <View style={styles.progressTrack}>
+            {/*<View style={styles.progressTrack}>*/}
                 <View
                     style={[
                         styles.progressFill,
                         { width: `${Math.max(0, Math.min(progress, 100))}%` },
                     ]}
                 />
-            </View>
+            {/*</View>*/}
             {/* LEFT: cover + text */}
             <View style={styles.left}>
                 {audioState.coverPath ? (

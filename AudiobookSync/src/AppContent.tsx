@@ -2,21 +2,16 @@ import React, {useCallback, useEffect, useState} from "react";
 import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import {StatusBar, StyleSheet, Text, TouchableOpacity, View,} from "react-native";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import RNFS from "react-native-fs";
 import {pickDirectory} from "react-native-document-picker";
 import {Setup} from "./components/Setup";
 import {LibraryContainer} from "./components/LibraryContainer";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
 import Animated, {
-    interpolate,
-    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming,
 } from "react-native-reanimated";
 import {Provider as PaperProvider} from 'react-native-paper';
-import {MiniPlayer} from "./components/MiniPlayer";
 import {AppData, Track} from "./utils/types";
 import {checkLocalStorageAvailable, loadInitialNativeMetadata, savePlaylist} from "./utils/persistence";
 import {usePlaylistManager} from "./hooks/usePlaylistManager";
@@ -64,7 +59,7 @@ export const setupPlayer = async () => {
 };
 
 type ViewName = "setup" | "library" | "albums";
-type PlayerMode = "mini" | "full";
+export type PlayerMode = "mini" | "full";
 
 const MainContent: React.FC = () => {
     const insets = useSafeAreaInsets();
@@ -200,12 +195,13 @@ const MainContent: React.FC = () => {
     };
 
 
-    const miniPlayerVisible = useSharedValue(0);
+
+    // Gesture handling logic
 
     const translateY = useSharedValue(300);
 
     const handleTransition = useCallback(() => {
-        setPlayerMode("full");
+        // setPlayerMode("full");
         translateY.value = withSpring(0, {
             stiffness: 70,
             damping: 25,
@@ -213,77 +209,19 @@ const MainContent: React.FC = () => {
         });
     },[translateY.value])
 
-    const closePlayer = () => {
-        // Start fading in MiniPlayer immediately
-        miniPlayerVisible.value = withTiming(1, { duration: 150 });
-
-        // Collapse full player
-        translateY.value = withSpring(300, { damping: 20, stiffness: 180 });
-
-        // After collapse, actually change UI mode
-        runOnJS(setPlayerMode)("mini");
-    };
-
-    const sheetStyle = useAnimatedStyle(() => ({
-        transform: [
-            { translateY: translateY.value },
-        ],
-    }));
-
-    const bottomBarTranslateY = useSharedValue(0);
+    const bottomBarTranslate = useSharedValue(0);
 
     useEffect(() => {
-        if (playerMode === "full") {
-            bottomBarTranslateY.value = withSpring(120, {
-                damping: 22,
-                stiffness: 80,
-                mass: 0.7,
-            });
-        } else {
-            bottomBarTranslateY.value = withSpring(10, {
-                damping: 20,
-                stiffness: 250,
-                mass: 0.5,
-            });
-        }
+        bottomBarTranslate.value = withSpring(
+            playerMode === "mini" ? 0 : 80,  // 80px slide
+            { stiffness: 60, damping: 20 }
+        );
     }, [playerMode]);
 
-    const bottomBarStyle = useAnimatedStyle(() => ({
-        transform: [{
-            translateY: interpolate(
-                bottomBarTranslateY.value,
-                [0, 50],
-                [0, 120],
-                { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-            )
-        }],
-        opacity: interpolate(
-            bottomBarTranslateY.value,
-            [0, 30],
-            [1, 0],
-            { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-        )
+    const bottomStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: bottomBarTranslate.value }]
     }));
 
-
-    const miniPlayerAnimatedStyle = useAnimatedStyle(() => {
-        // Fade from translateY when dragging
-        const dragOpacity = interpolate(
-            translateY.value,
-            [0, 150, 300],
-            [0, 0.1, 1],
-            { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-        );
-
-        // Fade from closing gesture (fires instantly)
-        const forcedOpacity = miniPlayerVisible.value;
-
-        return {
-            opacity: Math.max(dragOpacity, forcedOpacity),
-        };
-    });
-
-    const showMiniPlayer = !!player.audioState.name
 
     return (
         <View style={styles.root}>
@@ -347,29 +285,22 @@ const MainContent: React.FC = () => {
                     </SafeAreaView>
                 </View>
             </View>
-            {playerMode === "full" && (
-                    <Animated.View
-                        style={[
-                            styles.playerOverlay,
-                            sheetStyle,
-                            { paddingTop: insets.top },
-                        ]}
-                    >
-                        <PlayerView
-                            currentTime={player.currentTime}
-                            duration={player.duration}
-                            onNext={player.next}
-                            onPrevious={player.previous}
-                            onSkipForward={player.skipForward}
-                            onSkipBackward={player.skipBackward}
-                            onBack={() => closePlayer()}
-                            onTogglePlay={player.togglePlay}
-                            onSeek={player.seek}
-                            onSubtitleClick={player.jumpToTime}
-                            onOpenMetadata={handleOpenMetadata}
-                            onSegmentChange={player.changeSegment}
-                        />
-                    </Animated.View>
+            {player.audioState.name && (
+                <PlayerView
+                    currentTime={player.currentTime}
+                    duration={player.duration}
+                    onNext={player.next}
+                    playerMode={playerMode}
+                    onPrevious={player.previous}
+                    onSkipForward={player.skipForward}
+                    onSkipBackward={player.skipBackward}
+                    onBack={setPlayerMode}
+                    onTogglePlay={player.togglePlay}
+                    onSeek={player.seek}
+                    onSubtitleClick={player.jumpToTime}
+                    onOpenMetadata={handleOpenMetadata}
+                    onSegmentChange={player.changeSegment}
+                />
             )}
 
             {/* Metadata Panel */}
@@ -377,16 +308,9 @@ const MainContent: React.FC = () => {
                 data={metadataPanelData}
                 onClose={() => setMetadataPanelData(null)}
             />
-            {/*{showMiniPlayer &&(*/}
-            {/*    <Animated.View style={[miniPlayerAnimatedStyle, {marginBottom:-25}]}>*/}
-            {/*        <MiniPlayer*/}
-            {/*            onTogglePlay={player.togglePlay}*/}
-            {/*            progress={player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}*/}
-            {/*            onOpen={handleTransition}/>*/}
-            {/*    </Animated.View>*/}
-            {/*    )}*/}
+
             {/* Bottom Bar */}
-            <Animated.View style={[styles.bottomBar, bottomBarStyle, {paddingBottom: insets.bottom - 15}]}>
+            <Animated.View style={[styles.bottomBar, bottomStyle]}>
                 <View style={styles.tabRow}>
                     <TabButton
                         label="Sync"
@@ -461,9 +385,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#000",
     },
 
-    /** Overlay player */
     playerOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        position: "relative",
         zIndex: 50,
     },
 
@@ -471,7 +394,9 @@ const styles = StyleSheet.create({
     bottomBar: {
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: "#222",
-        backgroundColor: "#111"
+        backgroundColor: "#111",
+        position:'relative',
+        zIndex:100
     },
     tabRow: {
         flexDirection: "row",

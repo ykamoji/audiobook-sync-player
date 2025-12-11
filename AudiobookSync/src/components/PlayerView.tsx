@@ -11,31 +11,34 @@ import {
 import { findCueIndex } from '../utils/mediaLoader';
 import {
     Gesture,
-    GestureDetector,
+    GestureDetector, Pressable,
 } from 'react-native-gesture-handler';
 
 import Animated, {
     Easing,
     interpolate, interpolateColor,
-    runOnJS,
+    runOnJS, useAnimatedReaction,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
+    withSpring, withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Controls } from './Controls';
 import {
     XIcon,
-    ChevronDownIcon,
+    ChevronDownIcon, PauseIcon, PlayIcon,
 } from 'lucide-react-native';
 import {SlideWindow} from "./SlideWindow.tsx";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
+import {PlayerMode} from "../AppContent.tsx";
+import {miniStyles, playerStyles} from "../utils/playerStyles.ts";
 
 interface PlayerViewProps {
     currentTime: number;
     duration: number;
     onSegmentChange: (index: number) => void;
-    onBack: () => void;
+    playerMode: PlayerMode;
+    onBack: (state:PlayerMode) => void;
     onTogglePlay: () => void;
     onSeek: (percentage: number) => void;
     onSubtitleClick: (time: number) => void;
@@ -55,6 +58,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                                           currentTime,
                                                           duration,
                                                           onSegmentChange,
+                                                          playerMode,
                                                           onBack,
                                                           onTogglePlay,
                                                           onSeek,
@@ -90,12 +94,15 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     const scrollAtTop = useRef(true);
     const cueRefs = useRef<Record<string, View | null>>({});
 
+    const currentProgress = duration > 0 ? (currentTime / duration) * 100 : 0
+
     // ----- REANIMATED SHARED VALUES -----
     const translateY = useSharedValue(0);
     const progress = useSharedValue(0);
+    const colorScheme = useSharedValue(audioState.colorScheme);
+    const fullImageProgress = useSharedValue(0);
+    const expandedOnce = useSharedValue(false);
 
-
-    const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom;
 
     const currentCueIndex = findCueIndex(subtitleState.cues, currentTime)
 
@@ -162,38 +169,77 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+
+    const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
+
+    const gestureStartY = useSharedValue(0);
+
     // ----- APPLE-MUSIC-STYLE DRAG -----
     const dragGesture = Gesture.Pan()
+        .onStart(() => {
+            // capture current sheet position when gesture starts
+            gestureStartY.value = translateY.value;
+        })
         .onUpdate((e) => {
-            if (e.translationY > 0 && scrollAtTop.current) {
-                translateY.value = e.translationY;
-                progress.value = Math.min(1, translateY.value / miniOffset);
-            }
+            if (!scrollAtTop.current) return;
+
+            // combine the gesture translation with the starting sheet position
+            const rawY = gestureStartY.value + e.translationY;
+
+            // clamp actual visual sheet position between full (0) and miniOffset
+            translateY.value = Math.min(Math.max(rawY, 0), miniOffset);
+
+            // use unclamped rawY for progress so artwork morph still triggers properly
+            const effectiveProgress = Math.min(Math.max(rawY / miniOffset, 0), 1);
+
+            progress.value = effectiveProgress;
         })
         .onEnd((e) => {
-            const shouldClose = e.translationY > 120 || e.velocityY > 600;
+            const currentY = translateY.value;
 
-            if (shouldClose) {
-                // animate off-screen
-                translateY.value = withSpring(
-                    SCREEN_HEIGHT,
-                    {
-                        damping: 20,
-                        stiffness: 120,
-                        mass: 1.1,
-                        overshootClamping: true,
-                    },
-                    () => {
-                        runOnJS(onBack)();
-                    }
-                );
-            } else {
-                // snap back to full
-                translateY.value = withSpring(0, {
-                    damping: 14,
-                    stiffness: 140,
-                });
+            // How much user moved upward or downward relative to starting
+            const dragUpAmount = gestureStartY.value - currentY; // positive when dragging UP
+            const dragDownAmount = currentY - gestureStartY.value;
+
+            const flickUp = e.velocityY < -600;
+            const flickDown = e.velocityY > 600;
+
+            let target = 0;
+
+            // MINI → FULL (drag up)
+            if (dragUpAmount > 30 || flickUp) {
+                target = 0;
             }
+            // FULL → MINI (drag down)
+            else if (dragDownAmount > 120 || flickDown) {
+                target = miniOffset;
+            }
+            // If neither strong enough → go to nearest
+            else {
+                target = currentY < miniOffset / 2 ? 0 : miniOffset;
+            }
+
+            if (target === miniOffset) {
+                // Going into MINI mode → collapse the fullscreen artwork
+                fullImageProgress.value = 0;
+                expandedOnce.value = false;
+            }
+
+            translateY.value = withSpring(
+                target,
+                target === 0
+                    ? { stiffness: 38, damping: 16, mass: 1.25 }  // smooth upward slide
+                    : { stiffness: 70, damping: 25, mass: 1.1 }   // snappy collapse
+            );
+
+            progress.value = withSpring(target === 0 ? 0 : 1, {
+                stiffness: 38,
+                damping: 16,
+                mass: 1,
+            });
+
+            runOnJS(onBack)(target === 0 ? "full" : "mini");
+
         });
 
     // ----- ANIMATED STYLES -----
@@ -203,11 +249,11 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         };
     });
 
-    // Artwork morph (scale + move like Apple Music)
+    // Artwork morph (scale + transition)
     const artworkStyle = useAnimatedStyle(() => {
         const shrinkProgress = interpolate(
             progress.value,
-            [0.7, 0.88],
+            [0.60, 0.97],
             [0, 1],
             {
                 extrapolateLeft: "clamp",
@@ -215,9 +261,22 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             }
         );
 
-        const fastShrink = Easing.in(Easing.linear)(shrinkProgress);
+        // @ts-ignore
+        const fastShrink = interpolate(
+            shrinkProgress,
+            [0, 1],
+            [0, 1],
+            {  // @ts-ignore
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
+        );
 
-        const scale = interpolate(fastShrink, [0, 1], [1, 0.45], {
+        const scale = interpolate(
+            fastShrink,
+            [0, 1],
+            [1, 0.16], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
         });
@@ -225,7 +284,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         const translateX = interpolate(
             fastShrink,
             [0, 1],
-            [0, -SCREEN_WIDTH * 0.25], {
+            [0, -SCREEN_WIDTH * 0.39], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
         });
@@ -233,7 +292,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         const translateY = interpolate(
             fastShrink,
             [0, 1],
-            [0, -SCREEN_HEIGHT * 0.16],
+            [0, -SCREEN_HEIGHT * 0.185],
             {
                 extrapolateLeft: "clamp",
                 extrapolateRight: "clamp",
@@ -245,12 +304,18 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         };
     });
 
-    // Main header/subtitle/controls fade out as it collapses
+
+    useEffect(() => {
+        colorScheme.value = audioState.colorScheme;
+    }, [audioState.colorScheme]);
+
+
+    // Main header/subtitle/controls fade in theme color as it collapses
     const bgStyle = useAnimatedStyle(() => {
         // Same shrink math you already trust
         const shrinkProgress = interpolate(
             progress.value,
-            [0.7, 0.88],
+            [0.60, 0.97],
             [0, 1],
             {
                 extrapolateLeft: "clamp",
@@ -258,43 +323,163 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             }
         );
 
-        const fastShrink = Easing.in(Easing.linear)(shrinkProgress);
 
-        // Fade VERY near the end
-        const fade = interpolate(
+        const fastShrink = interpolate(
+            shrinkProgress,
+            [0, 1],
+            [0, 1],
+            {  // @ts-ignore
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1), // symmetric ease-in-out
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+            }
+        );
+
+        const bgColor = interpolateColor(
             fastShrink,
-            [0.95, 1], // last 5%
-            [0, 1],
-            {
-                extrapolateLeft: "clamp",
-                extrapolateRight: "clamp",
-            }
-        );
+            [0.8, 1],
+            ["rgb(0,0,0)", `rgba(${colorScheme.value},0.65)`],
+        )
 
         return {
-            backgroundColor: interpolateColor(
-                fade,
-                [0, 1],
-                ["rgb(0,0,0)", `rgb(${audioState.colorScheme})`]
-            ),
+           backgroundColor: bgColor,
         };
     });
 
-    // const artworkOpacity = useSharedValue(1);
-    //
-    // useEffect(() => {
-    //     // fade OUT old image completely
-    //     artworkOpacity.value = withTiming(0.5, { duration: 150 }, () => {
-    //         // after fade-out completes → fade new image IN
-    //         artworkOpacity.value = withTiming(1, { duration: 250 });
-    //     });
-    // }, [audioState.coverPath]);
-    //
-    // const artworkOpacityStyle = useAnimatedStyle(() => {
-    //     return {
-    //         opacity: artworkOpacity.value,
-    //     };
-    // });
+    const useFadeWithProgress = (progress:any, config = { start: 0, end: 1 }) => {
+        return useAnimatedStyle(() => {
+            const opacity = interpolate(
+                progress.value,
+                [config.start, config.end],
+                [1, 0],
+                {
+                    extrapolateLeft: "clamp",
+                    extrapolateRight: "clamp"
+                }
+            );
+
+            return { opacity };
+        });
+    };
+
+    const useSlideRight = (progress: any, x = 80, y = 80) => {
+        return useAnimatedStyle(() => {
+            const translateX = interpolate(
+                progress.value,
+                [0.90, 1.0],
+                [0, x],
+                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+            );
+
+            const translateY = interpolate(
+                progress.value,
+                [0.90, 1.0],
+                [0, y],
+                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+            );
+
+            return {
+                transform: [{ translateX }, { translateY }]
+            };
+        });
+    };
+
+    const progressPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0})
+
+    const headerPlayerMode = useFadeWithProgress(progress)
+
+    const trackNamePosPlayerMode = useSlideRight(progress, 25, -60)
+
+    const trackNameColorPlayerMode = useAnimatedStyle(() => {
+        return {
+            color: interpolateColor(
+                progress.value,
+                [0, 1],
+                ["#e5e7eb", "#000"]
+            )
+        };
+    });
+
+    const controlsPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.9})
+
+
+
+    const toggleFullImage = () => {
+        fullImageProgress.value = withTiming(
+            fullImageProgress.value === 0 ? 1 : 0,
+            {
+                duration: 450,
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1), // perfect “ease-in-out”
+            }
+        );
+
+        if(expandedOnce.value){
+            expandedOnce.value = false;
+        }
+        else{
+            expandedOnce.value = true;
+        }
+
+    };
+
+
+    const animatedWrapperStyle = useAnimatedStyle(() => {
+        const fullHeight = SCREEN_HEIGHT;
+        const portraitWidth = fullHeight *  9 / 16;
+
+        const height = interpolate(
+            fullImageProgress.value,
+            [0, 1],
+            [SCREEN_WIDTH, fullHeight]       // square → full height
+        );
+
+        const width = interpolate(
+            fullImageProgress.value,
+            [0, 1],
+            [SCREEN_WIDTH, portraitWidth]    // square → portrait width
+        );
+
+        return {
+            width,
+            height,
+            alignSelf: "center", // centers when width shrinks
+        };
+    });
+
+    const animatedImageStyle = useAnimatedStyle(() => {
+        return {
+            width: "100%",
+            height: "100%",
+            // resizeMode: "cover",
+        };
+    });
+
+    const scrollHiddenStyle = useAnimatedStyle(() => {
+
+        if (!expandedOnce.value) {
+            return { opacity: 1, transform: [{ translateY: 0 }] };
+        }
+
+        const translateY = interpolate(
+            fullImageProgress.value,
+            [0.97, 1],
+            [0, SCREEN_HEIGHT]  // slide fully offscreen
+        );
+
+        const opacity = interpolate(
+            fullImageProgress.value,
+            [0, 1],      // 0 = square mode, 1 = full image
+            [1, 0],      // fade out
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+
+        return {
+            opacity,
+            transform: [{ translateY }],
+        };
+    });
+
 
     // ----------------------------------------------------
     // RENDER
@@ -304,29 +489,50 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             <GestureDetector gesture={dragGesture}>
                 <Animated.View
                     style={[
-                        styles.root,
+                        playerStyles.root,
                         containerStyle,
-                        {
-                            // paddingTop: insets.top,
-                            // paddingBottom: insets.bottom,
-                        }
                     ]}
                     pointerEvents={showChapters ? "none" : "auto"}
                 >
-                    <Animated.View style={[]} pointerEvents={showChapters ? "none" : "auto"}>
+                    <Animated.View style={[miniStyles.progressTrack, progressPlayerMode]}>
+                        <View
+                            style={[
+                                miniStyles.progressFill,
+                                {width: `${Math.max(0, Math.min(currentProgress, 100))}%`},
+                            ]}
+                        />
+                    </Animated.View>
+                    <View pointerEvents={showChapters ? "none" : "auto"}>
                         {/* COVER ART */}
-                        <Animated.View style={[{overflow:"hidden"}, bgStyle]}>
-                            <Animated.View style={[styles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
+                        <Animated.View style={[[], bgStyle]}>
+                            <Animated.View style={[playerStyles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
                                 {audioState.coverPath ? (
-                                    <View style={styles.coverWrapper}>
+                                    <>
+                                    <Pressable
+                                        onPress={() => toggleFullImage()}
+                                        style={[
+                                            playerStyles.coverWrapper,
+                                            // fullImage && {
+                                            //     aspectRatio: 9/16,
+                                            //     height:'100%',
+                                            // }
+                                        ]}
+                                    >
+                                        <Animated.View style={animatedWrapperStyle}>
                                         <Animated.Image
                                             source={{ uri: audioState.coverPath }}
-                                            style={styles.coverImage}
+                                            style={[
+                                                playerStyles.coverImage,
+                                                // fullImage && {}
+                                                animatedImageStyle
+                                            ]}
                                         />
-                                    </View>
+                                        </Animated.View>
+                                    </Pressable>
+                                    </>
                                 ) : (
-                                    <View style={styles.coverPlaceholder}>
-                                        <Text style={styles.coverPlaceholderText}>
+                                    <View style={playerStyles.coverPlaceholder}>
+                                        <Text style={playerStyles.coverPlaceholderText}>
                                             {audioState.name.substring(0, 2).toUpperCase()}
                                         </Text>
                                     </View>
@@ -335,34 +541,64 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         </Animated.View>
 
                         {/* Header */}
-                        <View style={[styles.headerContainer, { paddingTop:insets.top }]}>
-                            <TouchableOpacity
-                                onPress={() => {
-                                    runOnJS(onBack)();
-                                }}
-                                style={styles.headerBackButton}>
-                                <ChevronDownIcon stroke={"#fff"} />
-                            </TouchableOpacity>
+                        <View
+                            pointerEvents={playerMode === "full" ? "none" : "auto"}
+                            style={[playerStyles.headerContainer, { paddingTop:insets.top }]}
+                        >
+                            <Animated.View style={headerPlayerMode}>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        // runOnJS(onBack)('mini');
+                                    }}
+                                    style={playerStyles.headerBackButton}>
+                                    <ChevronDownIcon stroke={"#fff"} />
+                                </TouchableOpacity>
+                            </Animated.View>
 
-                            <View style={styles.headerTextContainer}>
-                                <Text style={styles.nowPlayingLabel}>Now Playing</Text>
-                                <Text style={styles.trackTitle} numberOfLines={2}>
-                                    {audioState.name}
-                                </Text>
+                            <View style={playerStyles.headerTextContainer}>
+                                <Animated.View style={headerPlayerMode}>
+                                    <Text style={playerStyles.nowPlayingLabel}>Now Playing</Text>
+                                </Animated.View>
+                                <Animated.View style={trackNamePosPlayerMode}>
+                                    <Animated.Text style={[playerStyles.trackTitle, trackNameColorPlayerMode ]} numberOfLines={2}>
+                                        {audioState.name}
+                                    </Animated.Text>
+                                </Animated.View>
+                                <Animated.View
+                                    style={[miniStyles.controlsContainer, controlsPlayerMode]}>
+                                    <TouchableOpacity
+                                        onPress={(e) => {
+                                            if(playerMode === 'mini') {
+                                                e.stopPropagation();
+                                                onTogglePlay();
+                                            }
+                                        }}
+                                        activeOpacity={0.8}
+                                        style={miniStyles.playButton}
+                                    >
+                                        {isPlaying ? (
+                                            <PauseIcon size={30} color="#fff"/>
+                                        ) : (
+                                            <PlayIcon size={30} color="#fff"/>
+                                        )}
+                                    </TouchableOpacity>
+                                </Animated.View>
                             </View>
                         </View>
 
                         {/* SUBTITLES */}
-                        <View
-                            style={styles.subtitlesContainer}
+                        <Animated.View
+                            style={[playerStyles.subtitlesContainer,
+                                scrollHiddenStyle
+                            ]}
                             onLayout={onSubtitleContainerLayout}
                         >
                             <ScrollView
                                 ref={scrollRef}
                                 key={audioState.name}
-                                style={styles.subtitlesScroll}
-                                pointerEvents={showChapters ? 'none' : 'auto'}
-                                contentContainerStyle={styles.subtitlesContent}
+                                style={playerStyles.subtitlesScroll}
+                                pointerEvents={showChapters  ? 'none' : 'auto'}
+                                contentContainerStyle={playerStyles.subtitlesContent}
                                 scrollEventThrottle={16}
                                 onScroll={({ nativeEvent }) => {
                                     if (showChapters) return;
@@ -377,17 +613,17 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                             key={cue.id}
                                             ref={(ref) => { cueRefs.current[cue.id] = ref }}
                                             style={[
-                                                styles.cueContainer,
-                                                isActive && styles.cueContainerActive,
+                                                playerStyles.cueContainer,
+                                                isActive && playerStyles.cueContainerActive,
                                             ]}
                                         >
                                             <Text
                                                 onPress={() => onSubtitleClick(cue.start)}
                                                 style={[
-                                                    styles.cueText,
+                                                    playerStyles.cueText,
                                                     isActive
-                                                        ? styles.cueTextActive
-                                                        : styles.cueTextInactive,
+                                                        ? playerStyles.cueTextActive
+                                                        : playerStyles.cueTextInactive,
                                                 ]}
                                             >
                                                 {cue.text}
@@ -397,22 +633,22 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 })}
 
                                 {displayedCues.length === 0 && (
-                                    <View style={styles.noTextContainer}>
-                                        <Text style={styles.noText}>
+                                    <View style={playerStyles.noTextContainer}>
+                                        <Text style={playerStyles.noText}>
                                             No text content for this section.
                                         </Text>
                                     </View>
                                 )}
                             </ScrollView>
-                        </View>
+                        </Animated.View>
 
                         {/* CONTROLS */}
-                        <View style={styles.controlsContainer}>
+                        <View style={playerStyles.controlsContainer}>
                             <Controls
                                 isPlaying={isPlaying}
                                 currentTime={currentTime}
                                 duration={duration}
-                                progress={duration > 0 ? (currentTime / duration) * 100 : 0}
+                                progress={currentProgress}
                                 onPlayPause={onTogglePlay}
                                 onSeek={onSeek}
                                 onNext={onNext}
@@ -426,31 +662,31 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 hasPrevious={hasPrevious}
                             />
                         </View>
-                    </Animated.View>
+                    </View>
                 </Animated.View>
             </GestureDetector>
 
-            <SlideWindow style={styles.chaptersOverlayRoot}
+            <SlideWindow style={playerStyles.chaptersOverlayRoot}
                          open={showChapters}
                          side={"bottom"}
                          height={"60%"}
                          onClose={() => setShowChapters(false)}>
 
-                <View style={[styles.chaptersSheet, {}]}>
-                    <View style={styles.chaptersHeader}>
-                        <View style={styles.chaptersHeaderLeft}>
-                            <Text style={styles.chaptersTitle}>{audioState.name}</Text>
+                <View style={[playerStyles.chaptersSheet, {}]}>
+                    <View style={playerStyles.chaptersHeader}>
+                        <View style={playerStyles.chaptersHeaderLeft}>
+                            <Text style={playerStyles.chaptersTitle}>{audioState.name}</Text>
                         </View>
 
                         <TouchableOpacity
                             onPress={() => setShowChapters(false)}
-                            style={styles.chaptersCloseButton}
+                            style={playerStyles.chaptersCloseButton}
                         >
                             <XIcon size={24} color="#9ca3af" />
                         </TouchableOpacity>
                     </View>
 
-                    <View style={[styles.chaptersList, styles.chaptersListContent]}>
+                    <View style={[playerStyles.chaptersList, playerStyles.chaptersListContent]}>
                         {Array.from({length: totalSegments}).map((_, i) => {
                             let dynDuration = 0;
 
@@ -476,8 +712,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 <TouchableOpacity
                                     key={i}
                                     style={[
-                                        styles.chapterItem,
-                                        isActive && styles.chapterItemActive,
+                                        playerStyles.chapterItem,
+                                        isActive && playerStyles.chapterItemActive,
                                     ]}
                                     onPress={() => {
                                         onSegmentChange(i);
@@ -486,8 +722,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 >
                                     <Text
                                         style={[
-                                            styles.chapterIndex,
-                                            isActive && styles.chapterIndexActive,
+                                            playerStyles.chapterIndex,
+                                            isActive && playerStyles.chapterIndexActive,
                                         ]}
                                     >
                                         1.{i + 1}
@@ -495,8 +731,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
                                     <Text
                                         style={[
-                                            styles.chapterDuration,
-                                            isActive && styles.chapterDurationActive,
+                                            playerStyles.chapterDuration,
+                                            isActive && playerStyles.chapterDurationActive,
                                         ]}
                                     >
                                         {formatTime(dynDuration)}
@@ -510,233 +746,3 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         </>
     );
 };
-
-// ------------------ STYLES ------------------
-
-const styles = StyleSheet.create({
-    root: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'black',
-        flexDirection: 'column',
-    },
-    headerContainer: {
-        position: "absolute",
-        top: 0,
-        left: 15,
-        right: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerBackButton: {
-        padding: 8,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 999,
-    },
-    headerTextContainer: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    nowPlayingLabel: {
-        fontSize: 14,
-        textTransform: 'capitalize',
-        color: '#f97316',
-        fontWeight: '800',
-    },
-    trackTitle: {
-        marginTop: 2,
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#e5e7eb',
-    },
-    coverContainer: {
-        marginTop: 0,
-        width: '100%',
-        overflow: 'hidden',
-        alignItems: 'center',
-        justifyContent: 'center',
-        // height: SCREEN_HEIGHT * 0.4,
-        minHeight: 0,
-    },
-    coverWrapper: {
-        width: '99%',
-        aspectRatio: 1,
-        // borderRadius: 1,
-        overflow: 'hidden',
-    },
-    coverImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 0,
-    },
-    coverPlaceholder: {
-        width: '100%',
-        aspectRatio: 1,
-        borderRadius: 12,
-        backgroundColor: '#1f2933',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    coverPlaceholderText: {
-        fontSize: 36,
-        fontWeight: '700',
-        color: '#6b7280',
-    },
-    subtitlesContainer: {
-        flex: 1,
-        marginTop: 8,
-        minHeight: 300,
-    },
-    subtitlesScroll: {
-        flex: 1
-    },
-    subtitlesContent: {
-        paddingHorizontal: 24,
-        paddingTop: 16,
-    },
-    cueContainer: {
-        marginBottom: 18,
-    },
-    cueContainerActive: {},
-    cueText: {
-        fontSize: 17,
-        lineHeight: 20,
-        textAlign: 'left',
-        letterSpacing: 0.5,
-        fontFamily: 'CabinCondensed-Medium',
-    },
-    cueTextActive: {
-        color: '#f97316',
-        fontFamily: 'CabinCondensed-Semibold',
-    },
-    cueTextInactive: {
-        color: '#9ca3af',
-    },
-    noTextContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 20,
-    },
-    noText: {
-        color: '#6b7280',
-    },
-    controlsContainer: {
-        paddingTop: 8,
-        paddingHorizontal: 8,
-        paddingBottom: 4
-    },
-    miniLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    miniCover: {
-        width: 52,
-        height: 52,
-        borderRadius: 8,
-        marginRight: 10,
-    },
-    miniCoverPlaceholder: {
-        width: 52,
-        height: 52,
-        borderRadius: 8,
-        backgroundColor: '#222',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 10,
-    },
-    miniCoverText: {
-        color: '#aaa',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    miniTextWrapper: {
-        flex: 1,
-    },
-    miniTitle: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    miniSubtitle: {
-        color: '#aaa',
-        fontSize: 12,
-        marginTop: 2,
-    },
-    miniPlayButton: {
-        padding: 8,
-    },
-    chaptersOverlayRoot: {
-        // ...StyleSheet.absoluteFillObject,
-        justifyContent: 'flex-start',
-    },
-    chaptersSheet: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingTop: 8,
-    },
-    chaptersHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.1)',
-    },
-    chaptersHeaderLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        flex: 1,
-    },
-    chaptersTitle: {
-        marginLeft: 8,
-        fontSize: 20,
-        fontWeight: '700',
-        color: 'white',
-    },
-    chaptersCloseButton: {
-        padding: 8,
-        borderRadius: 999,
-        backgroundColor: 'rgba(255,255,255,0.08)',
-    },
-    chaptersList: {
-        maxHeight: SCREEN_HEIGHT * 0.4,
-    },
-    chaptersListContent: {
-        paddingHorizontal: 5,
-        paddingVertical: 8,
-    },
-    chapterItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        // borderRadius: 12,
-        marginBottom: 6,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-    },
-    chapterItemActive: {
-        backgroundColor: '#f97316',
-    },
-    chapterIndex: {
-        fontSize: 20,
-        color: '#e5e7eb',
-        fontWeight: '600',
-    },
-    chapterIndexActive: {
-        color: '#111827',
-    },
-    chapterDuration: {
-        fontSize: 16,
-        color: '#6b7280',
-    },
-    chapterDurationActive: {
-        color: '#111827',
-    },
-});
