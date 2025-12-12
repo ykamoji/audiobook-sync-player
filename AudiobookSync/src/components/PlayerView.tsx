@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     ScrollView,
     TouchableOpacity,
     LayoutChangeEvent,
@@ -17,7 +16,7 @@ import {
 import Animated, {
     Easing,
     interpolate, interpolateColor,
-    runOnJS, useAnimatedReaction,
+    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSpring, withTiming,
@@ -219,12 +218,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 target = currentY < miniOffset / 2 ? 0 : miniOffset;
             }
 
-            if (target === miniOffset) {
-                // Going into MINI mode → collapse the fullscreen artwork
-                fullImageProgress.value = 0;
-                expandedOnce.value = false;
-            }
-
             translateY.value = withSpring(
                 target,
                 target === 0
@@ -237,6 +230,20 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 damping: 16,
                 mass: 1,
             });
+
+            if (target === miniOffset) {
+                // Going into MINI mode → collapse the fullscreen artwork
+                // collapse artwork smoothly
+                fullImageProgress.value = withTiming(
+                    0,
+                    { duration: 300 },
+                    (finished) => {
+                        if (finished) {
+                            expandedOnce.value = false;
+                        }
+                    }
+                );
+            }
 
             runOnJS(onBack)(target === 0 ? "full" : "mini");
 
@@ -323,7 +330,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             }
         );
 
-
         const fastShrink = interpolate(
             shrinkProgress,
             [0, 1],
@@ -337,7 +343,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
         const bgColor = interpolateColor(
             fastShrink,
-            [0.8, 1],
+            [0.60, 1],
             ["rgb(0,0,0)", `rgba(${colorScheme.value},0.65)`],
         )
 
@@ -403,7 +409,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     const controlsPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.9})
 
 
-
     const toggleFullImage = () => {
         fullImageProgress.value = withTiming(
             fullImageProgress.value === 0 ? 1 : 0,
@@ -421,7 +426,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         }
 
     };
-
 
     const animatedWrapperStyle = useAnimatedStyle(() => {
         const fullHeight = SCREEN_HEIGHT;
@@ -442,7 +446,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         return {
             width,
             height,
-            alignSelf: "center", // centers when width shrinks
+            alignSelf: "center",
         };
     });
 
@@ -450,35 +454,99 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         return {
             width: "100%",
             height: "100%",
-            // resizeMode: "cover",
         };
     });
 
+    const easing = Easing.bezierFn(0.25, 0.1, 0.25, 1)
+
     const scrollHiddenStyle = useAnimatedStyle(() => {
 
-        if (!expandedOnce.value) {
-            return { opacity: 1, transform: [{ translateY: 0 }] };
-        }
 
-        const translateY = interpolate(
-            fullImageProgress.value,
-            [0.97, 1],
-            [0, SCREEN_HEIGHT]  // slide fully offscreen
+        let easedProgress = easing(fullImageProgress.value);
+
+        let translateY = interpolate(
+            easedProgress,
+            [0, 1],
+            [0, SCREEN_HEIGHT],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp",}
         );
+
+        if (expandedOnce.value) {
+
+            translateY = interpolate(
+                easedProgress,
+                [0.1, 1],
+                [0, SCREEN_HEIGHT],
+                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+            );
+        }
 
         const opacity = interpolate(
             fullImageProgress.value,
-            [0, 1],      // 0 = square mode, 1 = full image
-            [1, 0],      // fade out
+            [0, 1],
+            [1, 0],
             { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
-
 
         return {
             opacity,
             transform: [{ translateY }],
         };
     });
+
+    const collapseToMini = () => {
+        "worklet";
+
+        fullImageProgress.value = withTiming(
+            0,
+            {
+                duration: 450,
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1), // perfect “ease-in-out”
+            },
+            () => {
+                expandedOnce.value = false;
+            }
+        );
+
+        translateY.value = withSpring(
+            miniOffset,
+            { stiffness: 70, damping: 25, mass: 1.1 }
+        );
+
+        progress.value = withSpring(1, {
+            stiffness: 70,
+            damping: 25,
+            mass: 1.1,
+        });
+
+        // notify app side
+        runOnJS(onBack)("mini");
+    };
+
+    const expandToFull = () => {
+        "worklet";
+
+        translateY.value = withSpring(
+            0,
+            { stiffness: 38, damping: 16, mass: 1.25 }
+        );
+
+        progress.value = withSpring(0, {
+            stiffness: 38,
+            damping: 16,
+            mass: 1,
+        });
+    };
+
+    // const tapGesture = Gesture.Tap()
+    //     .maxDuration(250)
+    //     .onEnd(((_evt, success) => {
+    //         // if (!success) return;
+    //         // // IMPORTANT: runOnJS so UI thread doesn’t block
+    //         if (progress.value === 0) {
+    //             expandToFull()
+    //         }
+    //     }));
 
 
     // ----------------------------------------------------
@@ -539,16 +607,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                 )}
                             </Animated.View>
                         </Animated.View>
-
                         {/* Header */}
-                        <View
-                            pointerEvents={playerMode === "full" ? "none" : "auto"}
-                            style={[playerStyles.headerContainer, { paddingTop:insets.top }]}
-                        >
+                        <View style={[playerStyles.headerContainer, { paddingTop:insets.top }]}>
                             <Animated.View style={headerPlayerMode}>
                                 <TouchableOpacity
                                     onPress={() => {
-                                        // runOnJS(onBack)('mini');
+                                        runOnJS(collapseToMini)();
                                     }}
                                     style={playerStyles.headerBackButton}>
                                     <ChevronDownIcon stroke={"#fff"} />
