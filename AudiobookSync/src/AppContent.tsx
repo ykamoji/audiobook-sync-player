@@ -25,6 +25,7 @@ import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
 import {PlayerView} from "./components/PlayerView.tsx";
 import { PlayerProvider } from "./services/PlayerProvider.tsx";
+import {usePlayerContext} from "./services/PlayerContext.tsx";
 
 export const setupPlayer = async () => {
 
@@ -62,7 +63,7 @@ type ViewName = "setup" | "library" | "albums";
 export type PlayerMode = "mini" | "full";
 
 const MainContent: React.FC = () => {
-    const insets = useSafeAreaInsets();
+
 
     // --- Global View State ---
     const [view, setView] = useState<ViewName>("setup");
@@ -75,7 +76,7 @@ const MainContent: React.FC = () => {
     // --- Custom Hooks ---
     const playlistManager = usePlaylistManager(isStorageLoaded);
 
-    const {progressMap, initProgress, saveProgress, reloadProgress} = useProgressManager();
+    const {progressMap, clearProgress, initProgress, saveProgress, reloadProgress} = useProgressManager();
 
     const {allTracks, setAllTracks, isLoading, handleDirectoryUpload} =
         useLibrary({
@@ -130,9 +131,24 @@ const MainContent: React.FC = () => {
         }
     };
 
+    const { dispatch } = usePlayerContext();
+
     const clearStorage = () => {
+        dispatch({
+            type: "LOAD_TRACK",
+            playlist: [],
+            index:0,
+            audio: {name:'', path:'', coverPath:'', coverUrl:'', colorScheme:''},
+            subtitle: {name:'', path:'', cues:[], markers:[], totalSegments:0},
+        });
+
+        dispatch({
+            type: "SET_PLAYING",
+            playing: false,
+        });
+
         playlistManager.setSavedPlaylists([]);
-        reloadProgress().then()
+        clearProgress()
         setAllTracks([])
     }
 
@@ -171,13 +187,18 @@ const MainContent: React.FC = () => {
 
         if (!targetTrack) return;
 
-        const progress = progressMap[targetTrack.name];
+        const progressData = progressMap[targetTrack.name];
+
+        let progress = 0
+        if(!!player && !!player.audioState.name && !!player.currentTime){
+            progress = targetTrack.name === player.audioState.name ? player.currentTime : progressData.currentTime
+        }
 
         setMetadataPanelData({
             name: targetTrack.name,
             fileSize: targetTrack.audioSize,
-            progress: targetTrack.name === player.audioState.name ? player.currentTime : progress.currentTime,
-            duration: progress?.duration || (track ? 0 : player.duration),
+            progress,
+            duration: progressData?.duration || (track ? 0 : player.duration),
             associatedPlaylists: getAssociatedPlaylists(targetTrack.name),
         });
     };
@@ -189,31 +210,16 @@ const MainContent: React.FC = () => {
         option?: number
     ) => {
         player.playTrack(track, index, specificPlaylist || [track]).then();
-        if(option == 2){
-            handleTransition()
+        if(option === 2){
+            setPlayerMode('full')
         }
     };
-
-
-
-    // Gesture handling logic
-
-    const translateY = useSharedValue(300);
-
-    const handleTransition = useCallback(() => {
-        // setPlayerMode("full");
-        translateY.value = withSpring(0, {
-            stiffness: 70,
-            damping: 25,
-            mass: 1.1,
-        });
-    },[translateY.value])
 
     const bottomBarTranslate = useSharedValue(0);
 
     useEffect(() => {
         bottomBarTranslate.value = withSpring(
-            playerMode === "mini" ? 0 : 80,  // 80px slide
+            playerMode === "mini" ? 0 : 70,
             { stiffness: 60, damping: 20 }
         );
     }, [playerMode]);

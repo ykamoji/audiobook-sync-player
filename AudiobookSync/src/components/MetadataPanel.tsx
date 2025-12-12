@@ -28,7 +28,7 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
             open={isOpen}
             onClose={onClose}
             side="bottom"
-            height="70%"
+            height="50%"
         >
             <View
                 style={[
@@ -70,15 +70,19 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
                         )}
 
                         {/* Duration */}
+                        {!!data.duration &&
                         <View style={styles.section}>
                             <Text style={styles.label}>Duration</Text>
                             <Text style={styles.value}>{formatDuration(data.duration)}</Text>
                         </View>
+                        }
                         {/* Progress */}
+                        {!!data.progress &&
                         <View style={styles.section}>
                             <Text style={styles.label}>Progress</Text>
                             <Text style={styles.value}>{formatProgress(data.progress)}</Text>
                         </View>
+                        }
                         {/* File size */}
                         <View style={styles.section}>
                             <Text style={styles.label}>File Size</Text>

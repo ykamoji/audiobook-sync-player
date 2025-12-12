@@ -154,8 +154,6 @@ export const scanNativePath = async (
         tracks.push(trackData)
     });
 
-    // console.log(tracks)
-
     return {
         tracks: sortTracks(tracks),
         metadata,

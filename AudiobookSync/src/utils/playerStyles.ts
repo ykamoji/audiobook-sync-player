@@ -253,6 +253,17 @@ export const miniStyles = StyleSheet.create({
         marginLeft: 5,
         marginRight: 10,
     },
+    miniOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 10,
+        right: 80,
+        height: 72,
+        zIndex: 20,
+        backgroundColor: 'transparent',
+        // borderColor:'red',
+        // borderWidth:1
+    },
     coverPlaceholder: {
         width: 46,
         height: 46,

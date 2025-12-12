@@ -101,6 +101,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     const colorScheme = useSharedValue(audioState.colorScheme);
     const fullImageProgress = useSharedValue(0);
     const expandedOnce = useSharedValue(false);
+    const playerModeMini = useSharedValue(true);
 
 
     const currentCueIndex = findCueIndex(subtitleState.cues, currentTime)
@@ -406,7 +407,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         };
     });
 
-    const controlsPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.9})
+    const controlsPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.95})
 
 
     const toggleFullImage = () => {
@@ -521,32 +522,52 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
         // notify app side
         runOnJS(onBack)("mini");
+        playerModeMini.value = true;
     };
 
-    const expandToFull = () => {
-        "worklet";
+    const tapToExpandGesture = Gesture.Tap()
+        .onEnd((_, success) => {
+            if (!success) return;
+            if (playerMode === 'mini') {
+                runOnJS(onBack)("full");
+                translateY.value = withSpring(
+                    0,
+                    { stiffness: 38, damping: 16, mass: 1.25 }
+                );
 
-        translateY.value = withSpring(
-            0,
-            { stiffness: 38, damping: 16, mass: 1.25 }
-        );
-
-        progress.value = withSpring(0, {
-            stiffness: 38,
-            damping: 16,
-            mass: 1,
+                progress.value = withSpring(0, { stiffness: 38, damping: 16, mass: 1.25 });
+            }
         });
-    };
 
-    // const tapGesture = Gesture.Tap()
-    //     .maxDuration(250)
-    //     .onEnd(((_evt, success) => {
-    //         // if (!success) return;
-    //         // // IMPORTANT: runOnJS so UI thread doesn’t block
-    //         if (progress.value === 0) {
-    //             expandToFull()
-    //         }
-    //     }));
+
+    useEffect(() => {
+
+        if (playerMode === "full") {
+            playerModeMini.value = false;
+
+            translateY.value = withSpring(
+                0,
+                { stiffness: 38, damping: 16, mass: 1.25 }
+            );
+
+            progress.value = withSpring(0, {
+                stiffness: 38,
+                damping: 16,
+                mass: 1.25,
+            });
+
+            return;
+        }
+
+
+        if (playerMode === "mini" && playerModeMini.value){
+                translateY.value = miniOffset;
+                progress.value = 1;
+                fullImageProgress.value = 0;
+                expandedOnce.value = false;
+                playerModeMini.value = false; // reset
+        }
+    }, [playerMode]);
 
 
     // ----------------------------------------------------
@@ -572,28 +593,23 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                     </Animated.View>
                     <View pointerEvents={showChapters ? "none" : "auto"}>
                         {/* COVER ART */}
+                        {playerMode === 'mini' && (
+                            <GestureDetector gesture={tapToExpandGesture}>
+                                <View style={miniStyles.miniOverlay} pointerEvents="box-only" />
+                            </GestureDetector>
+                        )}
                         <Animated.View style={[[], bgStyle]}>
                             <Animated.View style={[playerStyles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
                                 {audioState.coverPath ? (
                                     <>
                                     <Pressable
                                         onPress={() => toggleFullImage()}
-                                        style={[
-                                            playerStyles.coverWrapper,
-                                            // fullImage && {
-                                            //     aspectRatio: 9/16,
-                                            //     height:'100%',
-                                            // }
-                                        ]}
+                                        style={[playerStyles.coverWrapper,]}
                                     >
                                         <Animated.View style={animatedWrapperStyle}>
                                         <Animated.Image
                                             source={{ uri: audioState.coverPath }}
-                                            style={[
-                                                playerStyles.coverImage,
-                                                // fullImage && {}
-                                                animatedImageStyle
-                                            ]}
+                                            style={[playerStyles.coverImage, animatedImageStyle]}
                                         />
                                         </Animated.View>
                                     </Pressable>
@@ -638,8 +654,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                             }
                                         }}
                                         activeOpacity={0.8}
-                                        style={miniStyles.playButton}
-                                    >
+                                        style={[
+                                            miniStyles.playButton,
+                                            playerMode === 'full' && { opacity: 0 },
+                                        ]}>
                                         {isPlaying ? (
                                             <PauseIcon size={30} color="#fff"/>
                                         ) : (

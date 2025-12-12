@@ -59,10 +59,15 @@ export const useProgressManager = () => {
         }
     };
 
+    const clearProgress = () => {
+        setProgressMap({});
+    }
+
     return {
         progressMap,
         initProgress,
         saveProgress,
+        clearProgress,
         reloadProgress,
     };
 };

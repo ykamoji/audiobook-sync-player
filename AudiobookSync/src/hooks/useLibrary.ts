@@ -3,7 +3,6 @@ import DocumentPicker, { types } from 'react-native-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Track, AppData } from '../utils/types';
 import { scanNativePath } from '../utils/fileScanner';
-import RNFS from "react-native-fs";
 
 
 interface UseLibraryProps {
@@ -58,12 +57,6 @@ export const useLibrary = ({
                 if (resultMetadata) onMetadataLoaded(resultMetadata);
 
                 setAllTracks(resultTracks);
-
-                // // Save color map (converted to plain object)
-                // await AsyncStorage.setItem(
-                //     'colorMap',
-                //     JSON.stringify(Object.fromEntries(resultColorMap))
-                // );
 
                 if (resultTracks.length > 0) {
                     onUploadSuccess();

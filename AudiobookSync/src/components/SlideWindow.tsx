@@ -2,7 +2,7 @@ import React, { FC, ReactNode, useMemo } from "react";
 import {
     StyleSheet,
     ViewStyle,
-    useWindowDimensions, View, TouchableWithoutFeedback,
+    useWindowDimensions, TouchableWithoutFeedback,
 } from "react-native";
 import Animated, {
     useSharedValue,
@@ -12,7 +12,7 @@ import Animated, {
     runOnJS,
     Easing,
 } from "react-native-reanimated";
-import {Gesture, GestureDetector, Pressable} from "react-native-gesture-handler";
+import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 type Side = "bottom" | "right" | "left" | "auto";
 
@@ -82,7 +82,7 @@ export const SlideWindow: FC<SlideWindowProps> = ({
             return orientation === "portrait" ? "left" : "bottom";
         }
         return side;
-    }, [side, orientation]);
+    }, [side]);
 
     // Determine sliding dimension
     const sheetSize = useMemo(
@@ -101,9 +101,9 @@ export const SlideWindow: FC<SlideWindowProps> = ({
     React.useEffect(() => {
         if (open) {
             offset.value = withSpring(0, {
-                damping: 20,
-                stiffness: 120,
-                mass: 0.6,
+                damping: 16,
+                stiffness: 38,
+                mass: 1.25,
                 overshootClamping: false,
             });
 
@@ -113,13 +113,14 @@ export const SlideWindow: FC<SlideWindowProps> = ({
             });
 
         } else {
-            offset.value = withTiming(sheetSize, {
-                duration: 300,
-                easing: Easing.out(Easing.cubic),
+            offset.value = withSpring(sheetSize, {
+                damping: 20,
+                stiffness: 90,
+                mass: 1.0,
             });
 
             backdropOpacity.value = withTiming(0, {
-                duration: 200,
+                duration: 220,
             });
         }
     }, [open, sheetSize]);
@@ -160,12 +161,17 @@ export const SlideWindow: FC<SlideWindowProps> = ({
             const shouldClose = flick || pulledEnough;
 
             if (shouldClose) {
-                offset.value = withTiming(sheetSize, { duration: 200 }, () => {
-                    runOnJS(onClose)();
-                });
+                offset.value = withSpring(
+                    sheetSize,
+                    { stiffness: 120, damping: 22, mass: 1 },
+                    () => runOnJS(onClose)()
+                );
                 backdropOpacity.value = withTiming(0, { duration: 150 });
             } else {
-                offset.value = withSpring(0);
+                offset.value = withSpring(0, {
+                    stiffness: 140,
+                    damping: 18,
+                });
                 backdropOpacity.value = withTiming(BACKDROP_MAX_OPACITY, { duration: 180 });
             }
         });
