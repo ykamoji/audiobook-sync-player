@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { ProgressData } from '../utils/types';
+import {ProgressData, Track} from '../utils/types';
+import {useStaticData} from "./useStaticData.tsx";
 
 export const useProgressManager = () => {
     const [progressMap, setProgressMap] = useState<Record<string, ProgressData>>({});
+
+    const { getDuration } = useStaticData()
 
     // Save progress to AsyncStorage
     const persistProgress = async (map: Record<string, ProgressData>) => {
@@ -15,26 +18,49 @@ export const useProgressManager = () => {
         }
     };
 
-    const initProgress = async (data: Record<string, ProgressData>) => {
+    const initProgress = async (data: Record<string, ProgressData>, tracks:Track[]) => {
 
-        setProgressMap((prev) => {
-            const newMap = {...prev, ...data};
-            persistProgress(newMap);
-            return newMap;
-        });
+        if(Object.entries(data).length > 0) {
+            persistProgress(data).then();
+            setProgressMap(data);
+        }
+        else {
+            initializeEmptyProgress(tracks);
+        }
+
+    }
+
+    const initializeEmptyProgress = (tracks:Track[]) => {
+
+        const emptyProgress: Record<string, ProgressData> = {};
+
+        for (const track of tracks) {
+            emptyProgress[track.name] = {
+                currentTime: 0,
+                percentage: 0,
+                updatedAt: Date.now(),
+                segmentHistory: {}
+            };
+        }
+
+        setProgressMap(emptyProgress);
+        persistProgress(emptyProgress).then();
     }
 
     const saveProgress = (
         trackName: string,
         currentTime: number,
-        duration: number,
         segmentHistory: Record<number, number>
     ) => {
-        if (!trackName || duration <= 0) return;
+
+        const {duration} = getDuration(trackName);
+
+        // console.log('inside useProgressManager ',trackName, currentTime, segmentHistory);
+
+        if (!trackName) return;
 
         const newEntry: ProgressData = {
             currentTime,
-            duration,
             percentage: (currentTime / duration) * 100,
             updatedAt: Date.now(),
             segmentHistory: { ...segmentHistory }
@@ -48,11 +74,14 @@ export const useProgressManager = () => {
     };
 
     // Load from AsyncStorage
-    const reloadProgress = async () => {
+    const reloadProgress = async (tracks:Track[]) => {
         try {
             const stored = await AsyncStorage.getItem('audiobook_progress');
-            if (stored) {
+            if (stored && Object.entries(stored).length > 0) {
                 setProgressMap(JSON.parse(stored));
+            }
+            else{
+                initializeEmptyProgress(tracks);
             }
         } catch (e) {
             console.warn('Failed to load progress', e);

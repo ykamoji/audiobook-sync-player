@@ -10,9 +10,10 @@ export const reducer = (state: PlayerState, action: Action): PlayerState => {
                 currentTrackIndex: action.index,
                 audioState: action.audio,
                 subtitleState: action.subtitle,
+                isPlaying: action.isPlaying,
             };
         case "SET_PLAYING":
-            return { ...state, isPlaying: action.playing };
+            return { ...state, isPlaying: action.isPlaying };
         default:
             return state;
     }

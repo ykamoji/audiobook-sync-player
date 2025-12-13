@@ -1,71 +1,55 @@
-import {useCallback, useEffect, useRef} from 'react';
-import TrackPlayer, {
-    Event,
-    State,
-    usePlaybackState,
-    useProgress,
-    useTrackPlayerEvents,
-} from 'react-native-track-player';
-
+import React, {useCallback, useEffect, useRef} from 'react';
+import TrackPlayer, {Event, useTrackPlayerEvents,} from 'react-native-track-player';
 import {releaseSecureAccess} from 'react-native-document-picker'
 import {usePlayerContext} from "../services/PlayerContext";
 
 import {ProgressData, Track} from '../utils/types';
-import {findCueIndex, getSegmentBounds, getSegmentIndex, loadTrackMedia} from '../utils/mediaLoader';
+import {getSegmentIndex, loadTrackMedia} from '../utils/mediaLoader';
+import {useStaticData} from "./useStaticData.tsx";
 
 interface UsePlayerProps {
-    progressMap: Record<string, ProgressData>;
-    saveProgress: (
-        trackName: string,
-        currentTime: number,
-        duration: number,
-        segmentHistory: Record<number, number>
-    ) => void;
+    progressMapRef:  React.MutableRefObject<Record<string, ProgressData>>;
 }
 
 export const usePlayer = ({
-                              progressMap,
-                              saveProgress,
+                              progressMapRef,
                           }: UsePlayerProps) => {
-
-    /** ─────────────────────────────────────────────
-     *  TRACK PLAYER HOOKS
-     *  ───────────────────────────────────────────── */
-    const playback = usePlaybackState();
-    const { position, duration } = useProgress(250);
 
     /** ─────────────────────────────────────────────
      *  UI STATE
      *  ───────────────────────────────────────────── */
+
+    const { getDuration } = useStaticData()
 
     const { state, dispatch } = usePlayerContext();
 
     const { playlist, currentTrackIndex, audioState, subtitleState, isPlaying } = state;
 
     /** Resume + history tracking */
-    const playingRef = useRef(false);
-    const resumeRef = useRef(0);
-    const segmentHistoryRef = useRef<Record<number, number>>({});
+    const playingRef = useRef(isPlaying);
+    const durationRef = useRef<number>(0);
 
-    /** Sync RNTP → UI */
     useEffect(() => {
-        const next = playback === State.Playing;
-
-        if (next !== state.isPlaying) {
-            dispatch({
-                type: "SET_PLAYING",
-                playing: next,
-            });
-        }
-    }, [playback, state.isPlaying, dispatch]);
+        playingRef.current = isPlaying
+    }, [isPlaying]);
 
 
     /* Release access when audio path changes */
     useEffect(() => {
-        if (audioState.path) {
+        if (!!audioState.path) {
             releaseSecureAccess([audioState.path]).catch(() => {});
         }
+
     }, [audioState.path]);
+
+    useEffect(() => {
+        if(!!audioState.name){
+            const { duration } =  getDuration(audioState.name)
+            durationRef.current = duration
+        }
+
+    }, [audioState.name]);
+
 
 
     /** ─────────────────────────────────────────────
@@ -76,54 +60,50 @@ export const usePlayer = ({
         if(track.name === audioState.name) {
             if (playingRef.current) {
                 playingRef.current = false;
+                dispatch({
+                    type: "SET_PLAYING",
+                    isPlaying: playingRef.current,
+                });
                 await TrackPlayer.pause()
-                saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
             }
             else {
                 playingRef.current = true;
+                dispatch({
+                    type: "SET_PLAYING",
+                    isPlaying: playingRef.current,
+                });
                 await TrackPlayer.play()
             }
-            return playingRef.current;
+            return
         }
 
-        // Save current progress
-        saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
-
-        segmentHistoryRef.current = {};
 
         /** Restore progress */
-        const saved = progressMap[track.name];
+        const saved = progressMapRef.current[track.name];
+        let resumed_position = 0;
         if (saved) {
-            resumeRef.current =
-                saved.currentTime > 0 && saved.currentTime < saved.duration - 1
+            resumed_position =
+                saved.currentTime > 0 && saved.currentTime < durationRef.current - 1
                     ? saved.currentTime
                     : 0;
-
-            if (saved.segmentHistory) {
-                segmentHistoryRef.current = { ...saved.segmentHistory };
-            }
-        } else {
-            resumeRef.current = 0;
         }
 
         /** Load local media */
         const { audioState: audioMeta, subtitleState: subMeta } = await loadTrackMedia(track);
-
 
         /** TrackPlayer loading */
         await TrackPlayer.reset();
 
         await TrackPlayer.add({
             id: track.id,
-            url: audioMeta.path!,            // IMPORTANT: use `.url`
+            url: audioMeta.path!,
             title: audioMeta.name,
             artwork: audioMeta.coverUrl || undefined,
         });
 
         /** Resume saved position */
-        if (resumeRef.current > 0) {
-            await TrackPlayer.seekTo(resumeRef.current);
-            resumeRef.current = 0;
+        if (resumed_position > 0) {
+            await TrackPlayer.seekTo(resumed_position);
         }
 
         dispatch({
@@ -132,53 +112,51 @@ export const usePlayer = ({
             index,
             audio: audioMeta,
             subtitle: subMeta,
+            isPlaying:playingRef.current
         });
 
         if(playingRef.current) {
             await TrackPlayer.play()
         }
 
-    }, [audioState.name, progressMap]);
+    }, [audioState.name]);
 
 
     /** ─────────────────────────────────────────────
      *  SAVE PROGRESS LOOP
      *  ───────────────────────────────────────────── */
-    useTrackPlayerEvents([Event.PlaybackProgressUpdated], () => {
-        const t = position;
-        if (!audioState.name || duration === 0) return;
+    useTrackPlayerEvents([Event.PlaybackProgressUpdated], (event) => {
+        if (!audioState.name || durationRef.current === 0) return;
 
-        /** Segment index calculation from subtitles */
-        const cues = subtitleState.cues;
+        // console.log('useTrackPlayerEvents', event.position)
+        progressMapRef.current[audioState.name].currentTime = event.position
 
-        const cueIndex = findCueIndex(cues, t);
-        const segmentIndex = getSegmentIndex(cueIndex);
+        const segmentIndex = getSegmentIndex(event.position, state.subtitleState.markers);
 
-        segmentHistoryRef.current[segmentIndex] = t;
+        progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = event.position;
     });
 
     /** ─────────────────────────────────────────────
      *  SEEK
      *  ───────────────────────────────────────────── */
     const seek = useCallback(async (percentage: number) => {
-        if (duration <= 0) return;
 
-        const newTime = (percentage / 100) * duration;
+        if (durationRef.current <= 0) return;
+
+        const newTime = (percentage / 100) * durationRef.current;
         await TrackPlayer.seekTo(newTime);
 
-        const cueIndex = findCueIndex(subtitleState.cues, newTime);
-        const segment = getSegmentIndex(cueIndex);
-        segmentHistoryRef.current[segment] = newTime;
+        const segmentIndex = getSegmentIndex(newTime, state.subtitleState.markers);
 
-        // saveProgress(audioState.name, newTime, duration, segmentHistoryRef.current);
+        progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = newTime;
 
-    }, [duration, subtitleState.cues, audioState.name]);
+    }, [subtitleState.cues, audioState.name]);
 
     /** ─────────────────────────────────────────────
      *  SUBTITLE CLICK
      *  ───────────────────────────────────────────── */
     const jumpToTime = async (time: number) => {
-        seek((time / duration) * 100);
+        seek((time / durationRef.current) * 100);
     };
 
     /** ─────────────────────────────────────────────
@@ -186,23 +164,27 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     const changeSegment = useCallback(async (index: number) => {
 
-        const { start, end } = getSegmentBounds(subtitleState.cues, index, duration);
-        const saved = segmentHistoryRef.current[index];
+        const start = index == 0 ? 0 : subtitleState.markers[index - 1]
+        const end = index === subtitleState.markers.length  ? durationRef.current : subtitleState.markers[index]
+
+        const saved = progressMapRef.current[audioState.name].segmentHistory![index];
         const target = (saved && saved >= start && saved <= end) ? saved : start;
 
         await TrackPlayer.seekTo(target);
-        segmentHistoryRef.current[index] = target;
+        progressMapRef.current[audioState.name].segmentHistory![index] = target;
 
-        // saveProgress(audioState.name, target, duration, segmentHistoryRef.current);
-
-    },[duration, subtitleState.cues, audioState.name]);
+    },[subtitleState.cues, audioState.name]);
 
     /** ─────────────────────────────────────────────
      *  BASIC CONTROLS
      *  ───────────────────────────────────────────── */
     const togglePlay = () => {
-        isPlaying ? TrackPlayer.pause() : TrackPlayer.play();
-        saveProgress(audioState.name, position, duration, segmentHistoryRef.current);
+        playingRef.current ? TrackPlayer.pause() : TrackPlayer.play();
+        playingRef.current = !playingRef.current;
+        dispatch({
+            type: "SET_PLAYING",
+            isPlaying: playingRef.current,
+        });
     };
 
     const next = async () => {
@@ -213,7 +195,7 @@ export const usePlayer = ({
     };
 
     const previous = async () => {
-        const t = position;
+        const t = progressMapRef.current[audioState.name].currentTime;
 
         // If > 3 seconds, rewind to start
         if (t > 3) {
@@ -231,27 +213,30 @@ export const usePlayer = ({
     };
 
     const skipForward = async () => {
-        const new_position = Math.min(position + 10, duration)
-        await seek((new_position/duration) * 100);
+        const currentTime = progressMapRef.current[audioState.name].currentTime
+        const new_position = Math.min(currentTime + 10, durationRef.current)
+        await seek((new_position/durationRef.current) * 100);
     };
 
     const skipBackward = async () => {
-        const new_position = Math.max(position - 10, 0)
-        await seek((new_position/duration) * 100);
+        const currentTime = progressMapRef.current[audioState.name].currentTime
+        const new_position = Math.max(currentTime - 10, 0)
+        await seek((new_position/durationRef.current) * 100);
     };
 
     /** ─────────────────────────────────────────────
      *  EXPORTED API
      *  ───────────────────────────────────────────── */
+
     return {
         audioState,
         subtitleState,
         playlist,
         currentTrackIndex,
-        isPlaying,
-        currentTime: position,
-        duration,
+        isPlaying:playingRef.current,
+        duration: durationRef.current,
 
+        state,
         playTrack,
         togglePlay,
         seek,

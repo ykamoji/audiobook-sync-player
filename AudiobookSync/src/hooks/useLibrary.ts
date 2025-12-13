@@ -6,7 +6,7 @@ import { scanNativePath } from '../utils/fileScanner';
 
 
 interface UseLibraryProps {
-    onMetadataLoaded: (data: AppData) => void;
+    onMetadataLoaded: (data: AppData, tracks: Track[]) => void;
     onUploadSuccess: () => void;
     onReloadFromStorage: () => Promise<boolean>;
 }
@@ -50,15 +50,14 @@ export const useLibrary = ({
                 // Scan selected files
                 const scan = await scanNativePath(filePaths);
 
-                const resultTracks = scan.tracks;
-                const resultMetadata = scan.metadata;
-                // const resultColorMap = scan.colorMap;
+                const tracks = scan.tracks;
+                const appData = scan.appData;
 
-                if (resultMetadata) onMetadataLoaded(resultMetadata);
+                if (appData) onMetadataLoaded(appData, tracks);
 
-                setAllTracks(resultTracks);
+                setAllTracks(tracks)
 
-                if (resultTracks.length > 0) {
+                if (tracks.length > 0) {
                     onUploadSuccess();
                 } else {
                     console.log('No audio files found.');

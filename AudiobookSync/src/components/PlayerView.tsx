@@ -1,51 +1,44 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    LayoutChangeEvent,
-    Dimensions,
-} from 'react-native';
-import { findCueIndex } from '../utils/mediaLoader';
-import {
-    Gesture,
-    GestureDetector, Pressable,
-} from 'react-native-gesture-handler';
+import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import {Dimensions, LayoutChangeEvent, ScrollView, Text, TouchableOpacity, View,} from 'react-native';
+import {findCueIndex, getSegmentIndex} from '../utils/mediaLoader';
+import {Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
 
 import Animated, {
     Easing,
-    interpolate, interpolateColor,
+    interpolate,
+    interpolateColor,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
-    withSpring, withTiming,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Controls } from './Controls';
-import {
-    XIcon,
-    ChevronDownIcon, PauseIcon, PlayIcon,
-} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Controls} from './Controls';
+import {ChevronDownIcon, PauseIcon, PlayIcon, XIcon,} from 'lucide-react-native';
 import {SlideWindow} from "./SlideWindow.tsx";
-import {usePlayerContext} from "../services/PlayerContext.tsx";
 import {PlayerMode} from "../AppContent.tsx";
 import {miniStyles, playerStyles} from "../utils/playerStyles.ts";
+import {useStaticData} from "../hooks/useStaticData.tsx";
+import {usePlayer} from "../hooks/usePlayer.ts";
+import {ProgressData, Track} from "../utils/types.ts";
 
 interface PlayerViewProps {
-    currentTime: number;
-    duration: number;
-    onSegmentChange: (index: number) => void;
     playerMode: PlayerMode;
     onBack: (state:PlayerMode) => void;
-    onTogglePlay: () => void;
-    onSeek: (percentage: number) => void;
-    onSubtitleClick: (time: number) => void;
-    onNext: () => void;
-    onPrevious: () => void;
-    onSkipForward: () => void;
-    onSkipBackward: () => void;
-    onOpenMetadata: () => void;
+    onOpenMetadata: (name:string) => void;
+    progressMapRef:  React.MutableRefObject<Record<string, ProgressData>>;
+    saveProgress: (
+        trackName: string,
+        currentTime: number,
+        segmentHistory: Record<number, number>
+    ) => void;
+
+}
+
+export interface PlayerViewRef {
+    playTrack: (track: Track, index: number, newPlaylist: Track[]) => Promise<void>;
+    savePlayerProgress: () => void
 }
 
 const CUES_PER_SEGMENT = 100;
@@ -53,32 +46,48 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MINI_HEIGHT = 80;
 
-export const PlayerView: React.FC<PlayerViewProps> = ({
-                                                          currentTime,
-                                                          duration,
-                                                          onSegmentChange,
-                                                          playerMode,
-                                                          onBack,
-                                                          onTogglePlay,
-                                                          onSeek,
-                                                          onSubtitleClick,
-                                                          onNext,
-                                                          onPrevious,
-                                                          onSkipForward,
-                                                          onSkipBackward,
-                                                          onOpenMetadata,
-                                                      }) => {
+export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
+                                                                     playerMode,
+                                                                     onBack,
+                                                                     saveProgress,
+                                                                     progressMapRef,
+                                                                     onOpenMetadata,
+                                                                 }, ref) => {
 
-    const { state } =  usePlayerContext()
+
+    const {duration, changeSegment, next, previous, seek, togglePlay, state,
+        jumpToTime, skipBackward, skipForward, playTrack } = usePlayer({progressMapRef});
 
     const { currentTrackIndex, playlist, isPlaying, audioState, subtitleState } = state
+
+    // console.log(progressMapRef.current[audioState.name])
+
+    const savePlayerProgress = () => {
+        if(!!audioState.name){
+            // console.log('inside savePlayerProgress', progressMapRef.current[audioState.name].currentTime);
+            saveProgress(audioState.name,
+                progressMapRef.current[audioState.name].currentTime,
+                progressMapRef.current[audioState.name].segmentHistory!);
+        }
+    }
+
+    const controlSaveProgress = () => {
+        // console.log('inside controlSaveProgress', progressMapRef.current[audioState.name].currentTime);
+        saveProgress(audioState.name, progressMapRef.current[audioState.name].currentTime, progressMapRef.current[audioState.name].segmentHistory!)
+    }
+
+    useImperativeHandle(ref, () => ({
+        playTrack,
+        savePlayerProgress,
+    }));
+
+    const { getScheme } = useStaticData()
 
     const displayedCues = subtitleState.cues
     const totalSegments = subtitleState.totalSegments
     const segmentMarkers = subtitleState.markers
     const hasNext = currentTrackIndex < playlist.length - 1
     const hasPrevious = currentTrackIndex > 0
-
 
     const insets = useSafeAreaInsets();
 
@@ -93,34 +102,25 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     const scrollAtTop = useRef(true);
     const cueRefs = useRef<Record<string, View | null>>({});
 
-    const currentProgress = duration > 0 ? (currentTime / duration) * 100 : 0
+    const currentProgress = duration > 0 ? (progressMapRef.current[audioState.name].currentTime / duration) * 100 : 0
+
+    const {scheme} = getScheme(audioState.name)
+
+    const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
 
     // ----- REANIMATED SHARED VALUES -----
-    const translateY = useSharedValue(0);
-    const progress = useSharedValue(0);
-    const colorScheme = useSharedValue(audioState.colorScheme);
+    const translateY = useSharedValue(miniOffset);
+    const progress = useSharedValue(1);
+    const colorScheme = useSharedValue(scheme);
     const fullImageProgress = useSharedValue(0);
     const expandedOnce = useSharedValue(false);
-    const playerModeMini = useSharedValue(true);
 
+    const currentCueIndex = findCueIndex(subtitleState.cues, !!audioState.name ?
+        progressMapRef.current[audioState.name].currentTime : 0)
 
-    const currentCueIndex = findCueIndex(subtitleState.cues, currentTime)
-
-    let currentSegmentIndex = 0;
-
-    if (currentCueIndex !== -1) {
-        currentSegmentIndex = Math.floor(currentCueIndex / CUES_PER_SEGMENT);
-    } else if (subtitleState.cues.length > 0) {
-        const nextCue = subtitleState.cues.findIndex(c => c.start > currentTime);
-        const fallbackIndex =
-            nextCue > 0
-                ? nextCue - 1
-                : nextCue === 0
-                    ? 0
-                    : subtitleState.cues.length - 1;
-
-        currentSegmentIndex = Math.floor(fallbackIndex / CUES_PER_SEGMENT);
-    }
+    // console.log(currentTime, subtitleState.markers)
+    let currentSegmentIndex = getSegmentIndex(!!audioState.name ? progressMapRef.current[audioState.name].currentTime : 0,
+        subtitleState.markers)
 
     // ----- AUTO-SCROLL TO ACTIVE CUE -----
     const scrollToActiveCue = (animated = true) => {
@@ -154,7 +154,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         } else {
             scrollToActiveCue(true);
         }
-        scrollToActiveCue();
+
     }, [currentCueIndex, currentSegmentIndex, displayedCues]);
 
 
@@ -170,9 +170,27 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     };
 
 
-    const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
+    useEffect(() => {
+
+        if (playerMode === "full") {
+
+            translateY.value = withSpring(
+                0,
+                { stiffness: 38, damping: 16, mass: 1.25 }
+            );
+
+            progress.value = withSpring(0, {
+                stiffness: 38,
+                damping: 16,
+                mass: 1.25,
+            });
+
+            return;
+        }
+    }, [playerMode]);
 
     const gestureStartY = useSharedValue(0);
+
 
     // ----- APPLE-MUSIC-STYLE DRAG -----
     const dragGesture = Gesture.Pan()
@@ -190,9 +208,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             translateY.value = Math.min(Math.max(rawY, 0), miniOffset);
 
             // use unclamped rawY for progress so artwork morph still triggers properly
-            const effectiveProgress = Math.min(Math.max(rawY / miniOffset, 0), 1);
-
-            progress.value = effectiveProgress;
+            progress.value = Math.min(Math.max(rawY / miniOffset, 0), 1);
         })
         .onEnd((e) => {
             const currentY = translateY.value;
@@ -311,12 +327,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             transform: [{ translateX }, { translateY }, { scale }]
         };
     });
-
-
-    useEffect(() => {
-        colorScheme.value = audioState.colorScheme;
-    }, [audioState.colorScheme]);
-
 
     // Main header/subtitle/controls fade in theme color as it collapses
     const bgStyle = useAnimatedStyle(() => {
@@ -522,7 +532,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
         // notify app side
         runOnJS(onBack)("mini");
-        playerModeMini.value = true;
     };
 
     const tapToExpandGesture = Gesture.Tap()
@@ -540,39 +549,17 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         });
 
 
-    useEffect(() => {
-
-        if (playerMode === "full") {
-            playerModeMini.value = false;
-
-            translateY.value = withSpring(
-                0,
-                { stiffness: 38, damping: 16, mass: 1.25 }
-            );
-
-            progress.value = withSpring(0, {
-                stiffness: 38,
-                damping: 16,
-                mass: 1.25,
-            });
-
-            return;
-        }
-
-
-        if (playerMode === "mini" && playerModeMini.value){
-                translateY.value = miniOffset;
-                progress.value = 1;
-                fullImageProgress.value = 0;
-                expandedOnce.value = false;
-                playerModeMini.value = false; // reset
-        }
-    }, [playerMode]);
-
+    // console.log('player view rendering')
 
     // ----------------------------------------------------
     // RENDER
     // ----------------------------------------------------
+
+    if(!(!!audioState.name)){
+        return <></>
+    }
+
+
     return (
         <>
             <GestureDetector gesture={dragGesture}>
@@ -650,7 +637,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                         onPress={(e) => {
                                             if(playerMode === 'mini') {
                                                 e.stopPropagation();
-                                                onTogglePlay();
+                                                // savePlayerProgress()
+                                                controlSaveProgress()
+                                                togglePlay();
                                             }
                                         }}
                                         activeOpacity={0.8}
@@ -700,7 +689,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                             ]}
                                         >
                                             <Text
-                                                onPress={() => onSubtitleClick(cue.start)}
+                                                onPress={() => jumpToTime(cue.start)}
                                                 style={[
                                                     playerStyles.cueText,
                                                     isActive
@@ -728,16 +717,21 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                         <View style={playerStyles.controlsContainer}>
                             <Controls
                                 isPlaying={isPlaying}
-                                currentTime={currentTime}
+                                currentTime={!!audioState.name ? progressMapRef.current[audioState.name].currentTime : 0}
                                 duration={duration}
                                 progress={currentProgress}
-                                onPlayPause={onTogglePlay}
-                                onSeek={onSeek}
-                                onNext={onNext}
-                                onPrevious={onPrevious}
-                                onSkipForward={onSkipForward}
-                                onSkipBackward={onSkipBackward}
-                                onOpenMetadata={onOpenMetadata}
+                                onPlayPause={()=>{
+                                    controlSaveProgress()
+                                    togglePlay()
+                                }}
+                                onSeek={seek}
+                                onNext={next}
+                                onPrevious={previous}
+                                onSkipForward={skipForward}
+                                onSkipBackward={skipBackward}
+                                onOpenMetadata={()=>{
+                                    onOpenMetadata(audioState.name)
+                                }}
                                 onOpenChapters={() => setShowChapters(true)}
                                 segmentMarkers={segmentMarkers}
                                 hasNext={hasNext}
@@ -798,7 +792,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                                         isActive && playerStyles.chapterItemActive,
                                     ]}
                                     onPress={() => {
-                                        onSegmentChange(i);
+                                        changeSegment(i).then();
                                         setShowChapters(false);
                                     }}
                                 >
@@ -826,5 +820,5 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 </View>
             </SlideWindow>
         </>
-    );
-};
+    )
+});

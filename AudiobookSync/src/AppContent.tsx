@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import {StatusBar, StyleSheet, Text, TouchableOpacity, View,} from "react-native";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
@@ -12,20 +12,20 @@ import Animated, {
     withSpring,
 } from "react-native-reanimated";
 import {Provider as PaperProvider} from 'react-native-paper';
-import {AppData, Track} from "./utils/types";
+import {AppData, ProgressData, Track} from "./utils/types";
 import {checkLocalStorageAvailable, loadInitialNativeMetadata, savePlaylist} from "./utils/persistence";
 import {usePlaylistManager} from "./hooks/usePlaylistManager";
 import {useProgressManager} from "./hooks/useProgressManager";
 import {useLibrary} from "./hooks/useLibrary";
-import {usePlayer} from "./hooks/usePlayer";
 import TrackPlayer, {Capability, IOSCategory, IOSCategoryOptions, IOSCategoryMode} from 'react-native-track-player';
 import {scanNativePath} from "./utils/fileScanner.ts";
 import {AlbumContainer} from "./components/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
-import {PlayerView} from "./components/PlayerView.tsx";
+import {PlayerView, PlayerViewRef} from "./components/PlayerView.tsx";
 import { PlayerProvider } from "./services/PlayerProvider.tsx";
 import {usePlayerContext} from "./services/PlayerContext.tsx";
+import {useStaticData} from "./hooks/useStaticData.tsx";
 
 export const setupPlayer = async () => {
 
@@ -41,6 +41,7 @@ export const setupPlayer = async () => {
             }
         );
         await TrackPlayer.updateOptions({
+            progressUpdateEventInterval: 1,
             capabilities: [
                 Capability.Play,
                 Capability.Pause,
@@ -73,84 +74,9 @@ const MainContent: React.FC = () => {
     const [metadataPanelData, setMetadataPanelData] =
         useState<MetadataPanelData | null>(null);
 
-    // --- Custom Hooks ---
     const playlistManager = usePlaylistManager(isStorageLoaded);
 
-    const {progressMap, clearProgress, initProgress, saveProgress, reloadProgress} = useProgressManager();
-
-    const {allTracks, setAllTracks, isLoading, handleDirectoryUpload} =
-        useLibrary({
-            onMetadataLoaded: (data: AppData) => applyMetadata(data),
-            onUploadSuccess: () => setView("library"),
-            onReloadFromStorage: () => onReloadFromStorage()
-        });
-
-    useEffect(() => {
-        setupPlayer().then();
-    }, []);
-
-    const player = usePlayer({
-        progressMap,
-        saveProgress,
-    });
-
-
-    // ------------------------------------------------
-    // Apply metadata logic
-    // ------------------------------------------------
-    const applyMetadata = (data: AppData) => {
-
-        if (data.progress) {
-            initProgress(data.progress).then()
-        }
-
-        if (data.playlists) {
-            playlistManager.setSavedPlaylists(data.playlists);
-            savePlaylist(data.playlists).then();
-        }
-
-    };
-
-    const loadStorage = async () => {
-        try {
-            await reloadProgress();
-            const { storedPlaylists,  filePaths} = await loadInitialNativeMetadata();
-            if (storedPlaylists) {
-                playlistManager.setSavedPlaylists(JSON.parse(storedPlaylists));
-            }
-
-            if(filePaths !== null && filePaths.length > 0){
-                const scan = await scanNativePath(filePaths);
-                const resultTracks = scan.tracks;
-                setAllTracks(resultTracks);
-            }
-        } catch (e) {
-            console.error("Storage load error", e);
-        } finally {
-            setIsStorageLoaded(true);
-        }
-    };
-
-    const { dispatch } = usePlayerContext();
-
-    const clearStorage = () => {
-        dispatch({
-            type: "LOAD_TRACK",
-            playlist: [],
-            index:0,
-            audio: {name:'', path:'', coverPath:'', coverUrl:'', colorScheme:''},
-            subtitle: {name:'', path:'', cues:[], markers:[], totalSegments:0},
-        });
-
-        dispatch({
-            type: "SET_PLAYING",
-            playing: false,
-        });
-
-        playlistManager.setSavedPlaylists([]);
-        clearProgress()
-        setAllTracks([])
-    }
+    const {progressMap, clearProgress, initProgress, saveProgress, reloadProgress} = useProgressManager()
 
     const onReloadFromStorage = async () => {
         if (isStorageLoaded) return false;
@@ -162,6 +88,81 @@ const MainContent: React.FC = () => {
         return true;
     };
 
+    const onMetadataLoaded = (data: AppData, tracks:Track[]) => {
+
+        initProgress(data.audiobook_progress, tracks).then()
+
+        if (data.audiobook_playlists) {
+            playlistManager.setSavedPlaylists(data.audiobook_playlists);
+            savePlaylist(data.audiobook_playlists).then();
+        }
+
+        if(data.static){
+            updateStaticData(data.static)
+        }
+
+    };
+
+    const loadStorage = async () => {
+        try {
+            const { storedPlaylists,  filePaths} = await loadInitialNativeMetadata();
+            if (storedPlaylists) {
+                playlistManager.setSavedPlaylists(JSON.parse(storedPlaylists));
+            }
+
+            const scan = await scanNativePath(filePaths);
+            const resultTracks = scan.tracks;
+            const appData = scan.appData;
+            if (appData?.static) updateStaticData(appData.static)
+            await reloadProgress(resultTracks);
+            setAllTracks(resultTracks);
+
+        } catch (e) {
+            console.error("Storage load error", e);
+        } finally {
+            setIsStorageLoaded(true);
+        }
+    };
+
+    const {allTracks, setAllTracks, isLoading, handleDirectoryUpload} =
+        useLibrary({
+            onMetadataLoaded,
+            onUploadSuccess: () => setView("library"),
+            onReloadFromStorage
+        });
+
+    const { preparePanelData, updateStaticData } = useStaticData();
+
+    useEffect(() => {
+        setupPlayer().then();
+    }, []);
+
+    const playerRef = useRef<PlayerViewRef>(null);
+    const progressMapRef =  useRef<Record<string, ProgressData>>({});
+
+    useEffect(() => {
+        progressMapRef.current = progressMap
+    }, [progressMap]);
+
+
+    const { state, dispatch } = usePlayerContext();
+
+    const clearStorage = () => {
+
+        dispatch({
+            type: "LOAD_TRACK",
+            playlist: [],
+            index:0,
+            audio: {name:'', path:'', coverPath:'', coverUrl:''},
+            subtitle: {name:'', path:'', cues:[], markers:[], totalSegments:0},
+            isPlaying: false,
+        });
+
+        playlistManager.setSavedPlaylists([]);
+        clearProgress()
+        setAllTracks([])
+    }
+
     // ------------------------------------------------
     // Metadata logic
     // ------------------------------------------------
@@ -171,37 +172,20 @@ const MainContent: React.FC = () => {
             .map((p: { name: any; }) => p.name);
 
 
-    const handleOpenMetadata = async (track?: Track) => {
-        let targetTrack = track as Track | null;
+    const handleOpenMetadata = async (name: string) => {
 
-        if (targetTrack !== undefined && targetTrack?.name === undefined) {
+        const progressData = progressMap[name];
 
-            const audioSize = allTracks.find((track) => track.name === player.audioState.name)?.audioSize
-
-            targetTrack = player.audioState.name ? {
-                name: player.audioState.name,
-                audioPath: player.audioState.path,
-                audioSize: audioSize,
-            } as Track : null
-        }
-
-        if (!targetTrack) return;
-
-        const progressData = progressMap[targetTrack.name];
-
-        let progress = 0
-        if(!!player && !!player.audioState.name && !!player.currentTime){
-            progress = targetTrack.name === player.audioState.name ? player.currentTime : progressData.currentTime
-        }
-
+        const staticData = preparePanelData(name)
         setMetadataPanelData({
-            name: targetTrack.name,
-            fileSize: targetTrack.audioSize,
-            progress,
-            duration: progressData?.duration || (track ? 0 : player.duration),
-            associatedPlaylists: getAssociatedPlaylists(targetTrack.name),
+            name,
+            progress: progressData?.currentTime,
+            associatedPlaylists: getAssociatedPlaylists(name),
+            static: staticData
         });
     };
+
+    // console.log('inside app', progressMapRef.current);
 
     const playTrackWrapper = (
         track: Track,
@@ -209,9 +193,17 @@ const MainContent: React.FC = () => {
         specificPlaylist?: Track[],
         option?: number
     ) => {
-        player.playTrack(track, index, specificPlaylist || [track]).then();
-        if(option === 2){
-            setPlayerMode('full')
+        if(playerRef.current){
+            if(state.isPlaying){
+                // console.log('inside playTrack Wrapper', track.name, progressMapRef.current);
+            // console.log("playTrackWrapper");
+                playerRef.current.savePlayerProgress()
+            }
+            playerRef.current.playTrack(track, index, specificPlaylist || [track]).then();
+            if(option === 2){
+                setPlayerMode('full')
+
+            }
         }
     };
 
@@ -228,6 +220,7 @@ const MainContent: React.FC = () => {
         transform: [{ translateY: bottomBarTranslate.value }]
     }));
 
+    // console.log('Main rendering')
 
     return (
         <View style={styles.root}>
@@ -291,24 +284,14 @@ const MainContent: React.FC = () => {
                     </SafeAreaView>
                 </View>
             </View>
-            {player.audioState.name && (
-                <PlayerView
-                    currentTime={player.currentTime}
-                    duration={player.duration}
-                    onNext={player.next}
-                    playerMode={playerMode}
-                    onPrevious={player.previous}
-                    onSkipForward={player.skipForward}
-                    onSkipBackward={player.skipBackward}
-                    onBack={setPlayerMode}
-                    onTogglePlay={player.togglePlay}
-                    onSeek={player.seek}
-                    onSubtitleClick={player.jumpToTime}
-                    onOpenMetadata={handleOpenMetadata}
-                    onSegmentChange={player.changeSegment}
-                />
-            )}
-
+            <PlayerView
+                ref={playerRef}
+                progressMapRef={progressMapRef}
+                saveProgress={saveProgress}
+                playerMode={playerMode}
+                onBack={setPlayerMode}
+                onOpenMetadata={handleOpenMetadata}
+            />
             {/* Metadata Panel */}
             <MetadataPanel
                 data={metadataPanelData}

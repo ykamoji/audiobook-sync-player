@@ -31,12 +31,13 @@ interface TrackRowProps {
     isSelected: boolean;
     isSelectionMode: boolean;
     progressMap: Record<string, ProgressData>;
+    showLive: boolean;
     associatedPlaylists: Playlist[];
     onSelectTrack: (track: Track, index: number, list: Track[], option?:number) => void;
     onToggleSelection: (trackId: string) => void;
     onLongPress: () => void;
     onEditToPlaylist: (track: Track, callback:() => void) => void;
-    onViewMetadata: (track: Track) => void;
+    onViewMetadata: (name: string) => void;
     style?: ViewStyle;
 }
 
@@ -50,6 +51,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                                    isSelected,
                                                    isSelectionMode,
                                                    progressMap,
+                                                   showLive,
                                                    associatedPlaylists,
                                                    onSelectTrack,
                                                    onToggleSelection,
@@ -122,16 +124,9 @@ export const TrackRow: React.FC<TrackRowProps> = ({
     }, [onEditToPlaylist, track, closeMenu]);
 
     const handleMetadata = useCallback(() => {
-        onViewMetadata(track);
+        onViewMetadata(track.name);
         closeMenu();
-    }, [onViewMetadata, track, closeMenu]);
-
-
-    const { state } = usePlayerContext();
-
-    const { isPlaying, audioState } = state;
-
-    const showLive =  isPlaying && audioState.name === track.name
+    }, [onViewMetadata, closeMenu, track.name]);
 
     const doubleTap = Gesture.Tap()
         .numberOfTaps(2)

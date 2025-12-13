@@ -15,7 +15,7 @@ export const loadTrackMedia = async (
         path: track.audioPath || null,
         name: track.name,
         coverPath: track.coverPath || null,
-        colorScheme: track.colorScheme || null,
+        // colorScheme: track.colorScheme || null,
     };
 
     // 2. Subtitles
@@ -118,17 +118,13 @@ export const findCueIndex = (() => {
     };
 })();
 
-export const getSegmentIndex = (cueIndex: number) =>
-    Math.floor(cueIndex / CUES_PER_SEGMENT);
+export const getSegmentIndex = (time: number, markers:number[]) =>{
+    // Math.floor(cueIndex / CUES_PER_SEGMENT);
+    for (let i = 0; i < markers.length; i++) {
+        if(markers[i] > time){
+            return i;
+        }
+    }
+    return markers.length;
+}
 
-export const getSegmentBounds = (cues: any[], segmentIndex: number, duration: number) => {
-    if (!cues.length) return { start: 0, end: duration };
-
-    const s = segmentIndex * CUES_PER_SEGMENT;
-    const e = Math.min((segmentIndex + 1) * CUES_PER_SEGMENT - 1, cues.length - 1);
-
-    return {
-        start: cues[s]?.start ?? 0,
-        end: cues[e]?.end ?? duration,
-    };
-};

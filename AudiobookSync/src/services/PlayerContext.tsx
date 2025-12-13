@@ -10,8 +10,8 @@ export type PlayerState = {
 };
 
 export type Action =
-    | { type: "LOAD_TRACK"; playlist: Track[]; index: number; audio: AudioFileState; subtitle: SubtitleFileState }
-    | { type: "SET_PLAYING"; playing: boolean }
+    | { type: "LOAD_TRACK"; playlist: Track[]; index: number; audio: AudioFileState; subtitle: SubtitleFileState; isPlaying: boolean }
+    | { type: "SET_PLAYING"; isPlaying: boolean }
 
 
 type PlayerContextValue = {

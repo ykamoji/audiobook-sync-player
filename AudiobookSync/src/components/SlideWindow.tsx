@@ -101,8 +101,8 @@ export const SlideWindow: FC<SlideWindowProps> = ({
     React.useEffect(() => {
         if (open) {
             offset.value = withSpring(0, {
-                damping: 16,
-                stiffness: 38,
+                damping: 12,
+                stiffness: 60,
                 mass: 1.25,
                 overshootClamping: false,
             });
@@ -114,8 +114,8 @@ export const SlideWindow: FC<SlideWindowProps> = ({
 
         } else {
             offset.value = withSpring(sheetSize, {
-                damping: 20,
-                stiffness: 90,
+                damping: 12,
+                stiffness: 60,
                 mass: 1.0,
             });
 
@@ -163,14 +163,14 @@ export const SlideWindow: FC<SlideWindowProps> = ({
             if (shouldClose) {
                 offset.value = withSpring(
                     sheetSize,
-                    { stiffness: 120, damping: 22, mass: 1 },
+                    { stiffness: 60, damping: 12, mass: 1 },
                     () => runOnJS(onClose)()
                 );
                 backdropOpacity.value = withTiming(0, { duration: 150 });
             } else {
                 offset.value = withSpring(0, {
-                    stiffness: 140,
-                    damping: 18,
+                    stiffness: 60,
+                    damping: 12,
                 });
                 backdropOpacity.value = withTiming(BACKDROP_MAX_OPACITY, { duration: 180 });
             }

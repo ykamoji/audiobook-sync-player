@@ -25,11 +25,11 @@ const sortTracks = (tracks: Track[]) =>
         return a.name.localeCompare(b.name, undefined, { numeric: true });
     });
 
-const getFileSize = async (path: string): Promise<number> => {
-    const cleanPath = decodeURI(path.replace("file://", ""));
-    const stat = await RNFS.stat(cleanPath);
-    return Number(stat.size);
-};
+// const getFileSize = async (path: string): Promise<number> => {
+//     const cleanPath = decodeURI(path.replace("file://", ""));
+//     const stat = await RNFS.stat(cleanPath);
+//     return Number(stat.size);
+// };
 
 /**
  * scanNativePath()
@@ -41,14 +41,13 @@ export const scanNativePath = async (
     fileUris: string[]
 ): Promise<{
     tracks: Track[];
-    metadata?: AppData;
-    colorMap: Map<string, string>;
+    appData?: AppData;
 }> => {
     const audioMap = new Map<string, string>();
     const subtitleMap = new Map<string, string>();
     const coverMap = new Map<string, string>();
-    let metadata: AppData | undefined = undefined;
-    let colorMap: Map<string, string> = new Map();
+    let appData: AppData | undefined = undefined;
+    // let colorMap: Map<string, string> = new Map();
 
 
     for (const uri of fileUris) {
@@ -74,21 +73,9 @@ export const scanNativePath = async (
         if (name === 'metadata.json') {
             try {
                 const text = await RNFS.readFile(path, 'utf8');
-                metadata = JSON.parse(text);
+                appData = JSON.parse(text);
             } catch (e) {
                 console.warn('Failed to parse metadata.json', e);
-            }
-            continue;
-        }
-
-        // Color Map
-        if (name === 'colorMap.json') {
-            try {
-                const text = await RNFS.readFile(path, 'utf8');
-                const obj = JSON.parse(text);
-                colorMap = new Map(Object.entries(obj));
-            } catch (e) {
-                console.warn('Failed to parse colorMap.json', e);
             }
             continue;
         }
@@ -143,20 +130,19 @@ export const scanNativePath = async (
             audioPath: path,
             subtitlePath:subtitlePath,
             coverPath: coverPath,
-            colorScheme: colorMap.get(base + '.png') as Object ?? [255, 131, 0],
-            audioSize: 0
+            // colorScheme: colorMap.get(base) as Object ?? [255, 131, 0],
+            // audioSize: 0
         };
 
-        getFileSize(path).then(size => {
-            trackData.audioSize = size;
-        })
+        // getFileSize(path).then(size => {
+        //     trackData.audioSize = size;
+        // })
 
         tracks.push(trackData)
     });
 
     return {
         tracks: sortTracks(tracks),
-        metadata,
-        colorMap,
+        appData
     };
 };

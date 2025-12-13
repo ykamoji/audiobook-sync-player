@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import RNFS from 'react-native-fs';
 import {AppData, Playlist} from './types.ts';
 
 /**
@@ -8,9 +7,9 @@ import {AppData, Playlist} from './types.ts';
  */
 export const saveToNativeFilesystem = async (data: AppData) => {
     try {
-        const { playlists, progress } = data
-        await AsyncStorage.setItem("audiobook_progress", JSON.stringify(progress))
-        await savePlaylist(playlists)
+        const { audiobook_progress, audiobook_playlists } = data
+        await AsyncStorage.setItem("audiobook_progress", JSON.stringify(audiobook_progress))
+        await savePlaylist(audiobook_playlists)
         return true;
     } catch (e) {
         console.error("Error saving metadata", e);

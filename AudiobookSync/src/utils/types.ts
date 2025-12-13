@@ -1,3 +1,5 @@
+import {Static} from "../hooks/useStaticData.tsx";
+
 export interface SubtitleCue {
     id: string;
     start: number; // seconds
@@ -14,8 +16,8 @@ export interface Track {
     audioPath: string;        // Required
     subtitlePath?: string;    // Optional
     coverPath?: string;       // Optional
-    colorScheme?: object;
-    audioSize: number;
+    // colorScheme?: object;
+    // audioSize: number;
 }
 
 export interface Playlist {
@@ -37,7 +39,7 @@ export interface AudioFileState {
     /** Cover image path */
     coverPath?: string | null;
 
-    colorScheme?: string | null;
+    // colorScheme?: string | null;
 }
 
 export interface SubtitleFileState {
@@ -52,14 +54,14 @@ export interface SubtitleFileState {
 
 export interface ProgressData {
     currentTime: number;
-    duration: number;
     percentage: number;
     updatedAt: number;
     segmentHistory?: Record<number, number>;
 }
 
 export interface AppData {
-    progress: Record<string, ProgressData>;
-    playlists: Playlist[];
+    audiobook_progress: Record<string, ProgressData>;
+    audiobook_playlists: Playlist[];
     exportedAt: number;
+    static: Record<string, Static>;
 }

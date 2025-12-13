@@ -11,6 +11,7 @@ import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
 import {Menu, Divider, MD3DarkTheme,} from "react-native-paper";
 import {Download, MoreVertical, SaveAll, Trash2} from "lucide-react-native";
+import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface LibraryProps {
     allTracks: Track[];
@@ -23,7 +24,7 @@ interface LibraryProps {
     onDownloadData: () => void;
     onClearStorage: () => void;
     exportSuccess: boolean;
-    onViewMetadata: (track: Track) => void;
+    onViewMetadata: (name: string) => void;
 }
 
 const ROW_HEIGHT = 88;
@@ -72,6 +73,10 @@ export const Library: React.FC<LibraryProps> = ({
         });
     };
 
+    const { state } = usePlayerContext();
+
+    const { audioState, isPlaying } = state;
+
     useEffect(() => {
         if(!isSelectionMode){
             setSelectedTrackIds(new Set());
@@ -98,12 +103,14 @@ export const Library: React.FC<LibraryProps> = ({
                     handleAlbumActions([track])
                     done()
                 }}
+                showLive={isPlaying && audioState.name === item.name}
                 onLongPress={() => setIsSelectionMode(prev => !prev)}
                 onViewMetadata={onViewMetadata}
                 style={{ height: ROW_HEIGHT }}
             />
         ),
-        [selectedTrackIds,
+        [
+            selectedTrackIds,
             isSelectionMode,
             progressMap,
             playlists,
@@ -111,7 +118,10 @@ export const Library: React.FC<LibraryProps> = ({
             onViewMetadata,
             handleAlbumActions,
             setShowModal,
-            allTracks]
+            allTracks,
+            isPlaying,
+            audioState.name
+        ]
     );
 
     // ----- Main render -----

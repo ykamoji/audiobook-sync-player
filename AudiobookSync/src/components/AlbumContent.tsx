@@ -10,7 +10,7 @@ interface AlbumContentProps {
     selectedPlaylist?: Playlist;
     onBack?: () => void;
     playlistNameChange: () => void;
-    onViewMetadata: (track: Track) => void;
+    onViewMetadata: (name: string) => void;
     progressMap: Record<string, ProgressData>;
     onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[]) => void;
     onRemoveTrack: (track: Track, callback:()=>void) => void;

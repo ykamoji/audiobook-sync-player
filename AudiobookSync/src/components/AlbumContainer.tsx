@@ -13,7 +13,7 @@ interface AlbumsContainerProps {
     onUpdate: () => void;
     closeAlbums: boolean;
     onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[]) => void;
-    onViewMetadata: (track: Track) => void;
+    onViewMetadata: (name: string) => void;
     playlistManager: {
         savedPlaylists: Playlist[];
         createPlaylist: (name: string, initialTracks: Track[]) => void;
