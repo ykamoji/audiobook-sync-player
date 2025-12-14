@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef} from 'react';
-import TrackPlayer, {Event, useTrackPlayerEvents,} from 'react-native-track-player';
+import TrackPlayer, {Event, usePlaybackState, useTrackPlayerEvents,} from 'react-native-track-player';
 import {releaseSecureAccess} from 'react-native-document-picker'
 import {usePlayerContext} from "../services/PlayerContext";
 
@@ -26,17 +26,13 @@ export const usePlayer = ({
 
     const { playlist, currentTrackIndex, audioState, subtitleState, isPlaying } = state;
 
+    // console.log('outside', audioState.name, isPlaying)
+
     /** Resume + history tracking */
-    const playingRef = useRef(isPlaying);
     const durationRef = useRef<number>(0);
     const currentTimeSV = useSharedValue(0)
 
     // console.log(isPlaying, audioState.name)
-
-
-    useEffect(() => {
-        playingRef.current = isPlaying
-    }, [isPlaying]);
 
 
     /* Release access when audio path changes */
@@ -52,7 +48,8 @@ export const usePlayer = ({
             const { duration } =  getDuration(audioState.name)
             durationRef.current = duration
 
-            currentTimeSV.value = progressMapRef.current[audioState.name].currentTime
+            if(!!progressMapRef.current[audioState.name])
+                currentTimeSV.value = progressMapRef.current[audioState.name].currentTime
         }
 
     }, [audioState.name]);
@@ -65,32 +62,31 @@ export const usePlayer = ({
     const playTrack = useCallback(async (
                                             track: Track,
                                             index: number,
-                                            newPlaylist: Track[]
+                                            newPlaylist: Track[],
+                                            option:number
                                     ) => {
 
         if(track.name === audioState.name) {
-            if (playingRef.current) {
-                // console.log('playing to pause');
-                playingRef.current = false;
+            // console.log('playTrack', option, isPlaying)
+            if(option == 2) return
+            if (isPlaying) {
                 dispatch({
                     type: "SET_PLAYING",
-                    isPlaying: playingRef.current,
+                    isPlaying: false,
                 });
                 await TrackPlayer.pause()
             }
             else {
-                playingRef.current = true;
-                // console.log('pause to play');
                 dispatch({
                     type: "SET_PLAYING",
-                    isPlaying: playingRef.current,
+                    isPlaying: true,
                 });
                 await TrackPlayer.play()
             }
             return
         }
 
-        if(playingRef.current){
+        if(isPlaying){
             await TrackPlayer.pause()
         }
 
@@ -122,20 +118,21 @@ export const usePlayer = ({
             await TrackPlayer.seekTo(resumed_position);
         }
 
+
         dispatch({
             type: "LOAD_TRACK",
             playlist: newPlaylist,
             index,
             audio: audioMeta,
             subtitle: subMeta,
-            isPlaying:playingRef.current
+            isPlaying:true
         });
 
-        if(playingRef.current) {
+        // if(playingRef.current) {
             await TrackPlayer.play()
-        }
+        // }
 
-    }, [audioState.name]);
+    }, [audioState.name, isPlaying]);
 
 
     /** ─────────────────────────────────────────────
@@ -145,10 +142,12 @@ export const usePlayer = ({
         if (!audioState.name || durationRef.current === 0) return;
 
         // console.log('useTrackPlayerEvents', event.position)
-        progressMapRef.current[audioState.name].currentTime = event.position
+        if(!!progressMapRef.current[audioState.name])
+            progressMapRef.current[audioState.name].currentTime = event.position
 
         const segmentIndex = getSegmentIndex(event.position, state.subtitleState.markers);
 
+        if(!!progressMapRef.current[audioState.name])
         progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = event.position;
 
         currentTimeSV.value = event.position;
@@ -197,18 +196,17 @@ export const usePlayer = ({
      *  BASIC CONTROLS
      *  ───────────────────────────────────────────── */
     const togglePlay = () => {
-        playingRef.current ? TrackPlayer.pause() : TrackPlayer.play();
-        playingRef.current = !playingRef.current;
+        isPlaying ? TrackPlayer.pause() : TrackPlayer.play();
         dispatch({
             type: "SET_PLAYING",
-            isPlaying: playingRef.current,
+            isPlaying: !isPlaying,
         });
     };
 
     const next = async () => {
         const nextIndex = currentTrackIndex + 1;
         if (nextIndex < playlist.length) {
-            await playTrack(playlist[nextIndex], nextIndex, playlist);
+            await playTrack(playlist[nextIndex], nextIndex, playlist, 1);
         }
     };
 
@@ -224,7 +222,7 @@ export const usePlayer = ({
         const prevIndex = currentTrackIndex - 1;
 
         if (prevIndex >= 0) {
-            await playTrack(playlist[prevIndex], prevIndex, playlist);
+            await playTrack(playlist[prevIndex], prevIndex, playlist, 1);
         } else {
             await TrackPlayer.seekTo(0);
         }
@@ -251,7 +249,6 @@ export const usePlayer = ({
         subtitleState,
         playlist,
         currentTrackIndex,
-        // isPlaying:playingRef.current,
         duration: durationRef.current,
 
         currentTimeSV,

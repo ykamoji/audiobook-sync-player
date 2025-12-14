@@ -128,23 +128,31 @@ export const TrackRow: React.FC<TrackRowProps> = ({
         closeMenu();
     }, [onViewMetadata, closeMenu, track.name]);
 
+
+    const singleTap = Gesture.Tap()
+        .numberOfTaps(1)
+        .onEnd((_e, success) => {
+            if(success) runOnJS(handlePress)(1)
+        });
+
     const doubleTap = Gesture.Tap()
         .numberOfTaps(2)
-        .onEnd(() => {
-            runOnJS(handlePress)(2)
+        .onEnd((_e, success) => {
+            if(success) runOnJS(handlePress)(2)
         });
+
 
     return (
         <View ref={rowRef} style={[styles.rowContainer, style]}>
-            <GestureDetector gesture={doubleTap}>
+            <GestureDetector gesture={Gesture.Exclusive(doubleTap, singleTap)}>
             <TouchableOpacity
                 style={[styles.mainRow, isSelected && styles.selectedRow]}
-                onPress={()=> handlePress(1)}
+                // onPress={()=> handlePress(1)}
                 onLongPress={() => {
                     onLongPress();
                     onToggleSelection(track.id);
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.5}
             >
                 {/* Thumbnail / Checkbox */}
                 <View style={styles.thumbnailBox}>

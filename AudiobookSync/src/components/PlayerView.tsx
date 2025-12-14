@@ -38,7 +38,7 @@ interface PlayerViewProps {
 }
 
 export interface PlayerViewRef {
-    playTrack: (track: Track, index: number, newPlaylist: Track[]) => Promise<void>;
+    playTrack: (track: Track, index: number, newPlaylist: Track[], option: number) => Promise<void>;
     savePlayerProgress: () => void
 }
 

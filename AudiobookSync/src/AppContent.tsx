@@ -145,7 +145,7 @@ const MainContent: React.FC = () => {
     }, [progressMap]);
 
 
-    const { state, dispatch } = usePlayerContext();
+    const { dispatch, state } = usePlayerContext();
 
     const clearStorage = () => {
 
@@ -172,7 +172,7 @@ const MainContent: React.FC = () => {
             .map((p: { name: any; }) => p.name);
 
 
-    const handleOpenMetadata = async (name: string) => {
+    const handleOpenMetadata = (async (name: string) => {
 
         const progressData = progressMap[name];
 
@@ -183,9 +183,7 @@ const MainContent: React.FC = () => {
             associatedPlaylists: getAssociatedPlaylists(name),
             static: staticData
         });
-    };
-
-    // console.log('inside app', progressMapRef.current);
+    });
 
     const playTrackWrapper = (
         track: Track,
@@ -194,15 +192,22 @@ const MainContent: React.FC = () => {
         option?: number
     ) => {
         if (playerRef.current) {
-            if (state.isPlaying) {
-                playerRef.current.savePlayerProgress()
-            }
+            // console.log('playTrackWrapper ', option, state.isPlaying);
+            playerRef.current!.playTrack(track, index, specificPlaylist || [track], option!).then();
 
-            if(option === 2){
-                setPlayerMode('full')
-            }
+            setTimeout(()=> {
+                if (option === 2) {
+                    setPlayerMode('full')
+                }
+            }, 500)
 
-            playerRef.current!.playTrack(track, index, specificPlaylist || [track]).then();
+            // setTimeout(()=> {
+            //     if (!state.isPlaying) {
+                    // console.log('delayed updates')
+                    playerRef.current!.savePlayerProgress()
+                // }
+            // }, 500)
+
         }
     };
 
