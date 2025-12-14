@@ -62,7 +62,6 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
     const savePlayerProgress = () => {
         if(!!audioState.name){
-            // console.log('inside savePlayerProgress', progressMapRef.current[audioState.name].currentTime);
             saveProgress(audioState.name,
                 progressMapRef.current[audioState.name].currentTime,
                 progressMapRef.current[audioState.name].segmentHistory!);
@@ -70,7 +69,6 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     }
 
     const controlSaveProgress = () => {
-        // console.log('inside controlSaveProgress', progressMapRef.current[audioState.name].currentTime);
         saveProgress(audioState.name, progressMapRef.current[audioState.name].currentTime, progressMapRef.current[audioState.name].segmentHistory!)
     }
 
@@ -505,7 +503,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     // RENDER
     // ----------------------------------------------------
 
-    if(!(!!audioState.name)){
+    if(!audioState.name){
         return <></>
     }
 

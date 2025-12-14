@@ -41,12 +41,11 @@ export const usePlayer = ({
         if (!!audioState.path) {
             releaseSecureAccess([audioState.path]).catch(() => {});
         }
-
     }, [audioState.path]);
 
     useEffect(() => {
         if(!!audioState.name){
-            const { duration } =  getDuration(audioState.name)
+            const { duration } = getDuration(audioState.name)
             durationSV.value = duration
 
             if(!!progressMapRef.current[audioState.name])
@@ -66,7 +65,6 @@ export const usePlayer = ({
                                     ) => {
 
         if(track.name === audioState.name) {
-            // console.log('playTrack', option, isPlaying)
             if(option == 2) return
             if (isPlaying) {
                 dispatch({
@@ -89,15 +87,19 @@ export const usePlayer = ({
             await TrackPlayer.pause()
         }
 
+        const {duration} = getDuration(track.name)
+
         /** Restore progress */
         const saved = progressMapRef.current[track.name];
         let resumed_position = 0;
         if (saved) {
             resumed_position =
-                saved.currentTime > 0 && saved.currentTime < durationSV.value - 1
+                saved.currentTime > 0 && saved.currentTime < duration - 1
                     ? saved.currentTime
                     : 0;
         }
+
+        durationSV.value = duration;
 
         /** Load local media */
         const { audioState: audioMeta, subtitleState: subMeta } = await loadTrackMedia(track);
@@ -114,8 +116,7 @@ export const usePlayer = ({
 
         /** Resume saved position */
         if (resumed_position > 0) {
-            // await TrackPlayer.seekTo(resumed_position);
-            seek(resumed_position/durationSV.value * 100, updateHistory)
+            await seek(resumed_position/duration * 100, updateHistory)
         }
 
         dispatch({
@@ -127,9 +128,7 @@ export const usePlayer = ({
             isPlaying:true
         });
 
-        // if(playingRef.current) {
-            await TrackPlayer.play()
-        // }
+        await TrackPlayer.play()
 
     }, [audioState.name, isPlaying]);
 
@@ -145,7 +144,6 @@ export const usePlayer = ({
         if (!isAutoUpdatingRef.current) return;
 
         if(!!progressMapRef.current[audioState.name]){
-            // console.log('updating in useTrackPlayerEvents')
             progressMapRef.current[audioState.name].currentTime = event.position
 
             const segmentIndex = getSegmentIndex(event.position, state.subtitleState.markers);
@@ -165,13 +163,17 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     const seek = useCallback(async (percentage: number, updateHistory?:boolean) => {
 
-        if (durationSV.value <= 0) return;
+        let duration = durationSV.value;
+        if(duration <= 0){
+            if(!audioState.name) return
+            duration = getDuration(audioState.name).duration
+            durationSV.value = duration
+        }
 
-        const newTime = (percentage / 100) * durationSV.value;
+        const newTime = (percentage / 100) * duration;
         await TrackPlayer.seekTo(newTime);
 
         if(updateHistory !== undefined && updateHistory) {
-            // console.log('updating in seek')
             const segmentIndex = getSegmentIndex(newTime, state.subtitleState.markers);
             progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = newTime;
         }
@@ -183,7 +185,7 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     const jumpToTime = async (time: number) => {
         await TrackPlayer.pause()
-        seek((time / durationSV.value) * 100, true);
+        await seek((time / durationSV.value) * 100, true);
         await TrackPlayer.play()
     };
 
@@ -199,7 +201,7 @@ export const usePlayer = ({
         const target = (saved && saved >= start && saved <= end) ? saved : start;
 
         // await TrackPlayer.seekTo(target);
-        seek(target/durationSV.value * 100, false);
+        await seek(target / durationSV.value * 100, false);
         progressMapRef.current[audioState.name].segmentHistory![index] = target;
 
     },[subtitleState.cues, audioState.name]);

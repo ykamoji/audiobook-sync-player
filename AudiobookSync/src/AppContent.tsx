@@ -224,8 +224,6 @@ const MainContent: React.FC = () => {
         transform: [{ translateY: bottomBarTranslate.value }]
     }));
 
-    // console.log('Main rendering')
-
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content"/>
