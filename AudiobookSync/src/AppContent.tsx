@@ -145,7 +145,7 @@ const MainContent: React.FC = () => {
     }, [progressMap]);
 
 
-    const { dispatch, state } = usePlayerContext();
+    const { dispatch } = usePlayerContext();
 
     const clearStorage = () => {
 

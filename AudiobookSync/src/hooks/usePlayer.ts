@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef} from 'react';
-import TrackPlayer, {Event, usePlaybackState, useTrackPlayerEvents,} from 'react-native-track-player';
+import TrackPlayer, {Event, State, usePlaybackState, useTrackPlayerEvents,} from 'react-native-track-player';
 import {releaseSecureAccess} from 'react-native-document-picker'
 import {usePlayerContext} from "../services/PlayerContext";
 
@@ -31,6 +31,7 @@ export const usePlayer = ({
     /** Resume + history tracking */
     const durationSV = useSharedValue(0);
     const currentTimeSV = useSharedValue(0)
+    const isAutoUpdatingRef = useRef(true);
 
     // console.log(isPlaying, audioState.name)
 
@@ -60,7 +61,8 @@ export const usePlayer = ({
                                             track: Track,
                                             index: number,
                                             newPlaylist: Track[],
-                                            option:number
+                                            option:number,
+                                            updateHistory?:boolean
                                     ) => {
 
         if(track.name === audioState.name) {
@@ -112,9 +114,9 @@ export const usePlayer = ({
 
         /** Resume saved position */
         if (resumed_position > 0) {
-            await TrackPlayer.seekTo(resumed_position);
+            // await TrackPlayer.seekTo(resumed_position);
+            seek(resumed_position/durationSV.value * 100, updateHistory)
         }
-
 
         dispatch({
             type: "LOAD_TRACK",
@@ -138,34 +140,41 @@ export const usePlayer = ({
     useTrackPlayerEvents([Event.PlaybackProgressUpdated], (event) => {
         if (!audioState.name || durationSV.value === 0) return;
 
-        // console.log('useTrackPlayerEvents', event.position)
+        currentTimeSV.value = event.position;
 
-        // console.log(even)
+        if (!isAutoUpdatingRef.current) return;
 
-        if(!!progressMapRef.current[audioState.name])
+        if(!!progressMapRef.current[audioState.name]){
+            // console.log('updating in useTrackPlayerEvents')
             progressMapRef.current[audioState.name].currentTime = event.position
 
-        const segmentIndex = getSegmentIndex(event.position, state.subtitleState.markers);
+            const segmentIndex = getSegmentIndex(event.position, state.subtitleState.markers);
+            progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = event.position;
+        }
 
-        if(!!progressMapRef.current[audioState.name])
-        progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = event.position;
+    });
 
-        currentTimeSV.value = event.position;
+    useTrackPlayerEvents([Event.PlaybackState], (event) => {
+        if (event.state === State.Playing) {
+            isAutoUpdatingRef.current = true;
+        }
     });
 
     /** ─────────────────────────────────────────────
      *  SEEK
      *  ───────────────────────────────────────────── */
-    const seek = useCallback(async (percentage: number) => {
+    const seek = useCallback(async (percentage: number, updateHistory?:boolean) => {
 
         if (durationSV.value <= 0) return;
 
         const newTime = (percentage / 100) * durationSV.value;
         await TrackPlayer.seekTo(newTime);
 
-        const segmentIndex = getSegmentIndex(newTime, state.subtitleState.markers);
-
-        progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = newTime;
+        if(updateHistory !== undefined && updateHistory) {
+            // console.log('updating in seek')
+            const segmentIndex = getSegmentIndex(newTime, state.subtitleState.markers);
+            progressMapRef.current[audioState.name].segmentHistory![segmentIndex] = newTime;
+        }
 
     }, [subtitleState.cues, audioState.name]);
 
@@ -173,7 +182,9 @@ export const usePlayer = ({
      *  SUBTITLE CLICK
      *  ───────────────────────────────────────────── */
     const jumpToTime = async (time: number) => {
-        seek((time / durationSV.value) * 100);
+        await TrackPlayer.pause()
+        seek((time / durationSV.value) * 100, true);
+        await TrackPlayer.play()
     };
 
     /** ─────────────────────────────────────────────
@@ -187,7 +198,8 @@ export const usePlayer = ({
         const saved = progressMapRef.current[audioState.name].segmentHistory![index];
         const target = (saved && saved >= start && saved <= end) ? saved : start;
 
-        await TrackPlayer.seekTo(target);
+        // await TrackPlayer.seekTo(target);
+        seek(target/durationSV.value * 100, false);
         progressMapRef.current[audioState.name].segmentHistory![index] = target;
 
     },[subtitleState.cues, audioState.name]);
@@ -204,40 +216,35 @@ export const usePlayer = ({
     };
 
     const next = async () => {
+        isAutoUpdatingRef.current = false;
         const nextIndex = currentTrackIndex + 1;
         if (nextIndex < playlist.length) {
-            await playTrack(playlist[nextIndex], nextIndex, playlist, 1);
+            await TrackPlayer.pause()
+            await playTrack(playlist[nextIndex], nextIndex, playlist, 1, false);
+            await TrackPlayer.play()
         }
     };
 
     const previous = async () => {
-        const t = progressMapRef.current[audioState.name].currentTime;
-
-        // If > 3 seconds, rewind to start
-        if (t > 3) {
-            await TrackPlayer.seekTo(0);
-            return;
-        }
-
+        isAutoUpdatingRef.current = false;
         const prevIndex = currentTrackIndex - 1;
-
         if (prevIndex >= 0) {
-            await playTrack(playlist[prevIndex], prevIndex, playlist, 1);
-        } else {
-            await TrackPlayer.seekTo(0);
+            await TrackPlayer.pause()
+            await playTrack(playlist[prevIndex], prevIndex, playlist, 1, false);
+            await TrackPlayer.play()
         }
     };
 
     const skipForward = async () => {
         const currentTime = progressMapRef.current[audioState.name].currentTime
         const new_position = Math.min(currentTime + 10, durationSV.value)
-        await seek((new_position/durationSV.value) * 100);
+        await seek((new_position/durationSV.value) * 100, true);
     };
 
     const skipBackward = async () => {
         const currentTime = progressMapRef.current[audioState.name].currentTime
         const new_position = Math.max(currentTime - 10, 0)
-        await seek((new_position/durationSV.value) * 100);
+        await seek((new_position/durationSV.value) * 100, true);
     };
 
     /** ─────────────────────────────────────────────

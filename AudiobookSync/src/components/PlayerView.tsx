@@ -509,6 +509,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         return <></>
     }
 
+
     return (
         <>
             <GestureDetector gesture={dragGesture}>
