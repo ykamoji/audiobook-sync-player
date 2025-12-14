@@ -193,17 +193,16 @@ const MainContent: React.FC = () => {
         specificPlaylist?: Track[],
         option?: number
     ) => {
-        if(playerRef.current){
-            if(state.isPlaying){
-                // console.log('inside playTrack Wrapper', track.name, progressMapRef.current);
-            // console.log("playTrackWrapper");
+        if (playerRef.current) {
+            if (state.isPlaying) {
                 playerRef.current.savePlayerProgress()
             }
-            playerRef.current.playTrack(track, index, specificPlaylist || [track]).then();
+
             if(option === 2){
                 setPlayerMode('full')
-
             }
+
+            playerRef.current!.playTrack(track, index, specificPlaylist || [track]).then();
         }
     };
 
