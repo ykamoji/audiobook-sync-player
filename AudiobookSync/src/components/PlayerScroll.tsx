@@ -1,5 +1,5 @@
 import Animated, {
-    SharedValue,
+    SharedValue, useAnimatedScrollHandler,
     useAnimatedStyle,
     withTiming
 } from "react-native-reanimated";
@@ -13,13 +13,14 @@ export interface PlayerScrollProps {
         start: number;
         text: string;
     }>;
+    isUserScrolling:SharedValue<boolean>;
     currentCueIndexSV: SharedValue<number>;
     jumpToTime: (time: number) => void;
     cueRefs: MutableRefObject<
         Record<string, ComponentRef<typeof Animated.View> | null>
     >;
     showChapters: boolean;
-    scrollRef: RefObject<ScrollView>;
+    scrollRef: RefObject<Animated.ScrollView>;
 }
 
 export interface CueRowProps {
@@ -75,14 +76,28 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                                 cueRefs,
                                 showChapters,
                                 scrollRef,
+                                isUserScrolling
                             }) => {
 
 
+    const scrollHandler = useAnimatedScrollHandler({
+        onBeginDrag: () => {
+            isUserScrolling.value = true
+        },
+        onEndDrag: () => {
+            isUserScrolling.value = false
+        },
+        onMomentumEnd: () => {
+            isUserScrolling.value = false
+        },
+    });
+
 
     return (
-        <ScrollView
+        <Animated.ScrollView
             ref={scrollRef}
             style={playerStyles.subtitlesScroll}
+            onScroll={scrollHandler}
             pointerEvents={showChapters ? 'none' : 'auto'}
             contentContainerStyle={playerStyles.subtitlesContent}
             scrollEventThrottle={16}
@@ -105,7 +120,7 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                     </Text>
                 </View>
             )}
-        </ScrollView>
+        </Animated.ScrollView>
     );
 };
 

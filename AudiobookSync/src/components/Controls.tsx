@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Slider } from '@miblanchard/react-native-slider';
-
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { ProgressSlider } from "../services/ProgressSlider.tsx";
 import {
     PlayIcon,
     PauseIcon,
@@ -11,14 +10,14 @@ import {
     LucideMenu
 } from 'lucide-react-native';
 import {Forward10Icon, Rewind10Icon} from "./Icons.tsx";
+import {SharedValue} from "react-native-reanimated";
 
 interface ControlsProps {
     isPlaying: boolean;
     onPlayPause: () => void;
-    progress: number;
     duration: number;
     segmentMarkers: number[];
-    currentTime: number;
+    currentTime: SharedValue<number>;
     onSeek: (value: number) => void;
     onOpenMetadata: () => void;
     onOpenChapters: () => void;
@@ -30,17 +29,9 @@ interface ControlsProps {
     hasPrevious: boolean;
 }
 
-const formatTime = (time: number) => {
-    if (isNaN(time)) return "0:00";
-    const m = Math.floor(time / 60);
-    const s = Math.floor(time % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-};
-
 export const Controls: React.FC<ControlsProps> = ({
                                                       isPlaying,
                                                       onPlayPause,
-                                                      progress,
                                                       duration,
                                                       currentTime,
                                                       onSeek,
@@ -54,22 +45,28 @@ export const Controls: React.FC<ControlsProps> = ({
                                                       hasNext,
                                                       hasPrevious
                                                   }) => {
+
     return (
         <View style={styles.root}>
 
             {/* PROGRESS + TIME */}
             <View style={styles.sliderContainer}>
-                <Slider
-                    value={progress}
-                    minimumValue={0}
-                    maximumValue={100}
-                    onSlidingComplete={(values) => onSeek(values[0])}
-                    minimumTrackTintColor="#f97316"
-                    maximumTrackTintColor="#555"
-                    thumbTintColor="#F86600"
-                    trackStyle={{
-                        zIndex:0
-                    }}
+                {/*<Slider*/}
+                {/*    value={progress}*/}
+                {/*    minimumValue={0}*/}
+                {/*    maximumValue={100}*/}
+                {/*    onSlidingComplete={(values) => onSeek(values[0])}*/}
+                {/*    minimumTrackTintColor="#f97316"*/}
+                {/*    maximumTrackTintColor="#555"*/}
+                {/*    thumbTintColor="#F86600"*/}
+                {/*    trackStyle={{*/}
+                {/*        zIndex:0*/}
+                {/*    }}*/}
+                {/*/>*/}
+                <ProgressSlider
+                    currentTimeSV={currentTime}
+                    duration={duration}
+                    onSeek={onSeek}
                 />
                 <View style={styles.markerContainer}>
                     {duration > 0 && segmentMarkers!.map((time, i) =>
@@ -78,10 +75,6 @@ export const Controls: React.FC<ControlsProps> = ({
                                 style={[styles.marker, { left: `${(time / duration) * 100 }%` }]}
                             />
                     )}
-                </View>
-                <View style={styles.timeRow}>
-                    <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                    <Text style={styles.timeText}>{formatTime(duration)}</Text>
                 </View>
             </View>
 
@@ -148,18 +141,6 @@ const styles = StyleSheet.create({
 
     sliderContainer: {
         width: '100%',
-    },
-
-    timeRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: -6,
-    },
-
-    timeText: {
-        color: '#aaa',
-        fontSize: 11,
-        fontWeight: '500',
     },
 
     controlsRow: {

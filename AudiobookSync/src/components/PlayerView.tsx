@@ -60,10 +60,6 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
     const { currentTrackIndex, playlist, isPlaying, audioState, subtitleState } = state
 
-    const currentTime = currentTimeSV.value;
-
-    // console.log(progressMapRef.current[audioState.name])
-
     const savePlayerProgress = () => {
         if(!!audioState.name){
             // console.log('inside savePlayerProgress', progressMapRef.current[audioState.name].currentTime);
@@ -93,18 +89,16 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
     const insets = useSafeAreaInsets();
 
-    const firstLoad = useRef(true);
-
     // UI
     const [showChapters, setShowChapters] = useState(false);
 
     // Scroll refs
-    const scrollRef = useRef<ScrollView | null>(null);
+    const scrollRef = useRef<Animated.ScrollView | null>(null);
     const containerHeightRef = useRef<number>(0);
     const scrollAtTop = useRef(true);
     const cueRefs = useRef<Record<string, View | null>>({});
 
-    const currentProgress = duration > 0 ? (currentTime / duration) * 100 : 0
+    // const currentProgress = duration > 0 ? (currentTimeSV.value / duration) * 100 : 0
 
     const {scheme} = getScheme(audioState.name)
 
@@ -116,12 +110,13 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const colorScheme = useSharedValue(scheme);
     const fullImageProgress = useSharedValue(0);
     const expandedOnce = useSharedValue(false);
+    const isUserScrolling = useSharedValue(false);
 
-    const currentCueIndex = findCueIndex(subtitleState.cues, currentTime)
-    const currentCueIndexSV = useSharedValue(currentCueIndex)
+
+    const currentCueIndexSV = useSharedValue(findCueIndex(subtitleState.cues, currentTimeSV.value))
 
     // console.log(currentTime, subtitleState.markers)
-    let currentSegmentIndex = getSegmentIndex(currentTime, subtitleState.markers)
+    let currentSegmentIndex = getSegmentIndex(currentTimeSV.value, subtitleState.markers)
 
     // ----- AUTO-SCROLL TO ACTIVE CUE -----
     const scrollToActiveCue = (animated = true) => {
@@ -157,27 +152,11 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         () => currentTimeSV.value,
         (value, prev) => {
             // console.log('currentTimeSV', value, prev);
+            if(isUserScrolling.value) return;
             if (prev === value) return;
             runOnJS(onTimeUpdate)(value);
         }
     );
-
-
-    // useEffect(() => {
-    //     firstLoad.current = true;
-    // }, [audioState.name]);
-
-    // useEffect(() => {
-    //     if (currentCueIndex < 0) return;
-    //
-    //     if (firstLoad.current) {
-    //         firstLoad.current = false;
-    //         scrollToActiveCue(false);
-    //     } else {
-    //         scrollToActiveCue(true);
-    //     }
-    //
-    // }, [currentTimeSV]);
 
     const onSubtitleContainerLayout = (e: LayoutChangeEvent) => {
         containerHeightRef.current = e.nativeEvent.layout.height;
@@ -422,6 +401,13 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
     const progressPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0})
 
+    const progressPlayerModeStyle = useAnimatedStyle(() => {
+        const progress = duration > 0 ? (currentTimeSV.value / duration) * 100 : 0;
+        return {
+            width: `${Math.max(0, Math.min(progress, 100))}%`,
+        };
+    });
+
     const headerPlayerMode = useFadeWithProgress(progress)
 
     const trackNamePosPlayerMode = useSlideRight(progress, 25, -60)
@@ -575,7 +561,6 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         return <></>
     }
 
-
     return (
         <>
             <GestureDetector gesture={dragGesture}>
@@ -587,10 +572,10 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                     pointerEvents={showChapters ? "none" : "auto"}
                 >
                     <Animated.View style={[miniStyles.progressTrack, progressPlayerMode]}>
-                        <View
+                        <Animated.View
                             style={[
                                 miniStyles.progressFill,
-                                {width: `${Math.max(0, Math.min(currentProgress, 100))}%`},
+                                progressPlayerModeStyle,
                             ]}
                         />
                     </Animated.View>
@@ -682,6 +667,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                         >
                             <PlayerScroll
                                 displayedCues={displayedCues}
+                                isUserScrolling={isUserScrolling}
                                 currentCueIndexSV={currentCueIndexSV}
                                 jumpToTime={jumpToTime}
                                 cueRefs={cueRefs}
@@ -694,9 +680,8 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                         <View style={playerStyles.controlsContainer}>
                             <Controls
                                 isPlaying={isPlaying}
-                                currentTime={currentTime}
+                                currentTime={currentTimeSV}
                                 duration={duration}
-                                progress={currentProgress}
                                 onPlayPause={()=>{
                                     controlSaveProgress()
                                     togglePlay()

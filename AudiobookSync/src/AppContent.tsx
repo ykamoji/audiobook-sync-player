@@ -199,7 +199,7 @@ const MainContent: React.FC = () => {
                 if (option === 2) {
                     setPlayerMode('full')
                 }
-            }, 500)
+            }, 800)
 
             // setTimeout(()=> {
             //     if (!state.isPlaying) {
