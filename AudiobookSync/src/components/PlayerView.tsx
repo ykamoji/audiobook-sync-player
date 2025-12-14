@@ -1,6 +1,5 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {Dimensions, Text, TouchableOpacity, View,} from 'react-native';
-import {getSegmentIndex} from '../utils/mediaLoader';
 import {Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
 
 import Animated, {
@@ -15,14 +14,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Controls} from './Controls';
-import {ChevronDownIcon, PauseIcon, PlayIcon, XIcon,} from 'lucide-react-native';
-import {SlideWindow} from "./SlideWindow.tsx";
+import {ChevronDownIcon, PauseIcon, PlayIcon,} from 'lucide-react-native';
 import {PlayerMode} from "../AppContent.tsx";
 import {miniStyles, playerStyles} from "../utils/playerStyles.ts";
 import {useStaticData} from "../hooks/useStaticData.tsx";
 import {usePlayer} from "../hooks/usePlayer.ts";
 import {ProgressData, Track} from "../utils/types.ts";
 import {PlayerScroll} from "./PlayerScroll.tsx";
+import {Segments} from "./Segments.tsx";
 
 interface PlayerViewProps {
     playerMode: PlayerMode;
@@ -42,7 +41,6 @@ export interface PlayerViewRef {
     savePlayerProgress: () => void
 }
 
-const CUES_PER_SEGMENT = 100;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MINI_HEIGHT = 80;
@@ -82,13 +80,10 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const insets = useSafeAreaInsets();
 
     // UI
-    const [showChapters, setShowChapters] = useState(false);
+    const [showSegments, setShowSegments] = useState(false);
 
-    // const containerHeightRef = useRef<number>(0);
     const scrollAtTop = useRef(true);
-
     const {scheme} = getScheme(audioState.name)
-
 
     const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
 
@@ -102,15 +97,6 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     useEffect(() => {
         colorScheme.value = scheme
     }, [audioState.name]);
-
-    let currentSegmentIndex = getSegmentIndex(currentTimeSV.value, subtitleState.markers)
-
-    const formatTime = (seconds: number) => {
-        if (!seconds || isNaN(seconds)) return '00:00';
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    };
 
     useEffect(() => {
 
@@ -516,7 +502,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                         playerStyles.root,
                         containerStyle,
                     ]}
-                    pointerEvents={showChapters ? "none" : "auto"}
+                    pointerEvents={showSegments ? "none" : "auto"}
                 >
                     <Animated.View style={[miniStyles.progressTrack, progressPlayerMode]}>
                         <Animated.View
@@ -526,7 +512,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                             ]}
                         />
                     </Animated.View>
-                    <View pointerEvents={showChapters ? "none" : "auto"}>
+                    <View pointerEvents={showSegments ? "none" : "auto"}>
                         {/* COVER ART */}
                         {playerMode === 'mini' && (
                             <GestureDetector gesture={tapToExpandGesture}>
@@ -534,7 +520,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                             </GestureDetector>
                         )}
                         <Animated.View style={[[], bgStyle]}>
-                            <Animated.View style={[playerStyles.coverContainer, artworkStyle]} pointerEvents={showChapters ? "none" : "auto"}>
+                            <Animated.View style={[playerStyles.coverContainer, artworkStyle]} pointerEvents={showSegments ? "none" : "auto"}>
                                 {audioState.coverPath ? (
                                     <>
                                     <Pressable
@@ -615,7 +601,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                 displayedCues={subtitleState.cues}
                                 currentTimeSV={currentTimeSV}
                                 jumpToTime={jumpToTime}
-                                showChapters={showChapters}
+                                showChapters={showSegments}
                             />
                         </Animated.View>
 
@@ -637,7 +623,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                 onOpenMetadata={()=>{
                                     onOpenMetadata(audioState.name)
                                 }}
-                                onOpenChapters={() => setShowChapters(true)}
+                                onOpenChapters={() => setShowSegments(true)}
                                 segmentMarkers={subtitleState.markers}
                                 hasNext={currentTrackIndex < playlist.length - 1}
                                 hasPrevious={currentTrackIndex > 0}
@@ -646,84 +632,16 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                     </View>
                 </Animated.View>
             </GestureDetector>
-
-            <SlideWindow style={playerStyles.chaptersOverlayRoot}
-                         open={showChapters}
-                         side={"bottom"}
-                         height={"60%"}
-                         onClose={() => setShowChapters(false)}>
-
-                <View style={[playerStyles.chaptersSheet, {}]}>
-                    <View style={playerStyles.chaptersHeader}>
-                        <View style={playerStyles.chaptersHeaderLeft}>
-                            <Text style={playerStyles.chaptersTitle}>{audioState.name}</Text>
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={() => setShowChapters(false)}
-                            style={playerStyles.chaptersCloseButton}
-                        >
-                            <XIcon size={24} color="#9ca3af" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={[playerStyles.chaptersList, playerStyles.chaptersListContent]}>
-                        {Array.from({length: subtitleState.totalSegments}).map((_, i) => {
-                            let dynDuration = 0;
-
-                            if (subtitleState.cues.length > 0) {
-                                const startIdx = i * CUES_PER_SEGMENT;
-                                const endIdx = Math.min(
-                                    (i + 1) * CUES_PER_SEGMENT - 1,
-                                    subtitleState.cues.length - 1
-                                );
-
-                                if (startIdx < subtitleState.cues.length && endIdx >= startIdx) {
-                                    dynDuration =
-                                        subtitleState.cues[endIdx].end -
-                                        subtitleState.cues[startIdx].start;
-                                }
-                            } else if (duration.value > 0) {
-                                dynDuration = duration.value;
-                            }
-
-                            const isActive = currentSegmentIndex === i;
-
-                            return (
-                                <TouchableOpacity
-                                    key={i}
-                                    style={[
-                                        playerStyles.chapterItem,
-                                        isActive && playerStyles.chapterItemActive,
-                                    ]}
-                                    onPress={() => {
-                                        changeSegment(i).then();
-                                        setShowChapters(false);
-                                    }}
-                                >
-                                    <Text
-                                        style={[
-                                            playerStyles.chapterIndex,
-                                            isActive && playerStyles.chapterIndexActive,
-                                        ]}
-                                    >
-                                        1.{i + 1}
-                                    </Text>
-
-                                    <Text
-                                        style={[
-                                            playerStyles.chapterDuration,
-                                            isActive && playerStyles.chapterDurationActive,
-                                        ]}
-                                    >
-                                        {formatTime(dynDuration)}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
-            </SlideWindow>
+            <Segments
+                changeSegment={changeSegment}
+                setShowSegments={setShowSegments}
+                duration={duration.value}
+                segmentHistory={progressMapRef.current[audioState.name].segmentHistory!}
+                currentTime={currentTimeSV.value}
+                showSegments={showSegments}
+                subtitleState={subtitleState}
+                trackName={audioState.name}
+            />
         </>
     )
 });

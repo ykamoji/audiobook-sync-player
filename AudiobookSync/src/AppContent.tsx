@@ -52,7 +52,7 @@ export const setupPlayer = async () => {
             compactCapabilities: [
                 Capability.Play,
                 Capability.Pause,
-                Capability.SkipToNext,
+                Capability.SeekTo,
             ],
         });
     }catch (e) {

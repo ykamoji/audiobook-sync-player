@@ -185,9 +185,9 @@ export const playerStyles = StyleSheet.create({
     },
     chaptersTitle: {
         marginLeft: 8,
-        fontSize: 20,
-        fontWeight: '700',
-        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+        color: 'rgba(255,131,0,1)',
     },
     chaptersCloseButton: {
         padding: 8,
@@ -206,27 +206,31 @@ export const playerStyles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 8,
         paddingHorizontal: 12,
+        height: 60,
         // borderRadius: 12,
         marginBottom: 6,
+        borderLeftWidth: 5,
         backgroundColor: 'rgba(255,255,255,0.05)',
     },
     chapterItemActive: {
-        backgroundColor: '#f97316',
+        // backgroundColor: '#f97316',
+        borderLeftWidth: 5,
+        borderLeftColor: 'rgba(255,131,0,0.60)'
     },
     chapterIndex: {
-        fontSize: 20,
-        color: '#e5e7eb',
+        fontSize: 14,
+        color: '#aaa',
         fontWeight: '600',
     },
     chapterIndexActive: {
-        color: '#111827',
+        // color: '#111827',
     },
     chapterDuration: {
-        fontSize: 16,
+        fontSize: 12,
         color: '#6b7280',
     },
     chapterDurationActive: {
-        color: '#111827',
+        // color: '#111827',
     },
 });
 
@@ -283,7 +287,7 @@ export const miniStyles = StyleSheet.create({
     },
     title: {
         color: '#fff',
-        fontSize: 12,
+        fontSize: 9,
         fontWeight: '600',
     },
     subtitle: {
