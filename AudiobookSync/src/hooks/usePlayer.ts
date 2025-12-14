@@ -29,7 +29,7 @@ export const usePlayer = ({
     // console.log('outside', audioState.name, isPlaying)
 
     /** Resume + history tracking */
-    const durationRef = useRef<number>(0);
+    const durationSV = useSharedValue(0);
     const currentTimeSV = useSharedValue(0)
 
     // console.log(isPlaying, audioState.name)
@@ -46,15 +46,12 @@ export const usePlayer = ({
     useEffect(() => {
         if(!!audioState.name){
             const { duration } =  getDuration(audioState.name)
-            durationRef.current = duration
+            durationSV.value = duration
 
             if(!!progressMapRef.current[audioState.name])
                 currentTimeSV.value = progressMapRef.current[audioState.name].currentTime
         }
-
     }, [audioState.name]);
-
-
 
     /** ─────────────────────────────────────────────
      *  LOAD + PLAY A TRACK
@@ -95,7 +92,7 @@ export const usePlayer = ({
         let resumed_position = 0;
         if (saved) {
             resumed_position =
-                saved.currentTime > 0 && saved.currentTime < durationRef.current - 1
+                saved.currentTime > 0 && saved.currentTime < durationSV.value - 1
                     ? saved.currentTime
                     : 0;
         }
@@ -139,9 +136,12 @@ export const usePlayer = ({
      *  SAVE PROGRESS LOOP
      *  ───────────────────────────────────────────── */
     useTrackPlayerEvents([Event.PlaybackProgressUpdated], (event) => {
-        if (!audioState.name || durationRef.current === 0) return;
+        if (!audioState.name || durationSV.value === 0) return;
 
         // console.log('useTrackPlayerEvents', event.position)
+
+        // console.log(even)
+
         if(!!progressMapRef.current[audioState.name])
             progressMapRef.current[audioState.name].currentTime = event.position
 
@@ -158,9 +158,9 @@ export const usePlayer = ({
      *  ───────────────────────────────────────────── */
     const seek = useCallback(async (percentage: number) => {
 
-        if (durationRef.current <= 0) return;
+        if (durationSV.value <= 0) return;
 
-        const newTime = (percentage / 100) * durationRef.current;
+        const newTime = (percentage / 100) * durationSV.value;
         await TrackPlayer.seekTo(newTime);
 
         const segmentIndex = getSegmentIndex(newTime, state.subtitleState.markers);
@@ -173,7 +173,7 @@ export const usePlayer = ({
      *  SUBTITLE CLICK
      *  ───────────────────────────────────────────── */
     const jumpToTime = async (time: number) => {
-        seek((time / durationRef.current) * 100);
+        seek((time / durationSV.value) * 100);
     };
 
     /** ─────────────────────────────────────────────
@@ -182,7 +182,7 @@ export const usePlayer = ({
     const changeSegment = useCallback(async (index: number) => {
 
         const start = index == 0 ? 0 : subtitleState.markers[index - 1]
-        const end = index === subtitleState.markers.length  ? durationRef.current : subtitleState.markers[index]
+        const end = index === subtitleState.markers.length  ? durationSV.value : subtitleState.markers[index]
 
         const saved = progressMapRef.current[audioState.name].segmentHistory![index];
         const target = (saved && saved >= start && saved <= end) ? saved : start;
@@ -230,14 +230,14 @@ export const usePlayer = ({
 
     const skipForward = async () => {
         const currentTime = progressMapRef.current[audioState.name].currentTime
-        const new_position = Math.min(currentTime + 10, durationRef.current)
-        await seek((new_position/durationRef.current) * 100);
+        const new_position = Math.min(currentTime + 10, durationSV.value)
+        await seek((new_position/durationSV.value) * 100);
     };
 
     const skipBackward = async () => {
         const currentTime = progressMapRef.current[audioState.name].currentTime
         const new_position = Math.max(currentTime - 10, 0)
-        await seek((new_position/durationRef.current) * 100);
+        await seek((new_position/durationSV.value) * 100);
     };
 
     /** ─────────────────────────────────────────────
@@ -249,7 +249,7 @@ export const usePlayer = ({
         subtitleState,
         playlist,
         currentTrackIndex,
-        duration: durationRef.current,
+        duration: durationSV,
 
         currentTimeSV,
         state,

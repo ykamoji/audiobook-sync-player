@@ -1,13 +1,13 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
-import {Dimensions, LayoutChangeEvent, ScrollView, Text, TouchableOpacity, View,} from 'react-native';
-import {findCueIndex, getSegmentIndex} from '../utils/mediaLoader';
+import {Dimensions, Text, TouchableOpacity, View,} from 'react-native';
+import {getSegmentIndex} from '../utils/mediaLoader';
 import {Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
 
 import Animated, {
     Easing,
     interpolate,
     interpolateColor,
-    runOnJS, useAnimatedReaction,
+    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
@@ -81,26 +81,16 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
     const { getScheme } = useStaticData()
 
-    const displayedCues = subtitleState.cues
-    const totalSegments = subtitleState.totalSegments
-    const segmentMarkers = subtitleState.markers
-    const hasNext = currentTrackIndex < playlist.length - 1
-    const hasPrevious = currentTrackIndex > 0
-
     const insets = useSafeAreaInsets();
 
     // UI
     const [showChapters, setShowChapters] = useState(false);
 
-    // Scroll refs
-    const scrollRef = useRef<Animated.ScrollView | null>(null);
-    const containerHeightRef = useRef<number>(0);
+    // const containerHeightRef = useRef<number>(0);
     const scrollAtTop = useRef(true);
-    const cueRefs = useRef<Record<string, View | null>>({});
-
-    // const currentProgress = duration > 0 ? (currentTimeSV.value / duration) * 100 : 0
 
     const {scheme} = getScheme(audioState.name)
+
 
     const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
 
@@ -110,57 +100,12 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const colorScheme = useSharedValue(scheme);
     const fullImageProgress = useSharedValue(0);
     const expandedOnce = useSharedValue(false);
-    const isUserScrolling = useSharedValue(false);
 
+    useEffect(() => {
+        colorScheme.value = scheme
+    }, [audioState.name]);
 
-    const currentCueIndexSV = useSharedValue(findCueIndex(subtitleState.cues, currentTimeSV.value))
-
-    // console.log(currentTime, subtitleState.markers)
     let currentSegmentIndex = getSegmentIndex(currentTimeSV.value, subtitleState.markers)
-
-    // ----- AUTO-SCROLL TO ACTIVE CUE -----
-    const scrollToActiveCue = (animated = true) => {
-        if (!scrollRef.current || !displayedCues.length) return;
-
-        if (currentCueIndexSV.value < 0) return;
-
-        const cue = displayedCues[currentCueIndexSV.value];
-        const ref = cueRefs.current[cue.id];
-        if (!ref) return;
-
-        ref.measureLayout(
-            scrollRef.current.getInnerViewNode(),
-            (x, y, w, h) => {
-                const targetY = Math.max(0, y - 150);
-                scrollRef.current?.scrollTo({ y: targetY, animated: animated });
-            },
-            () => {}
-        );
-    };
-
-
-    const onTimeUpdate = (time:number) => {
-        // NOW we may compute cue index (React JS thread)
-        currentCueIndexSV.value = findCueIndex(subtitleState.cues, time);
-
-        requestAnimationFrame(() => {
-            scrollToActiveCue(true);
-        });
-    };
-
-    useAnimatedReaction(
-        () => currentTimeSV.value,
-        (value, prev) => {
-            // console.log('currentTimeSV', value, prev);
-            if(isUserScrolling.value) return;
-            if (prev === value) return;
-            runOnJS(onTimeUpdate)(value);
-        }
-    );
-
-    const onSubtitleContainerLayout = (e: LayoutChangeEvent) => {
-        containerHeightRef.current = e.nativeEvent.layout.height;
-    };
 
     const formatTime = (seconds: number) => {
         if (!seconds || isNaN(seconds)) return '00:00';
@@ -399,10 +344,13 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         });
     };
 
-    const progressPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0})
+    const progressPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.98})
+
 
     const progressPlayerModeStyle = useAnimatedStyle(() => {
-        const progress = duration > 0 ? (currentTimeSV.value / duration) * 100 : 0;
+
+        const progress = duration.value > 0 ? (currentTimeSV.value / duration.value) * 100 : 0;
+
         return {
             width: `${Math.max(0, Math.min(progress, 100))}%`,
         };
@@ -663,16 +611,12 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                             style={[playerStyles.subtitlesContainer,
                                 scrollHiddenStyle
                             ]}
-                            onLayout={onSubtitleContainerLayout}
                         >
                             <PlayerScroll
-                                displayedCues={displayedCues}
-                                isUserScrolling={isUserScrolling}
-                                currentCueIndexSV={currentCueIndexSV}
+                                displayedCues={subtitleState.cues}
+                                currentTimeSV={currentTimeSV}
                                 jumpToTime={jumpToTime}
-                                cueRefs={cueRefs}
                                 showChapters={showChapters}
-                                scrollRef={scrollRef}
                             />
                         </Animated.View>
 
@@ -681,7 +625,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                             <Controls
                                 isPlaying={isPlaying}
                                 currentTime={currentTimeSV}
-                                duration={duration}
+                                duration={duration.value}
                                 onPlayPause={()=>{
                                     controlSaveProgress()
                                     togglePlay()
@@ -695,9 +639,9 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                     onOpenMetadata(audioState.name)
                                 }}
                                 onOpenChapters={() => setShowChapters(true)}
-                                segmentMarkers={segmentMarkers}
-                                hasNext={hasNext}
-                                hasPrevious={hasPrevious}
+                                segmentMarkers={subtitleState.markers}
+                                hasNext={currentTrackIndex < playlist.length - 1}
+                                hasPrevious={currentTrackIndex > 0}
                             />
                         </View>
                     </View>
@@ -725,7 +669,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                     </View>
 
                     <View style={[playerStyles.chaptersList, playerStyles.chaptersListContent]}>
-                        {Array.from({length: totalSegments}).map((_, i) => {
+                        {Array.from({length: subtitleState.totalSegments}).map((_, i) => {
                             let dynDuration = 0;
 
                             if (subtitleState.cues.length > 0) {
@@ -740,8 +684,8 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                         subtitleState.cues[endIdx].end -
                                         subtitleState.cues[startIdx].start;
                                 }
-                            } else if (duration > 0) {
-                                dynDuration = duration;
+                            } else if (duration.value > 0) {
+                                dynDuration = duration.value;
                             }
 
                             const isActive = currentSegmentIndex === i;

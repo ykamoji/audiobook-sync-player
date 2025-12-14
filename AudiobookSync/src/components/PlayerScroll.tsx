@@ -1,26 +1,20 @@
 import Animated, {
-    SharedValue, useAnimatedScrollHandler,
-    useAnimatedStyle,
+    runOnJS,
+    SharedValue, useAnimatedReaction, useAnimatedScrollHandler,
+    useAnimatedStyle, useSharedValue,
     withTiming
 } from "react-native-reanimated";
-import {ScrollView, Text, View} from "react-native";
-import {FC, RefObject, MutableRefObject, ComponentRef} from "react";
+import {Text, View} from "react-native";
+import {FC, MutableRefObject, ComponentRef, useRef} from "react";
 import {playerStyles} from "../utils/playerStyles.ts";
+import {findCueIndex} from "../utils/mediaLoader.ts";
+import {SubtitleCue} from "../utils/types.ts";
 
 export interface PlayerScrollProps {
-    displayedCues: Array<{
-        id: string;
-        start: number;
-        text: string;
-    }>;
-    isUserScrolling:SharedValue<boolean>;
-    currentCueIndexSV: SharedValue<number>;
+    displayedCues: SubtitleCue[];
+    currentTimeSV:SharedValue<number>;
     jumpToTime: (time: number) => void;
-    cueRefs: MutableRefObject<
-        Record<string, ComponentRef<typeof Animated.View> | null>
-    >;
     showChapters: boolean;
-    scrollRef: RefObject<Animated.ScrollView>;
 }
 
 export interface CueRowProps {
@@ -71,13 +65,54 @@ const CueRow: FC<CueRowProps> = ({
 
 export const PlayerScroll: FC<PlayerScrollProps> = ({
                                 displayedCues,
-                                currentCueIndexSV,
+                                currentTimeSV,
                                 jumpToTime,
-                                cueRefs,
                                 showChapters,
-                                scrollRef,
-                                isUserScrolling
                             }) => {
+
+    const isUserScrolling = useSharedValue(false);
+    const cueRefs = useRef<Record<string, View | null>>({});
+    const scrollRef = useRef<Animated.ScrollView | null>(null);
+    const currentCueIndexSV = useSharedValue(findCueIndex(displayedCues, currentTimeSV.value))
+
+    const scrollToActiveCue = (animated = true) => {
+        if (!scrollRef.current || !displayedCues.length) return;
+
+        if (currentCueIndexSV.value < 0) return;
+
+        const cue = displayedCues[currentCueIndexSV.value];
+        const ref = cueRefs.current[cue.id];
+        if (!ref) return;
+
+        ref.measureLayout(
+            scrollRef.current.getInnerViewNode(),
+            (x, y, w, h) => {
+                const targetY = Math.max(0, y - 150);
+                scrollRef.current?.scrollTo({ y: targetY, animated: animated });
+            },
+            () => {}
+        );
+    };
+
+
+    const onTimeUpdate = (time:number) => {
+        // NOW we may compute cue index (React JS thread)
+        currentCueIndexSV.value = findCueIndex(displayedCues, time);
+
+        requestAnimationFrame(() => {
+            scrollToActiveCue(true);
+        });
+    };
+
+    useAnimatedReaction(
+        () => currentTimeSV.value,
+        (value, prev) => {
+            // console.log('currentTimeSV', value, prev);
+            if(isUserScrolling.value) return;
+            if (prev === value) return;
+            runOnJS(onTimeUpdate)(value);
+        }
+    );
 
 
     const scrollHandler = useAnimatedScrollHandler({
