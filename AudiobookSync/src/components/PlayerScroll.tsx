@@ -1,73 +1,36 @@
 import Animated, {
     runOnJS,
-    SharedValue, useAnimatedReaction, useAnimatedScrollHandler,
-    useAnimatedStyle, useSharedValue,
-    withTiming
+    SharedValue,
+    useAnimatedReaction,
+    useAnimatedScrollHandler,
+    useSharedValue,
 } from "react-native-reanimated";
-import {Text, View} from "react-native";
-import {FC, MutableRefObject, ComponentRef, useRef} from "react";
+import { Switch } from 'react-native-paper';
+import {Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {FC, useCallback, useRef, useState} from "react";
 import {playerStyles} from "../utils/playerStyles.ts";
 import {findCueIndex} from "../utils/mediaLoader.ts";
 import {SubtitleCue} from "../utils/types.ts";
+import {Cue} from "./Cue.tsx";
+import {removeSubtitleEdit, saveSubtitleEdit} from "../utils/subtitleEdits.ts";
+import {modelStyles} from "../utils/modelStyles.ts";
+import {Pressable} from "react-native-gesture-handler";
+import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 export interface PlayerScrollProps {
     displayedCues: SubtitleCue[];
     currentTimeSV:SharedValue<number>;
     jumpToTime: (time: number) => void;
     showChapters: boolean;
+    togglePlay: (override?:boolean) => void;
 }
-
-export interface CueRowProps {
-    cue: {
-        id: string;
-        start: number;
-        text: string;
-    };
-
-    index: number;
-    currentCueIndexSV: SharedValue<number>;
-    jumpToTime: (time: number) => void;
-    cueRefs: MutableRefObject<
-        Record<string, ComponentRef<typeof Animated.View> | null>
-    >;
-}
-const CueRow: FC<CueRowProps> = ({
-                    cue,
-                    index,
-                    currentCueIndexSV,
-                    jumpToTime,
-                    cueRefs
-                }) => {
-
-    const animatedTextStyle = useAnimatedStyle(() => {
-        const isActive = index === currentCueIndexSV.value;
-        return {
-            color: withTiming(isActive ? '#f97316' : '#9ca3af', { duration: 10 }),
-            fontFamily: isActive ? 'CabinCondensed-Semibold' : 'CabinCondensed-Medium',
-        };
-    });
-
-    return (
-        <Animated.View
-            ref={(ref) => { cueRefs.current[cue.id] = ref }}
-            style={playerStyles.cueContainer}
-        >
-            <Animated.Text
-                onPress={() => jumpToTime(cue.start)}
-                style={[playerStyles.cueText, animatedTextStyle]}
-            >
-                {cue.text}
-            </Animated.Text>
-        </Animated.View>
-    );
-};
-
 
 export const PlayerScroll: FC<PlayerScrollProps> = ({
                                 displayedCues,
                                 currentTimeSV,
                                 jumpToTime,
                                 showChapters,
+                                togglePlay
                             }) => {
 
     const isUserScrolling = useSharedValue(false);
@@ -114,7 +77,6 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
         }
     );
 
-
     const scrollHandler = useAnimatedScrollHandler({
         onBeginDrag: () => {
             isUserScrolling.value = true
@@ -127,8 +89,81 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
         },
     });
 
+    const { state, dispatch } = usePlayerContext()
+
+    const [showModal, setShowModal] = useState<boolean>(false);
+    const cueIdRef = useRef<number>(-1);
+    const cueTextRef = useRef<string>("");
+    const previousPlayingRef = useRef(false);
+
+
+    const onCueUpdate = useCallback(async (cueId: number, text:string) => {
+        cueIdRef.current = cueId;
+        cueTextRef.current = text.trim();
+        if(state.isPlaying){
+            previousPlayingRef.current = true;
+            togglePlay(false);
+        }
+        setShowModal(true);
+    },[state.isPlaying, togglePlay])
+
+    const updateCueHandler = async () => {
+
+        await saveSubtitleEdit(state.audioState.name, cueIdRef.current, cueTextRef.current);
+
+        dispatch({
+            type: "UPDATE_CUE",
+            cueId: cueIdRef.current,
+            text: cueTextRef.current,
+            isPlaying: previousPlayingRef.current,
+            isEdited:true,
+        });
+
+        if (previousPlayingRef.current) {
+            togglePlay(true);
+        }
+
+        // Clean up
+        previousPlayingRef.current = false
+        setShowModal(false);
+        setTimeout(()=> {
+            cueIdRef.current = -1;
+            cueTextRef.current = "";
+        }, 100)
+
+    }
+
+    const removeCueHandler = async () => {
+
+        await removeSubtitleEdit(state.audioState.name, cueIdRef.current);
+
+        dispatch({
+            type: "UPDATE_CUE",
+            cueId: cueIdRef.current,
+            text: cueTextRef.current,
+            isPlaying: state.isPlaying,
+            isEdited:false,
+        });
+
+        if (previousPlayingRef.current) {
+            togglePlay(true);
+        }
+
+        // Clean up
+        previousPlayingRef.current = false
+        setShowModal(false);
+        setTimeout(()=> {
+            cueIdRef.current = -1;
+            cueTextRef.current = "";
+        }, 100)
+
+    }
+
+
+
 
     return (
+        <>
         <Animated.ScrollView
             ref={scrollRef}
             style={playerStyles.subtitlesScroll}
@@ -138,12 +173,13 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
             scrollEventThrottle={16}
         >
             {displayedCues.map((cue, index) => (
-                <CueRow
+                <Cue
                     key={cue.id}
                     cue={cue}
                     index={index}
                     currentCueIndexSV={currentCueIndexSV}
                     jumpToTime={jumpToTime}
+                    onUpdate={onCueUpdate}
                     cueRefs={cueRefs}
                 />
             ))}
@@ -156,6 +192,77 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                 </View>
             )}
         </Animated.ScrollView>
+        <Modal visible={showModal} transparent animationType="fade">
+            <View style={modelStyles.wrapper}>
+                <Pressable style={modelStyles.backdropWrapper}
+                           onPress={() => {
+                               if(previousPlayingRef.current){
+                                   togglePlay(true);
+                               }
+                               previousPlayingRef.current = false
+                               setShowModal(false);
+                               setTimeout(()=> {
+                                   cueIdRef.current = -1;
+                                   cueTextRef.current = "";
+                               }, 100)
+                           }}/>
+                <View style={modelStyles.modalContainer}>
+                    <View style={modelStyles.headerRow}>
+                        <Text style={modelStyles.headerText}>Edit Cue #{cueIdRef.current}</Text>
+                        <TouchableOpacity onPress={() => {
+                            if(previousPlayingRef.current){
+                                togglePlay(true);
+                            }
+                            previousPlayingRef.current = false
+                            setShowModal(false)
+                            setTimeout(()=> {
+                                cueIdRef.current = -1;
+                                cueTextRef.current = "";
+                            }, 100)
+                        }
+                        }>
+                            <Text style={modelStyles.closeText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <TextInput
+                        defaultValue={cueTextRef.current}
+                        multiline
+                        placeholder="Playlist Name"
+                        placeholderTextColor="#888"
+                        onChangeText={(val) => cueTextRef.current = val}
+                        style={[modelStyles.input, { height: 120, }]}
+                    />
+
+                    <View style={modelStyles.buttonRow}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowModal(false)
+                                if(previousPlayingRef.current){
+                                    togglePlay(true);
+                                }
+                                previousPlayingRef.current = false
+                                setTimeout(()=> {
+                                    cueIdRef.current = -1;
+                                    cueTextRef.current = "";
+                                }, 100)
+                            }}
+                            style={[modelStyles.secondaryButton, { marginTop: 10, paddingVertical: 12 }]}>
+                            <Text style={[modelStyles.secondaryButtonText, { paddingTop:1}]}>Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={updateCueHandler}
+                            style={[
+                                modelStyles.primaryButton,
+                                { flex: 1 },
+                            ]}>
+                            <Text style={modelStyles.primaryButtonText}>Update</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+        </>
     );
 };
 

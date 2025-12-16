@@ -18,8 +18,6 @@ import {
 } from "lucide-react-native";
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Track, Playlist, ProgressData } from "../utils/types";
-
-import {usePlayerContext} from "../services/PlayerContext.tsx";
 import {PlayingIndicator} from "../services/PlayingIndicator.tsx";
 import {runOnJS} from "react-native-reanimated";
 
@@ -141,7 +139,6 @@ export const TrackRow: React.FC<TrackRowProps> = ({
             if(success) runOnJS(handlePress)(2)
         });
 
-
     return (
         <View ref={rowRef} style={[styles.rowContainer, style]}>
             <GestureDetector gesture={Gesture.Exclusive(doubleTap, singleTap)}>
@@ -184,37 +181,37 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     >
                         {displayName}
                     </Text>
-                    { showLive ?
-                        <View style={styles.live}>
-                            <PlayingIndicator />
+                    <View style={styles.live}>
+                        <PlayingIndicator visible={showLive}/>
+                    </View>
+                    {(!isSelectionMode &&(
+                    <View style={styles.metaRow}>
+                        <View style={[styles.progressBarBackground, {
+                            opacity: progress?.percentage > 0 ? 1 : 0,
+                        }]}>
+                            <View
+                                style={[
+                                    styles.progressBarFill,
+                                    isCompleted && styles.completedBar,
+                                    {
+                                        opacity: progress?.percentage > 0 ? 1 : 0,
+                                        width: `${percentage}%`
+                                    },
+                                ]}/>
                         </View>
-                        :
-                        (!isSelectionMode && percentage > 0 && (
-                            <View style={styles.metaRow}>
-                                <View style={styles.progressBarBackground}>
-                                    <View
-                                        style={[
-                                            styles.progressBarFill,
-                                            isCompleted && styles.completedBar,
-                                            {width: `${percentage}%`},
-                                        ]}/>
-                                </View><View style={styles.metaDetails}>
-                                {isCompleted ? (
-                                    <Text style={styles.completedLabel}>Completed</Text>
-                                ) : percentage > 0 ? (
-                                    <Text style={styles.mediumText}>
-                                        {Math.floor(percentage)}%
-                                    </Text>
-                                ) : (
-                                    // 👇 placeholder to keep layout identical
-                                    <Text style={[styles.mediumText, {opacity: 0}]}>
-                                        100%
-                                    </Text>
-                                )}
-                                {playlistBadges}
-                            </View>
-                            </View>
-                        ))}
+                        <View style={styles.metaDetails}>
+                            {isCompleted && <Text style={styles.completedLabel}>Completed</Text>}
+                            <Text style={[styles.mediumText,
+                                {   paddingLeft: 5,
+                                    opacity: progress?.percentage > 0 ? 1 : 0
+                                }
+                            ]}>
+                                {Math.ceil(percentage)}%
+                            </Text>
+                        </View>
+                        {playlistBadges}
+                    </View>
+                    ))}
                 </View>
             </TouchableOpacity>
             </GestureDetector>
@@ -262,7 +259,7 @@ const styles = StyleSheet.create({
 
     mainRow: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-end",
         // backgroundColor: "#1a1a1a",
         padding: 12,
         borderRadius: 10,
@@ -290,6 +287,7 @@ const styles = StyleSheet.create({
 
     infoBox: {
         flex: 1,
+
     },
 
     trackTitle: {
@@ -303,7 +301,10 @@ const styles = StyleSheet.create({
     },
 
     metaRow: {
-        marginTop: 6,
+        // backgroundColor: "white",
+        flexDirection: "row",
+        alignItems: "flex-end",
+        // marginTop: 0,
     },
 
     progressBarBackground: {
@@ -323,16 +324,13 @@ const styles = StyleSheet.create({
     },
 
     metaDetails: {
-        marginTop: 4,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
     },
-
     completedLabel: {
-        color: "#4CAF50",
         fontWeight: "600",
-        fontSize: 16,
+        fontSize: 10,
     },
 
     mediumText: {
@@ -342,10 +340,11 @@ const styles = StyleSheet.create({
 
     badgesRow: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        position: "relative",
-        marginTop: 10,
-        maxWidth: "60%",
+        alignItems: "flex-start",
+        gap:2,
+        top:12,
+        left:-7,
+        position: "absolute",
     },
 
     playlistBadge: {
@@ -391,6 +390,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     live:{
-        marginTop: 10,
+        position: "absolute",
+        bottom: 30,
     }
 });

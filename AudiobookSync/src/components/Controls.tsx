@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     },
 
     sideButton: {
-        paddingHorizontal: 8,
+        padding: 8,
         // backgroundColor:"white"
     },
 

@@ -23,13 +23,13 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
     };
 
     const createPlaylist = (name: string, initialTracks: Track[]) => {
+
         const newPlaylist: Playlist = {
             id: uuid.v4().toString(),
             name,
             trackNames: initialTracks.map(t => t.name),
             createdAt: Date.now(),
         };
-
         setSavedPlaylists(prev => [...prev, newPlaylist]);
     };
 

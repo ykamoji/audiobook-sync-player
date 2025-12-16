@@ -1,6 +1,7 @@
 import RNFS from 'react-native-fs';
 import {Track, AudioFileState, SubtitleFileState, SubtitleCue} from './types';
 import { parseSubtitleText } from './parser';
+import {loadSubtitleEdits} from "./subtitleEdits.ts";
 
 const CUES_PER_SEGMENT = 100;
 
@@ -34,6 +35,17 @@ export const loadTrackMedia = async (
 
             const cues = parseSubtitleText(text);
 
+            const edits = await loadSubtitleEdits(track.name);
+
+            const mergedCues = cues.map(cue => {
+                const editedText = edits[cue.id];
+                return {
+                    ...cue,
+                    text: editedText ?? cue.text,
+                    isEdited: editedText !== undefined,
+                };
+            });
+
             const markers: number[] = [];
 
             const totalSegments = Math.ceil(cues.length / CUES_PER_SEGMENT)
@@ -51,7 +63,7 @@ export const loadTrackMedia = async (
 
             subtitleState = {
                 path: track.subtitlePath,
-                cues,
+                cues:mergedCues,
                 name: file_name,
                 markers,
                 totalSegments

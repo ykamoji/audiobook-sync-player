@@ -37,21 +37,23 @@ export const checkLocalStorageAvailable = async () => {
 /**
  * Load stored metadata from device.
  */
-export const loadInitialNativeMetadata = async (): Promise<any | null> => {
+export const loadInitialNativeMetadata = async (): Promise<{
+    playlists: Playlist[],
+    filePaths: string[],
+}> => {
     try {
         const storedPlaylists = await AsyncStorage.getItem("audiobook_playlists")
 
-        let reload_files: string | null = await AsyncStorage.getItem('filePaths')
-        let filePaths = [] as string[]
+        const playlists: Playlist[] = storedPlaylists !== null ? JSON.parse(storedPlaylists): []
 
-        if (reload_files !== null) {
-            filePaths = JSON.parse(reload_files) as string[]
-        }
+        const reload_files: string | null = await AsyncStorage.getItem('filePaths')
 
-        return { storedPlaylists,  filePaths}
+        const filePaths: string[] = reload_files !== null ? JSON.parse(reload_files) : []
+
+        return { playlists,  filePaths}
 
     } catch (e) {
         console.warn("Failed to load metadata", e);
-        return null;
+        return { playlists: [],  filePaths: [] }
     }
 };

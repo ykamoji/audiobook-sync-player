@@ -1594,7 +1594,15 @@ PODS:
     - Yoga
   - RNSVG (14.1.0):
     - React-Core
+  - RNZipArchive (7.0.2):
+    - React-Core
+    - RNZipArchive/Core (= 7.0.2)
+    - SSZipArchive (~> 2.5.5)
+  - RNZipArchive/Core (7.0.2):
+    - React-Core
+    - SSZipArchive (~> 2.5.5)
   - SocketRocket (0.7.0)
+  - SSZipArchive (2.5.5)
   - SwiftAudioEx (0.15.3)
   - Yoga (0.0.0)
 
@@ -1672,11 +1680,13 @@ DEPENDENCIES:
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNSVG (from `../node_modules/react-native-svg`)
+  - RNZipArchive (from `../node_modules/react-native-zip-archive`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
   trunk:
     - SocketRocket
+    - SSZipArchive
     - SwiftAudioEx
 
 EXTERNAL SOURCES:
@@ -1823,6 +1833,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNSVG:
     :path: "../node_modules/react-native-svg"
+  RNZipArchive:
+    :path: "../node_modules/react-native-zip-archive"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -1898,10 +1910,12 @@ SPEC CHECKSUMS:
   RNGestureHandler: f90e37613fe368dc85a9e4946e790d74f0f17e65
   RNReanimated: feff0d1b024e60a6ddb2e3568801a4d462ead394
   RNSVG: 6d5ed33b6635ed6d6ecb50744dcf127580c39ed5
+  RNZipArchive: 4304f5100eab004eeb7349adc51997b3a28deb76
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
+  SSZipArchive: c69881e8ac5521f0e622291387add5f60f30f3c4
   SwiftAudioEx: 83eabba2940924fc1c0d5cb0896049921365229c
   Yoga: 055f92ad73f8c8600a93f0e25ac0b2344c3b07e6
 
-PODFILE CHECKSUM: 9806b99288370cc4fb4d18cc1d99154f2dc7c72d
+PODFILE CHECKSUM: 82ada6155100ba67a35fc1ebb8469ea755ae9f44
 
 COCOAPODS: 1.15.2

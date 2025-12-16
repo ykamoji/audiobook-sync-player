@@ -601,6 +601,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                 displayedCues={subtitleState.cues}
                                 currentTimeSV={currentTimeSV}
                                 jumpToTime={jumpToTime}
+                                togglePlay={togglePlay}
                                 showChapters={showSegments}
                             />
                         </Animated.View>

@@ -84,6 +84,10 @@ export const usePlayer = ({
         }
 
         if(isPlaying){
+            dispatch({
+                type: "SET_PLAYING",
+                isPlaying: false,
+            });
             await TrackPlayer.pause()
         }
 
@@ -183,11 +187,11 @@ export const usePlayer = ({
     /** ─────────────────────────────────────────────
      *  SUBTITLE CLICK
      *  ───────────────────────────────────────────── */
-    const jumpToTime = async (time: number) => {
-        await TrackPlayer.pause()
+    const jumpToTime = useCallback(async (time: number) => {
+        if(isPlaying)await TrackPlayer.pause()
         await seek((time / durationSV.value) * 100, true);
-        await TrackPlayer.play()
-    };
+        if(isPlaying) await TrackPlayer.play()
+    },[isPlaying]);
 
     /** ─────────────────────────────────────────────
      *  SEGMENT CHANGE
@@ -209,13 +213,19 @@ export const usePlayer = ({
     /** ─────────────────────────────────────────────
      *  BASIC CONTROLS
      *  ───────────────────────────────────────────── */
-    const togglePlay = () => {
-        isPlaying ? TrackPlayer.pause() : TrackPlayer.play();
-        dispatch({
-            type: "SET_PLAYING",
-            isPlaying: !isPlaying,
-        });
-    };
+    const togglePlay = useCallback((override?:boolean) => {
+
+        if(override === undefined){
+            isPlaying ? TrackPlayer.pause() : TrackPlayer.play();
+            dispatch({
+                type: "SET_PLAYING",
+                isPlaying: !isPlaying,
+            });
+        }else{
+            !override ? TrackPlayer.pause() : TrackPlayer.play();
+        }
+
+    },[isPlaying, dispatch]);
 
     const next = async () => {
         isAutoUpdatingRef.current = false;

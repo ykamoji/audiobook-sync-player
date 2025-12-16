@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useCallback, useEffect, useRef} from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import { FlashList } from '@shopify/flash-list';
 import {
     View,
@@ -10,7 +10,7 @@ import { Track, Playlist, ProgressData } from '../utils/types';
 import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
 import {Menu, Divider, MD3DarkTheme,} from "react-native-paper";
-import {Download, MoreVertical, SaveAll, Trash2} from "lucide-react-native";
+import {Download, DownloadCloudIcon, MoreVertical, Save, Trash2} from "lucide-react-native";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface LibraryProps {
@@ -21,6 +21,7 @@ interface LibraryProps {
     handleAlbumActions: (track: Track[]) => void;
     setShowModal: (showModal: boolean) => void;
     onExportData: () => void;
+    onExportCues: () => void;
     onDownloadData: () => void;
     onClearStorage: () => void;
     exportSuccess: boolean;
@@ -38,6 +39,7 @@ export const Library: React.FC<LibraryProps> = ({
                                                     handleAlbumActions,
                                                     setShowModal,
                                                     onExportData,
+                                                    onExportCues,
                                                     onDownloadData,
                                                     exportSuccess,
                                                     onClearStorage,
@@ -76,7 +78,6 @@ export const Library: React.FC<LibraryProps> = ({
     const { state } = usePlayerContext();
 
     const { audioState, isPlaying } = state;
-
     useEffect(() => {
         if(!isSelectionMode){
             setSelectedTrackIds(new Set());
@@ -167,7 +168,7 @@ export const Library: React.FC<LibraryProps> = ({
                                     {exportSuccess ? (
                                         <SpinnerIcon size={20} color="#22c55e" />
                                     ) : (
-                                        <MoreVertical size={20} color="#9ca3af" />
+                                        <MoreVertical size={20} style={{paddingHorizontal:14, paddingEnd:20}} color="#9ca3af" />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -179,8 +180,19 @@ export const Library: React.FC<LibraryProps> = ({
                                 onExportData();
                             }}
                             titleStyle={{ color: "#CCC" }}
-                            title="Save Data"
-                            leadingIcon={() => <SaveAll size={18} color="#3D9D72" />}
+                            title="Save"
+                            leadingIcon={() => <Save size={18} color="#3D9D72" />}
+                        />
+                        <Divider />
+
+                        <Menu.Item
+                            onPress={() => {
+                                closeMenu();
+                                onExportCues();
+                            }}
+                            titleStyle={{ color: "#CCC" }}
+                            title="Cues"
+                            leadingIcon={() => <DownloadCloudIcon size={18} color="green" />}
                         />
                         <Divider />
 
@@ -190,7 +202,7 @@ export const Library: React.FC<LibraryProps> = ({
                                 onDownloadData();
                             }}
                             titleStyle={{ color: "#CCC" }}
-                            title="Download File"
+                            title="Metadata"
                             leadingIcon={() => <Download size={18} color="#0A84FF" />}
                         />
                         <Divider />
@@ -200,7 +212,7 @@ export const Library: React.FC<LibraryProps> = ({
                                 closeMenu();
                                 onClearStorage();
                             }}
-                            title="Clear Data"
+                            title="Clear"
                             titleStyle={{ color: "#CCC" }}
                             leadingIcon={() => <Trash2 size={18} color="#FF3B30" />}
                         />

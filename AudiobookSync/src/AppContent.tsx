@@ -105,9 +105,10 @@ const MainContent: React.FC = () => {
 
     const loadStorage = async () => {
         try {
-            const { storedPlaylists,  filePaths} = await loadInitialNativeMetadata();
-            if (storedPlaylists) {
-                playlistManager.setSavedPlaylists(JSON.parse(storedPlaylists));
+            const {playlists, filePaths} = await loadInitialNativeMetadata();
+
+            if (playlists.length > 0){
+                playlistManager.setSavedPlaylists(playlists);
             }
 
             const scan = await scanNativePath(filePaths);
@@ -145,7 +146,7 @@ const MainContent: React.FC = () => {
     }, [progressMap]);
 
 
-    const { dispatch } = usePlayerContext();
+    const { dispatch, state } = usePlayerContext();
 
     const clearStorage = () => {
 
@@ -195,18 +196,12 @@ const MainContent: React.FC = () => {
             // console.log('playTrackWrapper ', option, state.isPlaying);
             playerRef.current!.playTrack(track, index, specificPlaylist || [track], option!).then();
 
-            setTimeout(()=> {
-                if (option === 2) {
-                    setPlayerMode('full')
-                }
-            }, 800)
+            if (option === 2) {
+                let delay = track.name === state.audioState.name ? 0 : 1000
+                setTimeout(()=> setPlayerMode('full'), delay)
+            }
 
-            // setTimeout(()=> {
-            //     if (!state.isPlaying) {
-                    // console.log('delayed updates')
-                    playerRef.current!.savePlayerProgress()
-                // }
-            // }, 500)
+            playerRef.current!.savePlayerProgress()
 
         }
     };
@@ -258,7 +253,7 @@ const MainContent: React.FC = () => {
                             onSelectTrack={playTrackWrapper}
                             onViewMetadata={handleOpenMetadata}
                             playlistManager={playlistManager}
-                            onUpdate={loadStorage}
+                            onUpdate={()=>{}}
                             clearStorage={clearStorage}
                         />
                     </SafeAreaView>
@@ -277,7 +272,7 @@ const MainContent: React.FC = () => {
                         <AlbumContainer
                             allTracks={allTracks}
                             progressMap={progressMap}
-                            onUpdate={loadStorage}
+                            onUpdate={()=>{}}
                             closeAlbums={view === "albums"}
                             onViewMetadata={handleOpenMetadata}
                             playlistManager={playlistManager}

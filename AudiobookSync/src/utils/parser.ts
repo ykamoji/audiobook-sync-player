@@ -35,6 +35,7 @@ export const parseSubtitleText = (text: string): SubtitleCue[] => {
   const lines = text.split(/\r?\n/);
   
   let i = 0;
+  let cueId = 0;
   
   // Detect format roughly
   const isVTT = text.trim().startsWith('WEBVTT');
@@ -87,11 +88,11 @@ export const parseSubtitleText = (text: string): SubtitleCue[] => {
         }
         
         // Clean up text (remove VTT tags like <b>, <v>, etc)
-        content = content.replace(/<[^>]*>/g, '');
+        // content = content.replace(/<[^>]*>/g, '');
 
         if (content) {
             cues.push({
-                id: uuid.v4().toString(),
+                id: cueId++,
                 start,
                 end,
                 text: content

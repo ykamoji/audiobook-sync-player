@@ -232,6 +232,11 @@ export const playerStyles = StyleSheet.create({
     chapterDurationActive: {
         // color: '#111827',
     },
+    edited:{
+        position: 'absolute',
+        top: 7,
+        right: -12,
+    }
 });
 
 

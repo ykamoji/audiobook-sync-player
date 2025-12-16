@@ -10,6 +10,8 @@ import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {useStaticData} from "../hooks/useStaticData.tsx";
+import {exportAllEditedSubtitlesParsed} from "../utils/subtitleEdits.ts";
+import {zip} from "react-native-zip-archive";
 
 interface LibraryContainerProps {
     allTracks: Track[];
@@ -137,6 +139,76 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         }
     };
 
+    const onExportCues = async () => {
+
+        try {
+
+            const data = await exportAllEditedSubtitlesParsed()
+
+            const exportDir = `${RNFS.DocumentDirectoryPath}/SubtitleExports`;
+            await RNFS.mkdir(exportDir);
+
+            // Write one file per track
+            for (const [trackName, cues] of Object.entries(data)) {
+                const safeName = trackName.replace(/[^\w\d-_]/g, "_");
+                const filePath = `${exportDir}/${safeName}.json`;
+
+                await RNFS.writeFile(
+                    filePath,
+                    JSON.stringify(cues, null, 2),
+                    "utf8"
+                );
+            }
+
+            const zipPath = `${RNFS.DocumentDirectoryPath}/SubtitleExports.zip`;
+
+            await zip(exportDir, zipPath);
+
+            await Share.share({
+                title:"Download",
+                url: "file://" + zipPath,
+
+            });
+
+            const cleanupSubtitleExports = async () => {
+                try {
+                    const dirExists = await RNFS.exists(exportDir);
+                    if (dirExists) {
+                        await RNFS.unlink(exportDir);
+                    }
+
+                    const zipExists = await RNFS.exists(zipPath);
+                    if (zipExists) {
+                        await RNFS.unlink(zipPath);
+                    }
+                } catch (err) {
+                    console.warn("Cleanup failed:", err);
+                }
+            };
+
+            setTimeout(() => {
+                cleanupSubtitleExports();
+            }, 3000);
+
+            setExportSuccess(true);
+            setTimeout(() => {
+                setExportSuccess(false)
+                Toast.show({
+                    type:"snackbar",
+                    text1:"Cues Exported"
+                });
+            }, 1000);
+
+        } catch (err) {
+            console.log(err);
+            Toast.show({
+                type:"snackbar",
+                text1:"Error exporting cues"
+            });
+        }
+
+    }
+
 
     const playlistChangeRef = useRef("")
     const tracksChangeRef = useRef([] as Track[])
@@ -226,6 +298,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
             // Exporting
             onExportData={handleExportData}
+            onExportCues={onExportCues}
             onClearStorage={onClearStorage}
             onDownloadData={onDownloadData}
             exportSuccess={exportSuccess}

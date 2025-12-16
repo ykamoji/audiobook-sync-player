@@ -12,6 +12,8 @@ export type PlayerState = {
 export type Action =
     | { type: "LOAD_TRACK"; playlist: Track[]; index: number; audio: AudioFileState; subtitle: SubtitleFileState; isPlaying: boolean }
     | { type: "SET_PLAYING"; isPlaying: boolean }
+    | { type: "UPDATE_CUE"; cueId: number; isEdited:boolean; text: string; isPlaying: boolean;
+};
 
 
 type PlayerContextValue = {

@@ -1,10 +1,11 @@
 import {Static} from "../hooks/useStaticData.tsx";
 
 export interface SubtitleCue {
-    id: string;
+    id: number;
     start: number; // seconds
     end: number;   // seconds
     text: string;
+    isEdited?: boolean;
 }
 
 export interface Track {

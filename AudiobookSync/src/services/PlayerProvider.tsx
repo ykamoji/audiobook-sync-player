@@ -14,6 +14,22 @@ export const reducer = (state: PlayerState, action: Action): PlayerState => {
             };
         case "SET_PLAYING":
             return { ...state, isPlaying: action.isPlaying };
+        case "UPDATE_CUE":
+            return {
+                ...state,
+                isPlaying: action.isPlaying,
+                subtitleState: {
+                    ...state.subtitleState,
+                    cues: state.subtitleState.cues.map(cue =>
+                        cue.id === action.cueId
+                            ? { ...cue,
+                                text: action.text ,
+                                isEdited: action.isEdited,
+                            }
+                            : cue
+                    ),
+                },
+            };
         default:
             return state;
     }
