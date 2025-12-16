@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 const keyForTrack = (trackName: string) =>
     `edits_${trackName}`;
 
@@ -72,4 +71,15 @@ export const exportAllEditedSubtitlesParsed = async (): Promise<
     }
 
     return result;
+};
+
+
+export const clearAllSubtitleEdits = async (): Promise<void> => {
+    const keys = await AsyncStorage.getAllKeys();
+
+    const editKeys = keys.filter(key => key.startsWith("edits_"));
+
+    if (editKeys.length === 0) return;
+
+    await AsyncStorage.multiRemove(editKeys);
 };

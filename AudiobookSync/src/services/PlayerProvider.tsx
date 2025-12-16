@@ -30,6 +30,19 @@ export const reducer = (state: PlayerState, action: Action): PlayerState => {
                     ),
                 },
             };
+        case "RELOAD_CUES": {
+            if (!state.subtitleState) return state;
+
+            return {
+                ...state,
+                subtitleState: {
+                    ...state.subtitleState,
+                    cues: action.cues,
+                    markers: action.markers,
+                    totalSegments: action.totalSegments,
+                },
+            };
+        }
         default:
             return state;
     }

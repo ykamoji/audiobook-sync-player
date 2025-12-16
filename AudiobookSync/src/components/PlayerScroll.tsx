@@ -1,12 +1,11 @@
-import Animated, {
+import {
     runOnJS,
     SharedValue,
     useAnimatedReaction,
-    useAnimatedScrollHandler,
     useSharedValue,
 } from "react-native-reanimated";
-import { Switch } from 'react-native-paper';
-import {Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import {Keyboard, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {FC, useCallback, useRef, useState} from "react";
 import {playerStyles} from "../utils/playerStyles.ts";
 import {findCueIndex} from "../utils/mediaLoader.ts";
@@ -16,12 +15,12 @@ import {removeSubtitleEdit, saveSubtitleEdit} from "../utils/subtitleEdits.ts";
 import {modelStyles} from "../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
+import {Toggle} from "../services/Toggle.tsx";
 
 export interface PlayerScrollProps {
     displayedCues: SubtitleCue[];
     currentTimeSV:SharedValue<number>;
     jumpToTime: (time: number) => void;
-    showChapters: boolean;
     togglePlay: (override?:boolean) => void;
 }
 
@@ -29,32 +28,25 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                                 displayedCues,
                                 currentTimeSV,
                                 jumpToTime,
-                                showChapters,
                                 togglePlay
                             }) => {
 
-    const isUserScrolling = useSharedValue(false);
-    const cueRefs = useRef<Record<string, View | null>>({});
-    const scrollRef = useRef<Animated.ScrollView | null>(null);
+    const isUserScrolling = useSharedValue(false);;
+    const listRef = useRef<FlashList<SubtitleCue>>(null);
     const currentCueIndexSV = useSharedValue(findCueIndex(displayedCues, currentTimeSV.value))
+    const previousPlayingRef = useRef(false);
 
     const scrollToActiveCue = (animated = true) => {
-        if (!scrollRef.current || !displayedCues.length) return;
+        if (!displayedCues.length) return;
 
-        if (currentCueIndexSV.value < 0) return;
+        const index = currentCueIndexSV.value;
+        if (index < 0) return;
 
-        const cue = displayedCues[currentCueIndexSV.value];
-        const ref = cueRefs.current[cue.id];
-        if (!ref) return;
-
-        ref.measureLayout(
-            scrollRef.current.getInnerViewNode(),
-            (x, y, w, h) => {
-                const targetY = Math.max(0, y - 150);
-                scrollRef.current?.scrollTo({ y: targetY, animated: animated });
-            },
-            () => {}
-        );
+        listRef.current?.scrollToIndex({
+            index,
+            animated,
+            viewPosition: 0.6,
+        });
     };
 
 
@@ -70,42 +62,31 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
     useAnimatedReaction(
         () => currentTimeSV.value,
         (value, prev) => {
-            // console.log('currentTimeSV', value, prev);
             if(isUserScrolling.value) return;
             if (prev === value) return;
             runOnJS(onTimeUpdate)(value);
         }
     );
 
-    const scrollHandler = useAnimatedScrollHandler({
-        onBeginDrag: () => {
-            isUserScrolling.value = true
-        },
-        onEndDrag: () => {
-            isUserScrolling.value = false
-        },
-        onMomentumEnd: () => {
-            isUserScrolling.value = false
-        },
-    });
-
     const { state, dispatch } = usePlayerContext()
 
     const [showModal, setShowModal] = useState<boolean>(false);
+
     const cueIdRef = useRef<number>(-1);
     const cueTextRef = useRef<string>("");
-    const previousPlayingRef = useRef(false);
+    const cueEditedRef = useRef<boolean>(false);
 
 
-    const onCueUpdate = useCallback(async (cueId: number, text:string) => {
+    const onCueUpdate = async (cueId: number, text:string) => {
         cueIdRef.current = cueId;
         cueTextRef.current = text.trim();
+        cueEditedRef.current = displayedCues.find(dc => dc.id == cueId)?.isEdited ?? false
         if(state.isPlaying){
             previousPlayingRef.current = true;
             togglePlay(false);
         }
         setShowModal(true);
-    },[state.isPlaying, togglePlay])
+    };
 
     const updateCueHandler = async () => {
 
@@ -116,7 +97,7 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
             cueId: cueIdRef.current,
             text: cueTextRef.current,
             isPlaying: previousPlayingRef.current,
-            isEdited:true,
+            isEdited:cueEditedRef.current,
         });
 
         if (previousPlayingRef.current) {
@@ -132,66 +113,40 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
         }, 100)
 
     }
-
-    const removeCueHandler = async () => {
-
-        await removeSubtitleEdit(state.audioState.name, cueIdRef.current);
-
-        dispatch({
-            type: "UPDATE_CUE",
-            cueId: cueIdRef.current,
-            text: cueTextRef.current,
-            isPlaying: state.isPlaying,
-            isEdited:false,
-        });
-
-        if (previousPlayingRef.current) {
-            togglePlay(true);
-        }
-
-        // Clean up
-        previousPlayingRef.current = false
-        setShowModal(false);
-        setTimeout(()=> {
-            cueIdRef.current = -1;
-            cueTextRef.current = "";
-        }, 100)
-
-    }
-
-
-
 
     return (
         <>
-        <Animated.ScrollView
-            ref={scrollRef}
-            style={playerStyles.subtitlesScroll}
-            onScroll={scrollHandler}
-            pointerEvents={showChapters ? 'none' : 'auto'}
-            contentContainerStyle={playerStyles.subtitlesContent}
-            scrollEventThrottle={16}
-        >
-            {displayedCues.map((cue, index) => (
-                <Cue
-                    key={cue.id}
-                    cue={cue}
-                    index={index}
-                    currentCueIndexSV={currentCueIndexSV}
-                    jumpToTime={jumpToTime}
-                    onUpdate={onCueUpdate}
-                    cueRefs={cueRefs}
-                />
-            ))}
-
-            {displayedCues.length === 0 && (
-                <View style={playerStyles.noTextContainer}>
-                    <Text style={playerStyles.noText}>
-                        No text content for this section.
-                    </Text>
-                </View>
-            )}
-        </Animated.ScrollView>
+            <FlashList
+                ref={listRef}
+                data={displayedCues}
+                keyExtractor={(item) => String(item.id)}
+                estimatedItemSize={48}
+                onScrollBeginDrag={() => {
+                    isUserScrolling.value = true;
+                }}
+                onMomentumScrollEnd={() => {
+                    isUserScrolling.value = false;
+                }}
+                onScrollEndDrag={() => {
+                    isUserScrolling.value = false;
+                }}
+                renderItem={({ item, index }) => (
+                    <Cue
+                        cue={item}
+                        index={index}
+                        currentCueIndexSV={currentCueIndexSV}
+                        jumpToTime={jumpToTime}
+                        onUpdate={onCueUpdate}
+                    />
+                )}
+                ListEmptyComponent={
+                    <View style={playerStyles.noTextContainer}>
+                        <Text style={playerStyles.noText}>
+                            No text content for this section.
+                        </Text>
+                    </View>
+                }
+            />
         <Modal visible={showModal} transparent animationType="fade">
             <View style={modelStyles.wrapper}>
                 <Pressable style={modelStyles.backdropWrapper}
@@ -232,7 +187,13 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                         onChangeText={(val) => cueTextRef.current = val}
                         style={[modelStyles.input, { height: 120, }]}
                     />
-
+                    <Toggle
+                        label={""}
+                        defaultValue={cueEditedRef.current}
+                        onChange={(checked)=>{
+                            cueEditedRef.current = checked;
+                        }}
+                    />
                     <View style={modelStyles.buttonRow}>
                         <TouchableOpacity
                             onPress={() => {

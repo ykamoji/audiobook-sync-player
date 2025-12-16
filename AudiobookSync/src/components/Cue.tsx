@@ -10,9 +10,6 @@ export interface CueProps {
     index: number;
     currentCueIndexSV: SharedValue<number>;
     jumpToTime: (time: number) => void;
-    cueRefs: MutableRefObject<
-        Record<string, ComponentRef<typeof Animated.View> | null>
-    >;
 }
 
 
@@ -21,7 +18,6 @@ export const Cue: FC<CueProps> = ({
                                      index,
                                      currentCueIndexSV,
                                      jumpToTime,
-                                     cueRefs,
                                      onUpdate,
                                  }) => {
 
@@ -32,7 +28,7 @@ export const Cue: FC<CueProps> = ({
             return {
                 color: withTiming(isActive ? '#f97316' : '#9ca3af', { duration: 50 }),
                 fontFamily: isActive ? 'CabinCondensed-Semibold' : 'CabinCondensed-Medium',
-                marginLeft: withTiming(isActive ? 8 : 0, { duration: 50})
+                marginLeft: withTiming(isActive ? 5 : 0, { duration: 50})
             };
         });
 
@@ -48,9 +44,6 @@ export const Cue: FC<CueProps> = ({
 
     return (
             <Animated.View
-                ref={(ref) => {
-                    cueRefs.current[cue.id] = ref
-                }}
                 style={playerStyles.cueContainer}
                 onTouchStart={() => {
                     didLongPress.current = false;
@@ -78,7 +71,7 @@ export const Cue: FC<CueProps> = ({
                     {cue.text}
                 </Animated.Text>
                 <Animated.View style={[playerStyles.edited, animatedPencilStyle]}>
-                    <Pencil size={"10"} stroke={"orange"}/>
+                    <Pencil size={"8"} stroke={"orange"}/>
                 </Animated.View>
             </Animated.View>
     );

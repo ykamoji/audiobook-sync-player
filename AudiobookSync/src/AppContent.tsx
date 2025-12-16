@@ -248,6 +248,8 @@ const MainContent: React.FC = () => {
                         style={styles.safeAreaTopWrap}
                     >
                         <LibraryContainer
+                            state={state}
+                            dispatch={dispatch}
                             allTracks={allTracks}
                             progressMap={progressMap}
                             onSelectTrack={playTrackWrapper}

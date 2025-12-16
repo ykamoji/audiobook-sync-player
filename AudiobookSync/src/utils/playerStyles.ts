@@ -78,17 +78,14 @@ export const playerStyles = StyleSheet.create({
     },
     subtitlesContainer: {
         flex: 1,
-        marginTop: 8,
+        marginTop: 20,
         minHeight: 300,
     },
-    subtitlesScroll: {
-        flex: 1
-    },
     subtitlesContent: {
-        paddingHorizontal: 24,
-        paddingTop: 16,
+        paddingHorizontal: 20,
     },
     cueContainer: {
+        paddingHorizontal:22,
         marginBottom: 18,
     },
     cueContainerActive: {},
@@ -234,8 +231,8 @@ export const playerStyles = StyleSheet.create({
     },
     edited:{
         position: 'absolute',
-        top: 7,
-        right: -12,
+        top: 10,
+        right: 15,
     }
 });
 

@@ -1,22 +1,36 @@
-import React, {useRef} from 'react';
+import React, {Dispatch, useRef} from 'react';
 import { Library } from './Library';
 import RNFS from 'react-native-fs';
 import { Track, Playlist, AppData, ProgressData } from '../utils/types';
 import { modelStyles } from "../utils/modelStyles.ts";
 import { saveToNativeFilesystem } from '../utils/persistence';
-import {Dimensions, Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Keyboard, Share} from "react-native";
+import {
+    Dimensions,
+    Modal,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    Keyboard,
+    Share,
+    ActionSheetIOS
+} from "react-native";
 import {ListIcon} from "lucide-react-native";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {useStaticData} from "../hooks/useStaticData.tsx";
-import {exportAllEditedSubtitlesParsed} from "../utils/subtitleEdits.ts";
+import {clearAllSubtitleEdits, exportAllEditedSubtitlesParsed} from "../utils/subtitleEdits.ts";
 import {zip} from "react-native-zip-archive";
+import {Action, PlayerState, usePlayerContext} from "../services/PlayerContext.tsx";
+import {reloadSubtitleCues} from "../utils/mediaLoader.ts";
 
 interface LibraryContainerProps {
     allTracks: Track[];
     progressMap: Record<string, ProgressData>;
-
+    dispatch: Dispatch<Action>;
+    state:PlayerState,
     onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[], option?:number) => void;
     onViewMetadata: (name: string) => void;
     onUpdate: () => void;
@@ -37,6 +51,8 @@ interface LibraryContainerProps {
 const ignoreKeys = ["filePaths"]
 
 export const LibraryContainer: React.FC<LibraryContainerProps> = ({
+                                                                      state,
+                                                                      dispatch,
                                                                       allTracks,
                                                                       progressMap,
                                                                       onSelectTrack,
@@ -75,20 +91,43 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         }
     };
 
+    const handleMenuDelete = (call:()=>void, data:string) => {
+        ActionSheetIOS.showActionSheetWithOptions(
+            {
+                options: ['', 'Delete', 'Cancel'],
+                cancelButtonIndex: 0,
+                destructiveButtonIndex: 1,
+                userInterfaceStyle: 'dark',
+                message: "Are you sure you want to delete " + data + "?",
+            },
+            (buttonIndex) => {
+                if (buttonIndex === 1) {
+                    call()
+                }
+            }
+        );
+    };
+
     const onClearStorage = async () => {
         try {
-            await AsyncStorage.clear();
 
-            clearStorage()
+            const call = async() => {
+                await AsyncStorage.clear();
 
-            setExportSuccess(true);
-            setTimeout(() => {
-                setExportSuccess(false)
-                Toast.show({
-                    type:"snackbar",
-                    text1:"Storage cleared"
-                });
-            }, 1000);
+                clearStorage()
+
+                setExportSuccess(true);
+                setTimeout(() => {
+                    setExportSuccess(false)
+                    Toast.show({
+                        type:"snackbar",
+                        text1:"Storage cleared"
+                    });
+                }, 1000);
+            }
+
+            handleMenuDelete(call, "app data");
+
         } catch (err) {
             console.error("Clear error:", err);
         }
@@ -150,12 +189,12 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
             // Write one file per track
             for (const [trackName, cues] of Object.entries(data)) {
-                const safeName = trackName.replace(/[^\w\d-_]/g, "_");
-                const filePath = `${exportDir}/${safeName}.json`;
+                // const safeName = trackName.replace(/[^\w\d-_]/g, "_");
+                const filePath = `${exportDir}/${trackName}.json`;
 
                 await RNFS.writeFile(
                     filePath,
-                    JSON.stringify(cues, null, 2),
+                    JSON.stringify({chunks: cues}, null, 2),
                     "utf8"
                 );
             }
@@ -207,6 +246,34 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             });
         }
 
+    }
+
+    const onCleanCues = async() => {
+
+        const call = async () => {
+            await clearAllSubtitleEdits();
+            setExportSuccess(true);
+            setTimeout(() => {
+                setExportSuccess(false)
+                Toast.show({
+                    type:"snackbar",
+                    text1:"Cues Deleted"
+                });
+            }, 1000);
+
+            await reloadSubtitleCues(state.subtitleState, dispatch);
+        }
+
+        try {
+            handleMenuDelete(call, "edited cues")
+        }
+        catch (err) {
+            console.log(err);
+            Toast.show({
+                type:"snackbar",
+                text1:"Error deleting cues"
+            });
+        }
     }
 
 
@@ -299,6 +366,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             // Exporting
             onExportData={handleExportData}
             onExportCues={onExportCues}
+            onCleanCues={onCleanCues}
             onClearStorage={onClearStorage}
             onDownloadData={onDownloadData}
             exportSuccess={exportSuccess}

@@ -1,4 +1,4 @@
-import {AudioFileState, SubtitleFileState, Track} from "../utils/types.ts";
+import {AudioFileState, SubtitleCue, SubtitleFileState, Track} from "../utils/types.ts";
 import {createContext, useContext, useReducer} from "react";
 
 export type PlayerState = {
@@ -12,8 +12,8 @@ export type PlayerState = {
 export type Action =
     | { type: "LOAD_TRACK"; playlist: Track[]; index: number; audio: AudioFileState; subtitle: SubtitleFileState; isPlaying: boolean }
     | { type: "SET_PLAYING"; isPlaying: boolean }
-    | { type: "UPDATE_CUE"; cueId: number; isEdited:boolean; text: string; isPlaying: boolean;
-};
+    | { type: "UPDATE_CUE"; cueId: number; isEdited:boolean; text: string; isPlaying: boolean}
+    | { type: "RELOAD_CUES"; cues: SubtitleCue[]; markers: number[]; totalSegments: number };
 
 
 type PlayerContextValue = {

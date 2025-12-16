@@ -2,6 +2,8 @@ import RNFS from 'react-native-fs';
 import {Track, AudioFileState, SubtitleFileState, SubtitleCue} from './types';
 import { parseSubtitleText } from './parser';
 import {loadSubtitleEdits} from "./subtitleEdits.ts";
+import {Action} from "../services/PlayerContext.tsx";
+import {Dispatch} from "react";
 
 const CUES_PER_SEGMENT = 100;
 
@@ -140,3 +142,30 @@ export const getSegmentIndex = (time: number, markers:number[]) =>{
     return markers.length;
 }
 
+export const reloadSubtitleCues = async (
+    subtitle: SubtitleFileState,
+    dispatch: Dispatch<Action>
+) => {
+    if (!subtitle.path) return;
+
+    const text = await RNFS.readFile(subtitle.path, "utf8");
+    const cues = parseSubtitleText(text);
+
+    const edits = await loadSubtitleEdits(subtitle.name);
+
+    const mergedCues = cues.map(cue => {
+        const editedText = edits[cue.id];
+        return {
+            ...cue,
+            text: editedText ?? cue.text,
+            isEdited: editedText !== undefined,
+        };
+    });
+
+    dispatch({
+        type: "RELOAD_CUES",
+        cues: mergedCues,
+        markers: subtitle.markers,
+        totalSegments: subtitle.totalSegments,
+    });
+};

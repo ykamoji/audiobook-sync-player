@@ -592,17 +592,12 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                         </View>
 
                         {/* SUBTITLES */}
-                        <Animated.View
-                            style={[playerStyles.subtitlesContainer,
-                                scrollHiddenStyle
-                            ]}
-                        >
+                        <Animated.View style={[playerStyles.subtitlesContainer, scrollHiddenStyle]}>
                             <PlayerScroll
                                 displayedCues={subtitleState.cues}
                                 currentTimeSV={currentTimeSV}
                                 jumpToTime={jumpToTime}
                                 togglePlay={togglePlay}
-                                showChapters={showSegments}
                             />
                         </Animated.View>
 

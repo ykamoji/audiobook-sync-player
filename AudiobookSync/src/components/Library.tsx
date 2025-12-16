@@ -9,8 +9,8 @@ import {
 import { Track, Playlist, ProgressData } from '../utils/types';
 import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
-import {Menu, Divider, MD3DarkTheme,} from "react-native-paper";
-import {Download, DownloadCloudIcon, MoreVertical, Save, Trash2} from "lucide-react-native";
+import {Menu, MD3DarkTheme, MD3LightTheme,} from "react-native-paper";
+import {BrushCleaningIcon, Download, DownloadCloudIcon, MoreVertical, Save, Trash2} from "lucide-react-native";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface LibraryProps {
@@ -22,6 +22,7 @@ interface LibraryProps {
     setShowModal: (showModal: boolean) => void;
     onExportData: () => void;
     onExportCues: () => void;
+    onCleanCues: () => void;
     onDownloadData: () => void;
     onClearStorage: () => void;
     exportSuccess: boolean;
@@ -40,6 +41,7 @@ export const Library: React.FC<LibraryProps> = ({
                                                     setShowModal,
                                                     onExportData,
                                                     onExportCues,
+                                                    onCleanCues,
                                                     onDownloadData,
                                                     exportSuccess,
                                                     onClearStorage,
@@ -153,13 +155,13 @@ export const Library: React.FC<LibraryProps> = ({
                         onDismiss={closeMenu}
                         mode="elevated"
                         theme={{
-                            ...MD3DarkTheme,
+                            ...MD3LightTheme,
                             colors: {
-                                ...MD3DarkTheme.colors,
-                                onSurface: "#CCC",
-                                onSurfaceVariant: "#CCC",
-                                surface: "#050505",
-                                elevation: { level2: "#050505" },
+                                ...MD3LightTheme.colors,
+                                onSurface: "#050505",
+                                onSurfaceVariant: "#050505",
+                                surface: "#CCC",
+                                elevation: { level2: "#CCC" },
                             },
                         }}
                         anchor={
@@ -179,33 +181,42 @@ export const Library: React.FC<LibraryProps> = ({
                                 closeMenu();
                                 onExportData();
                             }}
-                            titleStyle={{ color: "#CCC" }}
+                            titleStyle={{ color: "#050505" }}
                             title="Save"
                             leadingIcon={() => <Save size={18} color="#3D9D72" />}
                         />
-                        <Divider />
-
                         <Menu.Item
                             onPress={() => {
                                 closeMenu();
                                 onExportCues();
                             }}
-                            titleStyle={{ color: "#CCC" }}
+                            titleStyle={{ color: "#050505" }}
                             title="Cues"
-                            leadingIcon={() => <DownloadCloudIcon size={18} color="green" />}
+                            leadingIcon={() => <DownloadCloudIcon size={18} color="#0A84FF" />}
                         />
-                        <Divider />
+
 
                         <Menu.Item
                             onPress={() => {
                                 closeMenu();
                                 onDownloadData();
                             }}
-                            titleStyle={{ color: "#CCC" }}
+                            titleStyle={{ color: "#050505" }}
                             title="Metadata"
                             leadingIcon={() => <Download size={18} color="#0A84FF" />}
                         />
-                        <Divider />
+
+
+                        <Menu.Item
+                            onPress={() => {
+                                closeMenu();
+                                onCleanCues();
+                            }}
+                            titleStyle={{ color: "#050505" }}
+                            title="Cues"
+                            leadingIcon={() => <BrushCleaningIcon size={18} color="#FF3B30" />}
+                        />
+
 
                         <Menu.Item
                             onPress={() => {
@@ -213,7 +224,7 @@ export const Library: React.FC<LibraryProps> = ({
                                 onClearStorage();
                             }}
                             title="Clear"
-                            titleStyle={{ color: "#CCC" }}
+                            titleStyle={{ color: "#050505" }}
                             leadingIcon={() => <Trash2 size={18} color="#FF3B30" />}
                         />
                     </Menu>
