@@ -1,9 +1,10 @@
 import React, {FC, useCallback, useEffect, useState} from "react";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
-import {ActionSheetIOS, StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {ChevronLeftIcon, PencilIcon, Trash} from "lucide-react-native";
+import {ActionSheetIOS, Modal, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {ChevronLeftIcon, InfoIcon, PencilIcon, Trash, TrashIcon} from "lucide-react-native";
 import {TrackRow} from "./TrackRow.tsx";
 import {FlashList} from "@shopify/flash-list";
+import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface AlbumContentProps {
     playlistTracks?: Track[];
@@ -19,6 +20,12 @@ interface AlbumContentProps {
 }
 
 const ROW_HEIGHT = 88;
+
+type TrackMenuState = {
+    visible: boolean;
+    track: Track | null;
+    position: { top: number; right: number };
+};
 
 export const AlbumContent: FC<AlbumContentProps> = ({
                                                         playlistTracks,
@@ -85,6 +92,28 @@ export const AlbumContent: FC<AlbumContentProps> = ({
         );
     };
 
+    const { state } = usePlayerContext();
+
+    const { audioState, isPlaying } = state;
+
+    const [trackMenu, setTrackMenu] = useState<TrackMenuState>({
+        visible: false,
+        track: null,
+        position: { top: 0, right: 20 },
+    });
+
+    const openTrackMenu = useCallback(
+        (track: Track, _isInsidePlaylist: boolean, position: { top: number; right: number }) => {
+            setTrackMenu({
+                visible: true,
+                track,
+                position,
+            });
+        }, []);
+
+    const closeTrackMenu = useCallback(() => {
+        setTrackMenu(prev => ({ ...prev, visible: false }));
+    }, []);
 
     const renderTrackItem = useCallback(
         ({item, index}: { item: Track; index: number }) => (
@@ -100,9 +129,9 @@ export const AlbumContent: FC<AlbumContentProps> = ({
                 onSelectTrack={onSelectTrack}
                 onToggleSelection={toggleSelection}
                 onLongPress={() => setIsSelectionMode(prev => !prev)}
-                onViewMetadata={onViewMetadata}
-                onEditToPlaylist={onRemoveTrack}
+                onOpenMenu={openTrackMenu}
                 style={{height: ROW_HEIGHT}}
+                showLive={isPlaying && audioState.name === item.name}
             />
         ),
         [
@@ -110,9 +139,11 @@ export const AlbumContent: FC<AlbumContentProps> = ({
             isSelectionMode,
             progressMap,
             onSelectTrack,
-            onViewMetadata,
             playlistTracks,
-            onRemoveTrack]
+            isPlaying,
+            audioState.name,
+            openTrackMenu
+        ]
     );
 
     return (
@@ -199,6 +230,32 @@ export const AlbumContent: FC<AlbumContentProps> = ({
                     <Text style={styles.bulkRemoveText}>Remove from Playlist</Text>
                 </TouchableOpacity>
             </View>
+            <Modal
+                visible={trackMenu.visible}
+                transparent
+                animationType="fade"
+                onRequestClose={closeTrackMenu}
+            >
+                <TouchableOpacity style={styles.backdrop} onPress={closeTrackMenu} />
+                <View style={[styles.menuContainer, trackMenu.position]} >
+                    <TouchableOpacity style={styles.menuItem} onPress={()=>{
+                        onRemoveTrack(trackMenu.track!, closeTrackMenu);
+                    }}>
+                        <TrashIcon size={18} color={"#fff"} />
+                        <Text style={styles.menuText}>Remove</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={()=>{
+                            onViewMetadata(trackMenu.track!.name);
+                            closeTrackMenu();
+                        }}
+                    >
+                        <InfoIcon size={18} color="#fff" />
+                        <Text style={styles.menuText}>View Metadata</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </>
     );
 };
@@ -318,5 +375,32 @@ const styles = StyleSheet.create({
         opacity: 0,
         pointerEvents: "none",
         position: "absolute",
-    }
+    },
+    backdrop: {
+        flex: 1,
+    },
+    menuContainer: {
+        position: "absolute",
+        right: 20,
+        top: 120,
+        backgroundColor: "#2a2a2a",
+        borderRadius: 0,
+        paddingVertical: 6,
+        width: 200,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.1)",
+    },
+
+    menuItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+
+    menuText: {
+        color: "white",
+        marginLeft: 10,
+        fontSize: 16,
+    },
 })

@@ -4,13 +4,21 @@ import {
     View,
     Text,
     StyleSheet,
-    TouchableOpacity,
+    TouchableOpacity, Modal,
 } from 'react-native';
 import { Track, Playlist, ProgressData } from '../utils/types';
 import { SpinnerIcon } from './SpinnerIcon.tsx';
 import { TrackRow } from './TrackRow';
 import {Menu, MD3DarkTheme, MD3LightTheme,} from "react-native-paper";
-import {BrushCleaningIcon, Download, DownloadCloudIcon, MoreVertical, Save, Trash2} from "lucide-react-native";
+import {
+    BrushCleaningIcon,
+    Download,
+    DownloadCloudIcon, InfoIcon,
+    MoreVertical, PencilIcon,
+    Save,
+    Trash2,
+    TrashIcon
+} from "lucide-react-native";
 import {usePlayerContext} from "../services/PlayerContext.tsx";
 
 interface LibraryProps {
@@ -31,6 +39,12 @@ interface LibraryProps {
 
 const ROW_HEIGHT = 88;
 
+type TrackMenuState = {
+    visible: boolean;
+    track: Track | null;
+    isInsidePlaylist: boolean;
+    position: { top: number; right: number };
+};
 
 export const Library: React.FC<LibraryProps> = ({
                                                     allTracks,
@@ -80,12 +94,43 @@ export const Library: React.FC<LibraryProps> = ({
     const { state } = usePlayerContext();
 
     const { audioState, isPlaying } = state;
+
     useEffect(() => {
         if(!isSelectionMode){
             setSelectedTrackIds(new Set());
         }
 
     }, [isSelectionMode]);
+
+
+    const [trackMenu, setTrackMenu] = useState<TrackMenuState>({
+        visible: false,
+        track: null,
+        isInsidePlaylist: false,
+        position: { top: 0, right: 20 },
+    });
+
+    const openTrackMenu = useCallback(
+        (
+            track: Track,
+            isInsidePlaylist: boolean,
+            position: { top: number; right: number }
+        ) => {
+            setTrackMenu({
+                visible: true,
+                track,
+                isInsidePlaylist,
+                position,
+            });
+        },
+        []
+    );
+
+    const closeTrackMenu = useCallback(() => {
+        setTrackMenu(prev => ({ ...prev, visible: false }));
+    }, []);
+
+
 
     // ----- Renderers -----
     const renderTrackItem = useCallback(
@@ -101,14 +146,9 @@ export const Library: React.FC<LibraryProps> = ({
                 associatedPlaylists={playlists.filter((p) => p.trackNames.includes(item.name))}
                 onSelectTrack={onSelectTrack}
                 onToggleSelection={toggleSelection}
-                onEditToPlaylist={(track: Track, done) => {
-                    setShowModal(true);
-                    handleAlbumActions([track])
-                    done()
-                }}
+                onOpenMenu={openTrackMenu}
                 showLive={isPlaying && audioState.name === item.name}
                 onLongPress={() => setIsSelectionMode(prev => !prev)}
-                onViewMetadata={onViewMetadata}
                 style={{ height: ROW_HEIGHT }}
             />
         ),
@@ -118,13 +158,10 @@ export const Library: React.FC<LibraryProps> = ({
             progressMap,
             playlists,
             onSelectTrack,
-            onViewMetadata,
-            handleAlbumActions,
-            setShowModal,
             allTracks,
             isPlaying,
-            audioState.name
-        ]
+            audioState.name,
+            openTrackMenu]
     );
 
     // ----- Main render -----
@@ -267,6 +304,34 @@ export const Library: React.FC<LibraryProps> = ({
                     <Text style={styles.bulkAddText}>Edit Playlist</Text>
                 </TouchableOpacity>
             </View>
+            <Modal
+                visible={trackMenu.visible}
+                transparent
+                animationType="fade"
+                onRequestClose={closeTrackMenu}
+            >
+                <TouchableOpacity style={styles.backdrop} onPress={closeTrackMenu} />
+                <View style={[styles.menuContainer, trackMenu.position]} >
+                    <TouchableOpacity style={styles.menuItem} onPress={()=>{
+                        setShowModal(true);
+                        handleAlbumActions([trackMenu.track!]);
+                        closeTrackMenu();
+                    }}>
+                        <PencilIcon size={18} color="#fff" />
+                        <Text style={styles.menuText}>Edit Playlist</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={()=>{
+                            onViewMetadata(trackMenu.track!.name);
+                            closeTrackMenu();
+                        }}
+                    >
+                        <InfoIcon size={18} color="#fff" />
+                        <Text style={styles.menuText}>View Metadata</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -349,7 +414,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: 0,
+        bottom: 75,
         paddingHorizontal: 16,
         paddingVertical: 10,
         backgroundColor: '#1f2933',
@@ -389,5 +454,32 @@ const styles = StyleSheet.create({
         opacity: 0,
         pointerEvents: "none",
         position: "absolute",
-    }
+    },
+    backdrop: {
+        flex: 1,
+    },
+    menuContainer: {
+        position: "absolute",
+        right: 20,
+        top: 120,
+        backgroundColor: "#2a2a2a",
+        borderRadius: 0,
+        paddingVertical: 6,
+        width: 200,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.1)",
+    },
+
+    menuItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+
+    menuText: {
+        color: "white",
+        marginLeft: 10,
+        fontSize: 16,
+    },
 });

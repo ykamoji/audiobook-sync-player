@@ -34,9 +34,12 @@ interface TrackRowProps {
     onSelectTrack: (track: Track, index: number, list: Track[], option?:number) => void;
     onToggleSelection: (trackId: string) => void;
     onLongPress: () => void;
-    onEditToPlaylist: (track: Track, callback:() => void) => void;
-    onViewMetadata: (name: string) => void;
     style?: ViewStyle;
+    onOpenMenu: (
+        track: Track,
+        isInsidePlaylist: boolean,
+        position: { top: number; right: number }
+    ) => void;
 }
 
 
@@ -54,14 +57,11 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                                    onSelectTrack,
                                                    onToggleSelection,
                                                    onLongPress,
-                                                   onEditToPlaylist,
-                                                   onViewMetadata,
                                                    style,
+                                                   onOpenMenu
                                                }) => {
-    const [menuVisible, setMenuVisible] = useState(false);
 
     const rowRef = useRef<View>(null);
-    const [menuPos, setMenuPos] = useState({ top: 0, right: 20 });
 
 
     const displayName = useMemo(
@@ -105,26 +105,12 @@ export const TrackRow: React.FC<TrackRowProps> = ({
         if (!rowRef.current) return;
 
         rowRef.current.measureInWindow((x, y, width, height) => {
-            setMenuPos({
+            onOpenMenu(track, isInsidePlaylist, {
                 top: y + height / 2,
-                right: 20
+                right: 20,
             });
-            setMenuVisible(true);
         });
-    }, []);
-
-    const closeMenu = useCallback(() => setMenuVisible(false), []);
-
-    const handleEdit = useCallback(() => {
-        onEditToPlaylist(track, () => {
-            closeMenu();
-        });
-    }, [onEditToPlaylist, track, closeMenu]);
-
-    const handleMetadata = useCallback(() => {
-        onViewMetadata(track.name);
-        closeMenu();
-    }, [onViewMetadata, closeMenu, track.name]);
+    }, [track, isInsidePlaylist, onOpenMenu]);
 
 
     const singleTap = Gesture.Tap()
@@ -225,27 +211,6 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     <MoreHorizontalIcon size={22} color="#aaa" />
                 </TouchableOpacity>
             )}
-            <Modal
-                visible={menuVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={closeMenu}
-            >
-                <TouchableOpacity style={styles.backdrop} onPress={closeMenu} />
-                <View style={[styles.menuContainer, { top: menuPos.top, right: menuPos.right }]} >
-                    <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
-                        {isInsidePlaylist ? <TrashIcon size={18} color={"#fff"} /> : <PencilIcon size={18} color="#fff" />}
-                        <Text style={styles.menuText}>{ isInsidePlaylist ? 'Remove' : "Edit Playlist"}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={handleMetadata}
-                    >
-                        <InfoIcon size={18} color="#fff" />
-                        <Text style={styles.menuText}>View Metadata</Text>
-                    </TouchableOpacity>
-                </View>
-            </Modal>
         </View>
     );
 };
@@ -361,34 +326,6 @@ const styles = StyleSheet.create({
         top: "35%",
     },
 
-    backdrop: {
-        flex: 1,
-    },
-
-    menuContainer: {
-        position: "absolute",
-        right: 20,
-        top: 120,
-        backgroundColor: "#2a2a2a",
-        borderRadius: 0,
-        paddingVertical: 6,
-        width: 200,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
-    },
-
-    menuItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-    },
-
-    menuText: {
-        color: "white",
-        marginLeft: 10,
-        fontSize: 16,
-    },
     live:{
         position: "absolute",
         bottom: 30,

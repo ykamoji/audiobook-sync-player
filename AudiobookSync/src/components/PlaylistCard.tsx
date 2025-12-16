@@ -7,12 +7,7 @@ import {
 } from "react-native";
 import { Playlist, Track, ProgressData } from "../utils/types";
 import { MusicIcon } from "lucide-react-native";
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    runOnJS,
-} from "react-native-reanimated";
+import {Thumbnail} from "./Thumbnail.tsx";
 
 interface PlaylistCardProps {
     playlist: Playlist;
@@ -51,45 +46,16 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
         };
     }, [allTracks, progressMap, playlist.trackNames]);
 
-    // Starting offset so each playlist rotates differently
-    const [offset, setOffset] = useState(() => Math.floor(Math.random() * 100));
-
-    const opacity = useSharedValue(1);
-    const [imageSrc, setImageSrc] = useState(covers[0] ?? null);
-
-    useEffect(() => {
-        if (covers.length <= 1) return;
-
-        const interval = setInterval(() => {
-            const nextOffset = (offset + 1) % covers.length;
-            const nextImage = covers[nextOffset];
-
-            opacity.value = withTiming(0.5, { duration: 250 }, () => {
-                runOnJS(setImageSrc)(nextImage);
-                opacity.value = withTiming(1, { duration: 300 });
-            });
-
-            setOffset(nextOffset);
-
-        }, 4000);
-
-        return () => clearInterval(interval);
-    }, [covers, offset]);
-
-    const animatedStyle = useAnimatedStyle(() => {
-        return { opacity: opacity.value };
-    });
-
 
     return (
         <TouchableOpacity onPress={onClick} activeOpacity={0.85} style={styles.card}>
             {/* Cover Image */}
             <View style={styles.coverContainer}>
-                {imageSrc ? (
-                    <Animated.Image
-                        source={{ uri: imageSrc }}
-                        style={[styles.coverImage, animatedStyle]}
-                        resizeMode="cover"
+                {covers.length > 0 ? (
+                    <Thumbnail
+                        images={covers}
+                        intervalMs={4000}
+                        fadeDurationMs={300}
                     />
                 ) : (
                     <View style={styles.emptyCover}>

@@ -5,8 +5,8 @@ import {
     useSharedValue,
 } from "react-native-reanimated";
 import { FlashList } from "@shopify/flash-list";
-import {Keyboard, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
-import {FC, useCallback, useRef, useState} from "react";
+import {Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {FC, useRef, useState} from "react";
 import {playerStyles} from "../utils/playerStyles.ts";
 import {findCueIndex} from "../utils/mediaLoader.ts";
 import {SubtitleCue} from "../utils/types.ts";
@@ -90,7 +90,12 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
 
     const updateCueHandler = async () => {
 
-        await saveSubtitleEdit(state.audioState.name, cueIdRef.current, cueTextRef.current);
+        if(cueEditedRef.current) {
+            await saveSubtitleEdit(state.audioState.name, cueIdRef.current, cueTextRef.current);
+        }
+        else {
+            await removeSubtitleEdit(state.audioState.name, cueIdRef.current);
+        }
 
         dispatch({
             type: "UPDATE_CUE",

@@ -1,48 +1,65 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, View, Image } from "react-native";
-import uuid from 'react-native-uuid';
+import { Animated, StyleSheet, View } from "react-native";
+import uuid from "react-native-uuid";
 
 interface ThumbnailProps {
-    file: string; // local file path like "file:///..."
+    images: string[];          // local or remote URIs
+    intervalMs?: number;       // time between image switches
+    fadeDurationMs?: number;   // cross-fade duration
 }
 
-export const Thumbnail: React.FC<ThumbnailProps> = ({ file }) => {
-    const [layers, setLayers] = useState<
-        { uri: string; id: string; opacity: Animated.Value }[]
-    >([]);
+type Layer = {
+    id: string;
+    uri: string;
+    opacity: Animated.Value;
+};
 
-    const lastUriRef = useRef<string | null>(null);
+export const Thumbnail: React.FC<ThumbnailProps> = ({
+                                                        images,
+                                                        intervalMs = 4000,
+                                                        fadeDurationMs = 450,
+                                                    }) => {
+    const [layers, setLayers] = useState<Layer[]>([]);
+    const indexRef = useRef(0);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    useEffect(() => {
-        if (!file) return;
-
-        const uri = file.startsWith("file://") ? file : `file://${file}`;
+    const pushImage = (uri: string) => {
+        const opacity = new Animated.Value(0);
         const id = uuid.v4().toString();
 
-        // Create animated opacity value
-        const opacity = new Animated.Value(0);
+        setLayers((prev) => [...prev, { id, uri, opacity }]);
 
-        // Add new layer on top
-        setLayers((prev) => {
-            const last = prev[prev.length - 1];
-            return last ? [...prev, { uri, id, opacity }] : [{ uri, id, opacity }];
-        });
-
-        // Fade in animation
         Animated.timing(opacity, {
             toValue: 1,
-            duration: 450,
+            duration: fadeDurationMs,
             useNativeDriver: true,
         }).start(() => {
-            // After fade, remove older layers
-            setLayers((prev) => {
-                if (prev.length > 1) return [prev[prev.length - 1]];
-                return prev;
-            });
+            // Retain only the topmost image
+            setLayers((prev) => prev.slice(-1));
         });
+    };
 
-        lastUriRef.current = uri;
-    }, [file]);
+    useEffect(() => {
+        if (!images || images.length === 0) return;
+
+        // Seed first image immediately
+        indexRef.current = 0;
+        pushImage(images[0]);
+
+        if (images.length === 1) return;
+
+        intervalRef.current = setInterval(() => {
+            indexRef.current = (indexRef.current + 1) % images.length;
+            pushImage(images[indexRef.current]);
+        }, intervalMs);
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [images, intervalMs, fadeDurationMs]);
 
     if (layers.length === 0) {
         return <View style={styles.placeholder} />;
