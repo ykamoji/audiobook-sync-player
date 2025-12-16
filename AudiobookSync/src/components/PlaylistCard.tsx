@@ -46,7 +46,6 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
         };
     }, [allTracks, progressMap, playlist.trackNames]);
 
-
     return (
         <TouchableOpacity onPress={onClick} activeOpacity={0.85} style={styles.card}>
             {/* Cover Image */}
