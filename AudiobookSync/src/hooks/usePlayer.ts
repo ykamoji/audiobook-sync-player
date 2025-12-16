@@ -5,7 +5,7 @@ import {usePlayerContext} from "../services/PlayerContext";
 
 import {ProgressData, Track} from '../utils/types';
 import {getSegmentIndex, loadTrackMedia} from '../utils/mediaLoader';
-import {useStaticData} from "./useStaticData.tsx";
+import {useStaticData} from "./useStaticData.ts";
 import {useSharedValue} from "react-native-reanimated";
 
 interface UsePlayerProps {
@@ -20,7 +20,7 @@ export const usePlayer = ({
      *  UI STATE
      *  ───────────────────────────────────────────── */
 
-    const { getDuration } = useStaticData()
+    const { getTrackStaticData } = useStaticData()
 
     const { state, dispatch } = usePlayerContext();
 
@@ -45,7 +45,7 @@ export const usePlayer = ({
 
     useEffect(() => {
         if(!!audioState.name){
-            const { duration } = getDuration(audioState.name)
+            const { duration } = getTrackStaticData(audioState.name)
             durationSV.value = duration
 
             if(!!progressMapRef.current[audioState.name])
@@ -91,7 +91,7 @@ export const usePlayer = ({
             await TrackPlayer.pause()
         }
 
-        const {duration} = getDuration(track.name)
+        const {duration} = getTrackStaticData(track.name)
 
         /** Restore progress */
         const saved = progressMapRef.current[track.name];
@@ -170,7 +170,7 @@ export const usePlayer = ({
         let duration = durationSV.value;
         if(duration <= 0){
             if(!audioState.name) return
-            duration = getDuration(audioState.name).duration
+            duration = getTrackStaticData(audioState.name).duration
             durationSV.value = duration
         }
 

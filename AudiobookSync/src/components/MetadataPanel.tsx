@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XIcon } from 'lucide-react-native';
 import {formatBytes, formatDate, formatDuration, formatProgress} from '../utils/formatting';
 import { SlideWindow } from './SlideWindow';
-import {Static} from "../hooks/useStaticData.tsx";
+import {Static} from "../hooks/useStaticData.ts";
 
 export interface MetadataPanelData {
     name: string;

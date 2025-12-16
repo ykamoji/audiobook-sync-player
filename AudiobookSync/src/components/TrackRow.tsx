@@ -1,9 +1,8 @@
-import React, {useState, useMemo, useCallback, useRef, useEffect} from "react";
+import React, {useMemo, useCallback, useRef} from "react";
 import {
     View,
     Text,
     Image,
-    Modal,
     TouchableOpacity,
     StyleSheet,
     ViewStyle
@@ -14,12 +13,12 @@ import {
     MoreHorizontalIcon,
     CheckCircleIcon,
     CircleIcon,
-    InfoIcon, PencilIcon, TrashIcon,
 } from "lucide-react-native";
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Track, Playlist, ProgressData } from "../utils/types";
 import {PlayingIndicator} from "../services/PlayingIndicator.tsx";
 import {runOnJS} from "react-native-reanimated";
+import {useStaticData} from "../hooks/useStaticData.ts";
 
 interface TrackRowProps {
     track: Track;
@@ -125,6 +124,10 @@ export const TrackRow: React.FC<TrackRowProps> = ({
             if(success) runOnJS(handlePress)(2)
         });
 
+    const { getTrackStaticData } = useStaticData()
+
+    const { intro } = getTrackStaticData(track.name)
+
     return (
         <View ref={rowRef} style={[styles.rowContainer, style]}>
             <GestureDetector gesture={Gesture.Exclusive(doubleTap, singleTap)}>
@@ -166,6 +169,13 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                         numberOfLines={1}
                     >
                         {displayName}
+                    </Text>
+                    <Text style={[
+                        styles.trackIntro,
+                        isSelected && styles.selectedText,
+                    ]}
+                          numberOfLines={1}>
+                        {intro}
                     </Text>
                     <View style={styles.live}>
                         <PlayingIndicator visible={showLive}/>
@@ -252,13 +262,18 @@ const styles = StyleSheet.create({
 
     infoBox: {
         flex: 1,
-
     },
 
     trackTitle: {
         color: "white",
         fontSize: 14,
         fontWeight: "600",
+    },
+
+    trackIntro:{
+      color: "rgba(255,255,255,0.7)",
+      marginTop:5,
+      fontSize: 10,
     },
 
     selectedText: {
@@ -328,6 +343,6 @@ const styles = StyleSheet.create({
 
     live:{
         position: "absolute",
-        bottom: 30,
+        bottom: 40,
     }
 });

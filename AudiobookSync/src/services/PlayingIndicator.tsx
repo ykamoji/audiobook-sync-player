@@ -33,7 +33,7 @@ const Bar = ({ delay, active }: { delay: number, active:boolean }) => {
                 height.value = withDelay(
                     delay,
                     withRepeat(
-                        withTiming(25, { duration: 500 }),
+                        withTiming(20, { duration: 500 }),
                         -1,
                         true
                     )
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-end',
         gap: 2,
-        height: 25,
+        height: 20,
     },
     bar: {
         width: 2,

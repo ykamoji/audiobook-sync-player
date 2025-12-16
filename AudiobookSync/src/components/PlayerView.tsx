@@ -8,7 +8,9 @@ import Animated, {
     interpolateColor,
     runOnJS,
     useAnimatedStyle,
+    useDerivedValue,
     useSharedValue,
+    withRepeat,
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
@@ -17,7 +19,7 @@ import {Controls} from './Controls';
 import {ChevronDownIcon, PauseIcon, PlayIcon,} from 'lucide-react-native';
 import {PlayerMode} from "../AppContent.tsx";
 import {miniStyles, playerStyles} from "../utils/playerStyles.ts";
-import {useStaticData} from "../hooks/useStaticData.tsx";
+import {useStaticData} from "../hooks/useStaticData.ts";
 import {usePlayer} from "../hooks/usePlayer.ts";
 import {ProgressData, Track} from "../utils/types.ts";
 import {PlayerScroll} from "./PlayerScroll.tsx";
@@ -75,7 +77,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         savePlayerProgress,
     }));
 
-    const { getScheme } = useStaticData()
+    const { getTrackStaticData } = useStaticData()
 
     const insets = useSafeAreaInsets();
 
@@ -83,7 +85,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const [showSegments, setShowSegments] = useState(false);
 
     const scrollAtTop = useRef(true);
-    const {scheme} = getScheme(audioState.name)
+    const { scheme, dims } = getTrackStaticData(audioState.name)
 
     const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
 
@@ -93,6 +95,22 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const colorScheme = useSharedValue(scheme);
     const fullImageProgress = useSharedValue(0);
     const expandedOnce = useSharedValue(false);
+    const panDirection = useSharedValue(1);
+
+    const panProgress = useDerivedValue(() => {
+        if (fullImageProgress.value < 1) {
+            return 0; // ALWAYS centered before and during zoom
+        }
+
+        return withRepeat(
+            withTiming(1, {
+                duration: 20000,
+                easing: Easing.linear,
+            }),
+            -1,
+            true
+        );
+    });
 
     useEffect(() => {
         colorScheme.value = scheme
@@ -357,6 +375,13 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const controlsPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.95})
 
     const toggleFullImage = () => {
+        const expanding = fullImageProgress.value === 0;
+
+        if (expanding) {
+            // Randomize direction ONCE per expand
+            panDirection.value = Math.random() > 0.5 ? 1 : -1;
+        }
+
         fullImageProgress.value = withTiming(
             fullImageProgress.value === 0 ? 1 : 0,
             {
@@ -375,19 +400,36 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     };
 
     const animatedWrapperStyle = useAnimatedStyle(() => {
-        const fullHeight = SCREEN_HEIGHT;
-        const portraitWidth = fullHeight *  9 / 16;
+
+        const imgW = dims?.[0] ?? SCREEN_WIDTH;
+        const imgH = dims?.[1] ?? SCREEN_WIDTH;
+
+        const imageAspect = imgW / imgH;
+        const screenAspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+        let targetWidth;
+        let targetHeight;
+
+        if (imageAspect > screenAspect) {
+            // Image is wider than screen → cover height (crop top/bottom)
+            targetHeight = SCREEN_HEIGHT;
+            targetWidth = SCREEN_HEIGHT * imageAspect;
+        } else {
+            // Image is taller than screen → cover width (crop sides)
+            targetWidth = SCREEN_WIDTH;
+            targetHeight = SCREEN_WIDTH / imageAspect;
+        }
 
         const height = interpolate(
             fullImageProgress.value,
             [0, 1],
-            [SCREEN_WIDTH, fullHeight]       // square → full height
+            [SCREEN_WIDTH, targetHeight]       // square → full height
         );
 
         const width = interpolate(
             fullImageProgress.value,
             [0, 1],
-            [SCREEN_WIDTH, portraitWidth]    // square → portrait width
+            [SCREEN_WIDTH, targetWidth]    // square → portrait width
         );
 
         return {
@@ -398,16 +440,57 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     });
 
     const animatedImageStyle = useAnimatedStyle(() => {
+        if (fullImageProgress.value < 1) {
+            return {
+                width: "100%",
+                height: "100%",
+                transform: [{ translateX: 0 }, { translateY: 0 }],
+            };
+        }
+
+        const imgW = dims?.[0] ?? SCREEN_WIDTH;
+        const imgH = dims?.[1] ?? SCREEN_WIDTH;
+
+        const imageAspect = imgW / imgH;
+        const screenAspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+        let overflowX = 0;
+        let overflowY = 0;
+
+        if (imageAspect > screenAspect) {
+            const targetWidth = SCREEN_HEIGHT * imageAspect;
+            overflowX = targetWidth - SCREEN_WIDTH;
+        } else {
+            const targetHeight = SCREEN_WIDTH / imageAspect;
+            overflowY = targetHeight - SCREEN_HEIGHT;
+        }
+
+        const translateX = overflowX
+            ? interpolate(
+                panProgress.value * panDirection.value,
+                [-1, 1],
+                [-overflowX / 2, overflowX / 2]
+            )
+            : 0;
+
+        const translateY = overflowY
+            ? interpolate(
+                panProgress.value * panDirection.value,
+                [-1, 1],
+                [-overflowY / 2, overflowY / 2]
+            )
+            : 0;
+
         return {
             width: "100%",
             height: "100%",
+            transform: [{ translateX }, { translateY }],
         };
     });
 
     const easing = Easing.bezierFn(0.25, 0.1, 0.25, 1)
 
     const scrollHiddenStyle = useAnimatedStyle(() => {
-
 
         let easedProgress = easing(fullImageProgress.value);
 

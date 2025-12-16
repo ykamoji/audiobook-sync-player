@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
+import React, {useEffect, useRef, useState} from "react";
+import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {StatusBar, StyleSheet, Text, TouchableOpacity, View,} from "react-native";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {pickDirectory} from "react-native-document-picker";
@@ -25,7 +25,7 @@ import {Library, ListMusic, RefreshCw} from "lucide-react-native";
 import {PlayerView, PlayerViewRef} from "./components/PlayerView.tsx";
 import { PlayerProvider } from "./services/PlayerProvider.tsx";
 import {usePlayerContext} from "./services/PlayerContext.tsx";
-import {useStaticData} from "./hooks/useStaticData.tsx";
+import {useStaticData} from "./hooks/useStaticData.ts";
 
 export const setupPlayer = async () => {
 

@@ -1,4 +1,4 @@
-import {Static} from "../hooks/useStaticData.tsx";
+import {Static} from "../hooks/useStaticData.ts";
 
 export interface SubtitleCue {
     id: number;

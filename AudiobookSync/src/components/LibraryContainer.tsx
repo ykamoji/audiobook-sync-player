@@ -20,7 +20,7 @@ import {ListIcon} from "lucide-react-native";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {useStaticData} from "../hooks/useStaticData.tsx";
+import {useStaticData} from "../hooks/useStaticData.ts";
 import {clearAllSubtitleEdits, exportAllEditedSubtitlesParsed} from "../utils/subtitleEdits.ts";
 import {zip} from "react-native-zip-archive";
 import {Action, PlayerState, usePlayerContext} from "../services/PlayerContext.tsx";
@@ -74,7 +74,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             audiobook_progress: progressMap,
             audiobook_playlists: playlists,
             exportedAt: Date.now(),
-            static: await loadStaticData()
+            static: loadStaticData()
         };
 
         const saved = await saveToNativeFilesystem(data);

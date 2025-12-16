@@ -2,12 +2,12 @@ import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {ProgressData, Track} from '../utils/types';
-import {useStaticData} from "./useStaticData.tsx";
+import {useStaticData} from "./useStaticData.ts";
 
 export const useProgressManager = () => {
     const [progressMap, setProgressMap] = useState<Record<string, ProgressData>>({});
 
-    const { getDuration } = useStaticData()
+    const { getTrackStaticData } = useStaticData()
 
     // Save progress to AsyncStorage
     const persistProgress = async (map: Record<string, ProgressData>) => {
@@ -53,7 +53,7 @@ export const useProgressManager = () => {
         segmentHistory: Record<number, number>
     ) => {
 
-        const {duration} = getDuration(trackName);
+        const {duration} = getTrackStaticData(trackName);
 
         // console.log('inside useProgressManager ',trackName, currentTime, segmentHistory);
 
