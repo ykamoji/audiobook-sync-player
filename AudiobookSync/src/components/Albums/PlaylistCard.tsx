@@ -5,7 +5,7 @@ import {
     TouchableOpacity,
     StyleSheet,
 } from "react-native";
-import { Playlist, Track, ProgressData } from "../utils/types";
+import { Playlist, Track, ProgressData } from "../../utils/types.ts";
 import { MusicIcon } from "lucide-react-native";
 import {Thumbnail} from "./Thumbnail.tsx";
 

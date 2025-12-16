@@ -1,10 +1,10 @@
 import React, {FC, useCallback, useEffect, useState} from "react";
-import {Playlist, ProgressData, Track} from "../utils/types.ts";
+import {Playlist, ProgressData, Track} from "../../utils/types.ts";
 import {ActionSheetIOS, Modal, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {ChevronLeftIcon, InfoIcon, PencilIcon, Trash, TrashIcon} from "lucide-react-native";
-import {TrackRow} from "./TrackRow.tsx";
+import {TrackRow} from "../TrackRow.tsx";
 import {FlashList} from "@shopify/flash-list";
-import {usePlayerContext} from "../services/PlayerContext.tsx";
+import {usePlayerContext} from "../../context/PlayerContext.tsx";
 
 interface AlbumContentProps {
     playlistTracks?: Track[];

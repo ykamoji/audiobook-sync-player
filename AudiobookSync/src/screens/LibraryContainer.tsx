@@ -1,9 +1,9 @@
 import React, {Dispatch, useRef} from 'react';
-import { Library } from './Library';
+import { Library } from '../components/Library/Library.tsx';
 import RNFS from 'react-native-fs';
-import { Track, Playlist, AppData, ProgressData } from '../utils/types';
+import { Track, Playlist, AppData, ProgressData } from '../utils/types.ts';
 import { modelStyles } from "../utils/modelStyles.ts";
-import { saveToNativeFilesystem } from '../utils/persistence';
+import { saveToNativeFilesystem } from '../utils/persistence.ts';
 import {
     Dimensions,
     Modal,
@@ -23,7 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {useStaticData} from "../hooks/useStaticData.ts";
 import {clearAllSubtitleEdits, exportAllEditedSubtitlesParsed} from "../utils/subtitleEdits.ts";
 import {zip} from "react-native-zip-archive";
-import {Action, PlayerState, usePlayerContext} from "../services/PlayerContext.tsx";
+import {Action, PlayerState, usePlayerContext} from "../context/PlayerContext.tsx";
 import {reloadSubtitleCues} from "../utils/mediaLoader.ts";
 
 interface LibraryContainerProps {

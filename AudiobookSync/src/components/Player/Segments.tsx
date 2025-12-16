@@ -1,10 +1,10 @@
 import React, {FC} from "react";
-import {playerStyles} from "../utils/playerStyles.ts";
+import {playerStyles} from "../../utils/playerStyles.ts";
 import {Text, TouchableOpacity, View} from "react-native";
 import {XIcon} from "lucide-react-native";
-import {SlideWindow} from "./SlideWindow.tsx";
-import {SubtitleFileState} from "../utils/types.ts";
-import {findCueIndex, getSegmentIndex} from "../utils/mediaLoader.ts";
+import {SlideWindow} from "../../services/SlideWindow.tsx";
+import {SubtitleFileState} from "../../utils/types.ts";
+import {findCueIndex, getSegmentIndex} from "../../utils/mediaLoader.ts";
 
 interface SegmentProps {
     showSegments: boolean;

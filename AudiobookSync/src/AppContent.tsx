@@ -3,8 +3,8 @@ import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {StatusBar, StyleSheet, Text, TouchableOpacity, View,} from "react-native";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {pickDirectory} from "react-native-document-picker";
-import {Setup} from "./components/Setup";
-import {LibraryContainer} from "./components/LibraryContainer";
+import {Setup} from "./screens/Setup.tsx";
+import {LibraryContainer} from "./screens/LibraryContainer.tsx";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
 import Animated, {
     useAnimatedStyle,
@@ -19,12 +19,12 @@ import {useProgressManager} from "./hooks/useProgressManager";
 import {useLibrary} from "./hooks/useLibrary";
 import TrackPlayer, {Capability, IOSCategory, IOSCategoryOptions, IOSCategoryMode} from 'react-native-track-player';
 import {scanNativePath} from "./utils/fileScanner.ts";
-import {AlbumContainer} from "./components/AlbumContainer.tsx";
+import {AlbumContainer} from "./screens/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
-import {PlayerView, PlayerViewRef} from "./components/PlayerView.tsx";
-import { PlayerProvider } from "./services/PlayerProvider.tsx";
-import {usePlayerContext} from "./services/PlayerContext.tsx";
+import {PlayerView, PlayerViewRef} from "./screens/PlayerView.tsx";
+import { PlayerProvider } from "./context/PlayerProvider.tsx";
+import {usePlayerContext} from "./context/PlayerContext.tsx";
 import {useStaticData} from "./hooks/useStaticData.ts";
 
 export const setupPlayer = async () => {

@@ -1,5 +1,5 @@
 import React, { useReducer } from "react";
-import { PlayerContext , PlayerState, Action } from "./PlayerContext";
+import { PlayerContext , PlayerState, Action } from "./PlayerContext.tsx";
 
 export const reducer = (state: PlayerState, action: Action): PlayerState => {
     switch (action.type) {

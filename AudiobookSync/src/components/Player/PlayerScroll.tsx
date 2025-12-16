@@ -7,15 +7,15 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import {Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {FC, useRef, useState} from "react";
-import {playerStyles} from "../utils/playerStyles.ts";
-import {findCueIndex} from "../utils/mediaLoader.ts";
-import {SubtitleCue} from "../utils/types.ts";
+import {playerStyles} from "../../utils/playerStyles.ts";
+import {findCueIndex} from "../../utils/mediaLoader.ts";
+import {SubtitleCue} from "../../utils/types.ts";
 import {Cue} from "./Cue.tsx";
-import {removeSubtitleEdit, saveSubtitleEdit} from "../utils/subtitleEdits.ts";
-import {modelStyles} from "../utils/modelStyles.ts";
+import {removeSubtitleEdit, saveSubtitleEdit} from "../../utils/subtitleEdits.ts";
+import {modelStyles} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
-import {usePlayerContext} from "../services/PlayerContext.tsx";
-import {Toggle} from "../services/Toggle.tsx";
+import {usePlayerContext} from "../../context/PlayerContext.tsx";
+import {Toggle} from "../../services/Toggle.tsx";
 
 export interface PlayerScrollProps {
     displayedCues: SubtitleCue[];

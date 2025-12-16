@@ -2,7 +2,7 @@ import RNFS from 'react-native-fs';
 import {Track, AudioFileState, SubtitleFileState, SubtitleCue} from './types';
 import { parseSubtitleText } from './parser';
 import {loadSubtitleEdits} from "./subtitleEdits.ts";
-import {Action} from "../services/PlayerContext.tsx";
+import {Action} from "../context/PlayerContext.tsx";
 import {Dispatch} from "react";
 
 const CUES_PER_SEGMENT = 100;

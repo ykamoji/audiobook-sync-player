@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef} from 'react';
 import TrackPlayer, {Event, State, usePlaybackState, useTrackPlayerEvents,} from 'react-native-track-player';
 import {releaseSecureAccess} from 'react-native-document-picker'
-import {usePlayerContext} from "../services/PlayerContext";
+import {usePlayerContext} from "../context/PlayerContext.tsx";
 
 import {ProgressData, Track} from '../utils/types';
 import {getSegmentIndex, loadTrackMedia} from '../utils/mediaLoader';

@@ -3,8 +3,8 @@ import {PlaylistCard} from "./PlaylistCard.tsx";
 import {PlusIcon} from "lucide-react-native";
 import React, {FC, useRef} from "react";
 import { StyleSheet} from "react-native";
-import {Playlist, ProgressData, Track} from "../utils/types.ts";
-import {modelStyles} from "../utils/modelStyles.ts";
+import {Playlist, ProgressData, Track} from "../../utils/types.ts";
+import {modelStyles} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
 

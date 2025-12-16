@@ -6,9 +6,9 @@ import {
     StyleSheet,
     TouchableOpacity, Modal,
 } from 'react-native';
-import { Track, Playlist, ProgressData } from '../utils/types';
-import { SpinnerIcon } from './SpinnerIcon.tsx';
-import { TrackRow } from './TrackRow';
+import { Track, Playlist, ProgressData } from '../../utils/types.ts';
+import { SpinnerIcon } from '../../services/SpinnerIcon.tsx';
+import { TrackRow } from '../TrackRow.tsx';
 import {Menu, MD3DarkTheme, MD3LightTheme,} from "react-native-paper";
 import {
     BrushCleaningIcon,
@@ -19,7 +19,7 @@ import {
     Trash2,
     TrashIcon
 } from "lucide-react-native";
-import {usePlayerContext} from "../services/PlayerContext.tsx";
+import {usePlayerContext} from "../../context/PlayerContext.tsx";
 
 interface LibraryProps {
     allTracks: Track[];

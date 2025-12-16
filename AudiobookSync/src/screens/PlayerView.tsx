@@ -15,15 +15,15 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Controls} from './Controls';
+import {Controls} from '../components/Player/Controls.tsx';
 import {ChevronDownIcon, PauseIcon, PlayIcon,} from 'lucide-react-native';
 import {PlayerMode} from "../AppContent.tsx";
 import {miniStyles, playerStyles} from "../utils/playerStyles.ts";
 import {useStaticData} from "../hooks/useStaticData.ts";
 import {usePlayer} from "../hooks/usePlayer.ts";
 import {ProgressData, Track} from "../utils/types.ts";
-import {PlayerScroll} from "./PlayerScroll.tsx";
-import {Segments} from "./Segments.tsx";
+import {PlayerScroll} from "../components/Player/PlayerScroll.tsx";
+import {Segments} from "../components/Player/Segments.tsx";
 
 interface PlayerViewProps {
     playerMode: PlayerMode;

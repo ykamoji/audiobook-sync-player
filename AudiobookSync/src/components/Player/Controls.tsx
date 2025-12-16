@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { ProgressSlider } from "../services/ProgressSlider.tsx";
+import { ProgressSlider } from "../../services/ProgressSlider.tsx";
 import {
     PlayIcon,
     PauseIcon,
@@ -9,7 +9,7 @@ import {
     SkipForwardIcon,
     LucideMenu
 } from 'lucide-react-native';
-import {Forward10Icon, Rewind10Icon} from "./Icons.tsx";
+import {Forward10Icon, Rewind10Icon} from "../../services/Icons.tsx";
 import {SharedValue} from "react-native-reanimated";
 
 interface ControlsProps {

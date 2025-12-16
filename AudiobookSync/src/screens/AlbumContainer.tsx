@@ -3,8 +3,8 @@ import React, {FC, useEffect, useRef, useState} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
 import {modelStyles} from "../utils/modelStyles.ts";
-import {Albums} from "./Albums.tsx";
-import {AlbumContent} from "./AlbumContent.tsx";
+import {Albums} from "../components/Albums/Albums.tsx";
+import {AlbumContent} from "../components/Albums/AlbumContent.tsx";
 import {Pressable} from "react-native-gesture-handler";
 
 interface AlbumsContainerProps {
