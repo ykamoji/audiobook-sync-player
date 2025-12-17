@@ -11,11 +11,12 @@ import {
 } from 'lucide-react-native';
 import {Forward10Icon, Rewind10Icon} from "../../services/Icons.tsx";
 import {SharedValue} from "react-native-reanimated";
+import {ExclusiveGesture} from "react-native-gesture-handler";
 
 interface ControlsProps {
     isPlaying: boolean;
     onPlayPause: () => void;
-    duration: number;
+    duration: SharedValue<number>;
     segmentMarkers: number[];
     currentTime: SharedValue<number>;
     onSeek: (value: number) => void;
@@ -27,6 +28,7 @@ interface ControlsProps {
     onSkipBackward: () => void;
     hasNext: boolean;
     hasPrevious: boolean;
+    registerGesture:(g:ExclusiveGesture) => void;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -43,7 +45,8 @@ export const Controls: React.FC<ControlsProps> = ({
                                                       onSkipForward,
                                                       onSkipBackward,
                                                       hasNext,
-                                                      hasPrevious
+                                                      hasPrevious,
+                                                      registerGesture
                                                   }) => {
 
     return (
@@ -51,28 +54,17 @@ export const Controls: React.FC<ControlsProps> = ({
 
             {/* PROGRESS + TIME */}
             <View style={styles.sliderContainer}>
-                {/*<Slider*/}
-                {/*    value={progress}*/}
-                {/*    minimumValue={0}*/}
-                {/*    maximumValue={100}*/}
-                {/*    onSlidingComplete={(values) => onSeek(values[0])}*/}
-                {/*    minimumTrackTintColor="#f97316"*/}
-                {/*    maximumTrackTintColor="#555"*/}
-                {/*    thumbTintColor="#F86600"*/}
-                {/*    trackStyle={{*/}
-                {/*        zIndex:0*/}
-                {/*    }}*/}
-                {/*/>*/}
                 <ProgressSlider
                     currentTimeSV={currentTime}
                     duration={duration}
                     onSeek={onSeek}
+                    registerGesture={registerGesture}
                 />
                 <View style={styles.markerContainer}>
-                    {duration > 0 && segmentMarkers!.map((time, i) =>
+                    {duration.value > 0 && segmentMarkers!.map((time, i) =>
                             <View
                                 key={i}
-                                style={[styles.marker, { left: `${(time / duration) * 100 }%` }]}
+                                style={[styles.marker, { left: `${(time / duration.value) * 100 }%` }]}
                             />
                     )}
                 </View>
@@ -140,7 +132,10 @@ const styles = StyleSheet.create({
     },
 
     sliderContainer: {
+        // paddingTop: 30,
+        paddingBottom:20,
         width: '100%',
+        // backgroundColor: '#fff',
     },
 
     controlsRow: {
@@ -177,7 +172,7 @@ const styles = StyleSheet.create({
     },
     markerContainer: {
         position: 'absolute',
-        top: 18,
+        top: 12.5,
         bottom: 0,
         width: '100%',
     },
@@ -185,8 +180,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 0,
         bottom: 0,
-        width: 4,
-        height: 4,
+        width: 2,
+        height: 5,
         backgroundColor: '#F86600',
         pointerEvents: 'none',
     }

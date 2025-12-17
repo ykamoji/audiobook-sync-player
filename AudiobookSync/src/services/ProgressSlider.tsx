@@ -1,12 +1,14 @@
-import React, {useState, useCallback} from 'react';
-import { Slider } from '@miblanchard/react-native-slider';
-import {useAnimatedReaction, runOnJS, useSharedValue, SharedValue} from 'react-native-reanimated';
+import React, {useState, FC, forwardRef, useRef, useImperativeHandle} from 'react';
+import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS} from 'react-native-reanimated';
 import {StyleSheet, Text, View} from "react-native";
+import {ControlSlider} from "./ControlSlider.tsx";
+import {ExclusiveGesture} from "react-native-gesture-handler";
 
 type Props = {
     currentTimeSV: SharedValue<number>;
-    duration: number;
+    duration: SharedValue<number>;
     onSeek: (v: number) => void;
+    registerGesture:(g:ExclusiveGesture) => void;
 };
 
 const formatTime = (time: number) => {
@@ -16,54 +18,71 @@ const formatTime = (time: number) => {
     return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
+interface CurrentTimeRef {
+    setTime: (time: number) => void;
+}
 
-export const ProgressSlider: React.FC<Props> = ({ currentTimeSV, duration, onSeek }) => {
-    const [sliderValue, setSliderValue] = useState(0);
-    const lastSecond = useSharedValue(-1);
-    const isSliding = useSharedValue(false);
+interface CurrentTimeProps {
+    currentTime:number
+}
 
-    // Update slider once per second (Option B)
+
+export const CurrentTime = forwardRef<CurrentTimeRef, CurrentTimeProps>(({currentTime},
+                                                                                               ref) => {
+
+    const [time, setTime] = useState<number>(currentTime);
+
+    useImperativeHandle(ref, () => ({
+        setTime,
+    }));
+
+    return <Text style={styles.timeText}>{formatTime(time)}</Text>
+});
+
+export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, registerGesture }) => {
+    const progressSV = useSharedValue(0);
+    const isSeekingSV = useSharedValue(false);
+
+    const currentTimeRef = useRef<CurrentTimeRef>(null);
+
+    const updateCurrentTime = (time: number) => {
+        currentTimeRef.current?.setTime(time);
+    };
+
     useAnimatedReaction(
-        () => Math.floor(currentTimeSV.value),
-        (sec) => {
-            if (isSliding.value) return;
-            // console.log(currentTimeSV.value, duration)
-            if (sec !== lastSecond.value) {
-                lastSecond.value = sec;
-                const progress = duration > 0 ? (sec / duration) * 100 : 0;
-                runOnJS(setSliderValue)(progress);
-            }
-        }
+        () => {
+            if (isSeekingSV.value) return progressSV.value;
+            if (duration.value === 0) return 0;
+            return currentTimeSV.value / duration.value;
+        },
+        (next) => {
+            if (isSeekingSV.value) return;
+            progressSV.value = next;
+            isSeekingSV.value = false;
+        },
+        []
     );
 
-    const handleSlidingStart = useCallback(() => {
-        isSliding.value = true;
-    }, [isSliding.value]);
-
-    const handleSlidingComplete = useCallback(
-        (values: number[]) => {
-            isSliding.value = false;
-            onSeek(values[0]);
+    useAnimatedReaction(
+        () => currentTimeSV.value,
+        (time, prev) => {
+            if (time === prev) return;
+            runOnJS(updateCurrentTime)(time);
         },
-        [onSeek, isSliding.value]
+        []
     );
 
     return (
         <>
-        <Slider
-            value={sliderValue}
-            animateTransitions={false}
-            minimumValue={0}
-            maximumValue={100}
-            onSlidingStart={handleSlidingStart}
-            onSlidingComplete={handleSlidingComplete}
-            minimumTrackTintColor="#f97316"
-            maximumTrackTintColor="#555"
-            thumbTintColor="#F86600"
-        />
+         <ControlSlider
+             onSeek={onSeek}
+             isSeekingSV={isSeekingSV}
+             progressSV={progressSV}
+             registerGesture={registerGesture}
+         />
         <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{formatTime(currentTimeSV.value)}</Text>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            <CurrentTime ref={currentTimeRef} currentTime={currentTimeSV.value} />
+            <Text style={styles.timeText}>{formatTime(duration.value)}</Text>
         </View>
         </>
     );
@@ -73,7 +92,8 @@ const styles = StyleSheet.create({
     timeRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: -6,
+        marginTop:10,
+        marginBottom:-10,
     },
 
     timeText: {

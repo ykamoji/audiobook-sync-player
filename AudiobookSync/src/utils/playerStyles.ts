@@ -1,7 +1,6 @@
 import {Dimensions, StyleSheet} from "react-native";
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export const playerStyles = StyleSheet.create({
     root: {
@@ -41,6 +40,10 @@ export const playerStyles = StyleSheet.create({
     trackTitle: {
         marginTop: 2,
         fontSize: 14,
+        fontWeight: '700',
+    },
+    trackIntro: {
+        marginTop: 2,
         fontWeight: '700',
     },
     coverContainer: {

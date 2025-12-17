@@ -55,11 +55,11 @@ export const modelStyles = StyleSheet.create({
         marginTop: 10,
     },
     input: {
-        backgroundColor: "rgba(0,0,0,0.25)",
-        borderColor: "#666",
+        backgroundColor: "#aaa",
+        // borderColor: "#666",
         borderWidth: 1,
         padding: 12,
-        color: "#fff",
+        // color: "#fff",
         borderRadius: 8,
     },
     primaryButton: {

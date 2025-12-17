@@ -1,5 +1,9 @@
 import React, {useCallback, useEffect, useRef} from 'react';
-import TrackPlayer, {Event, State, usePlaybackState, useTrackPlayerEvents,} from 'react-native-track-player';
+import TrackPlayer, {
+    Event,
+    State, TrackType,
+    useTrackPlayerEvents,
+} from 'react-native-track-player';
 import {releaseSecureAccess} from 'react-native-document-picker'
 import {usePlayerContext} from "../context/PlayerContext.tsx";
 
@@ -108,14 +112,18 @@ export const usePlayer = ({
         /** Load local media */
         const { audioState: audioMeta, subtitleState: subMeta } = await loadTrackMedia(track);
 
+        const { intro, duration:track_duration } = getTrackStaticData(audioMeta.name)
+
         /** TrackPlayer loading */
         await TrackPlayer.reset();
 
         await TrackPlayer.add({
             id: track.id,
             url: audioMeta.path!,
-            title: audioMeta.name,
-            artwork: audioMeta.coverUrl || undefined,
+            title: audioMeta.name.replace(/\s*\(Chapter\s+\d+\)\s*$/, ''),
+            artwork: audioMeta.coverPath || undefined,
+            artist: intro,
+            duration: track_duration
         });
 
         /** Resume saved position */

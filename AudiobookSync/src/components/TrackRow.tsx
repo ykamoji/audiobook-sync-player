@@ -196,7 +196,6 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                 ]}/>
                         </View>
                         <View style={styles.metaDetails}>
-                            {isCompleted && <Text style={styles.completedLabel}>Completed</Text>}
                             <Text style={[styles.mediumText,
                                 {   paddingLeft: 5,
                                     opacity: progress?.percentage > 0 ? 1 : 0

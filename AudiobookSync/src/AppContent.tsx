@@ -6,24 +6,25 @@ import {pickDirectory} from "react-native-document-picker";
 import {Setup} from "./screens/Setup.tsx";
 import {LibraryContainer} from "./screens/LibraryContainer.tsx";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-} from "react-native-reanimated";
+import Animated, {useAnimatedStyle, useSharedValue, withSpring,} from "react-native-reanimated";
 import {Provider as PaperProvider} from 'react-native-paper';
 import {AppData, ProgressData, Track} from "./utils/types";
 import {checkLocalStorageAvailable, loadInitialNativeMetadata, savePlaylist} from "./utils/persistence";
 import {usePlaylistManager} from "./hooks/usePlaylistManager";
 import {useProgressManager} from "./hooks/useProgressManager";
 import {useLibrary} from "./hooks/useLibrary";
-import TrackPlayer, {Capability, IOSCategory, IOSCategoryOptions, IOSCategoryMode} from 'react-native-track-player';
+import TrackPlayer, {
+    Capability,
+    IOSCategory,
+    IOSCategoryMode,
+    IOSCategoryOptions,
+} from 'react-native-track-player';
 import {scanNativePath} from "./utils/fileScanner.ts";
 import {AlbumContainer} from "./screens/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
 import {PlayerView, PlayerViewRef} from "./screens/PlayerView.tsx";
-import { PlayerProvider } from "./context/PlayerProvider.tsx";
+import {PlayerProvider} from "./context/PlayerProvider.tsx";
 import {usePlayerContext} from "./context/PlayerContext.tsx";
 import {useStaticData} from "./hooks/useStaticData.ts";
 
@@ -33,11 +34,11 @@ export const setupPlayer = async () => {
         await TrackPlayer.setupPlayer(
             {
                 iosCategory:IOSCategory.Playback,
-                iosCategoryMode: IOSCategoryMode.SpokenAudio,
+                iosCategoryMode: IOSCategoryMode.MoviePlayback,
                 iosCategoryOptions: [
                     IOSCategoryOptions.AllowBluetoothA2DP,
                     IOSCategoryOptions.AllowAirPlay,
-                ]
+                ],
             }
         );
         await TrackPlayer.updateOptions({
@@ -48,11 +49,14 @@ export const setupPlayer = async () => {
                 Capability.SkipToNext,
                 Capability.SkipToPrevious,
                 Capability.SeekTo,
+                Capability.JumpForward,
+                Capability.JumpBackward
             ],
             compactCapabilities: [
                 Capability.Play,
                 Capability.Pause,
-                Capability.SeekTo,
+                Capability.JumpForward,
+                Capability.JumpBackward
             ],
         });
     }catch (e) {
