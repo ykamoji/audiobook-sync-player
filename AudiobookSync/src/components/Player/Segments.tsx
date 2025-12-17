@@ -78,8 +78,7 @@ export const Segments:FC<SegmentProps> = ({
                                         primary:"#f97316",
                                     }
                                 }}
-                                value={showEditedCues}
-                                onValueChange={()=> setShowEditedCues(p => !p)} />
+                                value={showEditedCues}/>
                         <Text style={playerStyles.chaptersTitle}>{trackName}</Text>
                     </View>
 
