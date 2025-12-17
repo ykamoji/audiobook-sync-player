@@ -348,6 +348,37 @@ const TabButton: React.FC<{
     </TouchableOpacity>
 );
 
+export const toastConfig: ToastConfig = {
+    snackbar: ({ text1, text2, props }) => (
+        <View style={styles.toastContainer}>
+            <View style={styles.toastTextContainer}>
+                <Text style={styles.toastMessage}>{text1}</Text>
+                {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
+            </View>
+            {props?.action ? (
+                <TouchableOpacity onPress={props.action.onPress}>
+                    <Text style={styles.toastAction}>{props.action.label}</Text>
+                </TouchableOpacity>
+            ) : null}
+        </View>
+    ),
+};
+
+export default function AppContent() {
+    return (
+        <GestureHandlerRootView style={{flex: 1}}>
+            <SafeAreaProvider>
+                <PaperProvider theme={{ version: 2 }}>
+                    <PlayerProvider>
+                        <MainContent/>
+                    </PlayerProvider>
+                    <Toast config={toastConfig} visibilityTime={1000} topOffset={120}  />
+                </PaperProvider>
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
+    );
+}
+
 const styles = StyleSheet.create({
     root: {
         flex: 1,
@@ -451,34 +482,3 @@ const styles = StyleSheet.create({
         marginLeft: 16,
     },
 });
-
-export const toastConfig: ToastConfig = {
-    snackbar: ({ text1, text2, props }) => (
-        <View style={styles.toastContainer}>
-            <View style={styles.toastTextContainer}>
-                <Text style={styles.toastMessage}>{text1}</Text>
-                {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
-            </View>
-            {props?.action ? (
-                <TouchableOpacity onPress={props.action.onPress}>
-                    <Text style={styles.toastAction}>{props.action.label}</Text>
-                </TouchableOpacity>
-            ) : null}
-        </View>
-    ),
-};
-
-export default function AppContent() {
-    return (
-        <GestureHandlerRootView style={{flex: 1}}>
-            <SafeAreaProvider>
-                <PaperProvider>
-                    <PlayerProvider>
-                        <MainContent/>
-                    </PlayerProvider>
-                    <Toast config={toastConfig} visibilityTime={1000} topOffset={120}  />
-                </PaperProvider>
-            </SafeAreaProvider>
-        </GestureHandlerRootView>
-    );
-}

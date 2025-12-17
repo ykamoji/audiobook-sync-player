@@ -5,6 +5,9 @@ import {XIcon} from "lucide-react-native";
 import {SlideWindow} from "../../services/SlideWindow.tsx";
 import {SubtitleFileState} from "../../utils/types.ts";
 import {findCueIndex, getSegmentIndex} from "../../utils/mediaLoader.ts";
+import {Switch} from "react-native-paper";
+import {FlashList} from "@shopify/flash-list";
+import {Cue} from "./Cue.tsx";
 
 interface SegmentProps {
     showSegments: boolean;
@@ -54,6 +57,10 @@ export const Segments:FC<SegmentProps> = ({
         }
     });
 
+    const [showEditedCues, setShowEditedCues] = React.useState(false);
+
+    // console.log(subtitleState.cues.length)
+
     return (
         <SlideWindow style={playerStyles.chaptersOverlayRoot}
                      open={showSegments}
@@ -62,8 +69,17 @@ export const Segments:FC<SegmentProps> = ({
                      onClose={() => setShowSegments(false)}>
 
             <View style={[playerStyles.chaptersSheet, {}]}>
-                <View style={playerStyles.chaptersHeader}>
+                <View style={playerStyles.chaptersHeader} onTouchEndCapture={()=> setShowEditedCues(p=>!p)}>
                     <View style={playerStyles.chaptersHeaderLeft}>
+                        <Switch style={{}}
+                                theme={{
+                                    isV3:true,
+                                    colors:{
+                                        primary:"#f97316",
+                                    }
+                                }}
+                                value={showEditedCues}
+                                onValueChange={()=> setShowEditedCues(p => !p)} />
                         <Text style={playerStyles.chaptersTitle}>{trackName}</Text>
                     </View>
 
@@ -74,8 +90,7 @@ export const Segments:FC<SegmentProps> = ({
                         <XIcon size={24} color="#9ca3af" />
                     </TouchableOpacity>
                 </View>
-
-                <View style={[playerStyles.chaptersList, playerStyles.chaptersListContent]}>
+                {!showEditedCues && (<View style={[playerStyles.chaptersList, playerStyles.chaptersListContent]}>
                     {Array.from({length: subtitleState.totalSegments}).map((_, i) => {
                         let dynDuration = 0;
 
@@ -144,6 +159,30 @@ export const Segments:FC<SegmentProps> = ({
                             </TouchableOpacity>
                         );
                     })}
+                </View>)}
+                <View style={[
+                    {flexDirection:"row", height: '90%'},
+                    !showEditedCues && { opacity : 0 }
+                ]}>
+                    <FlashList
+                        data={subtitleState.cues.filter(cue => cue.isEdited)}
+                        keyExtractor={(item) => String(item.id)}
+                        estimatedItemSize={48}
+                        renderItem={({item, index}) => (
+                            <View key={index} style={playerStyles.cueContainer}>
+                                <Text style={[playerStyles.cueText, {color:"#f97316"}]}>{item.id}</Text>
+                                <Text style={[playerStyles.cueText, {color:"#9ca3af"}]}>{item.text}</Text>
+                            </View>
+                        )}
+                        contentContainerStyle={{paddingVertical:20}}
+                        ListEmptyComponent={
+                            <View style={playerStyles.noTextContainer}>
+                                <Text style={playerStyles.noText}>
+                                    No Edited texts for this book.
+                                </Text>
+                            </View>
+                        }
+                    />
                 </View>
             </View>
         </SlideWindow>

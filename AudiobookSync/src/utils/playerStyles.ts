@@ -180,7 +180,7 @@ export const playerStyles = StyleSheet.create({
     chaptersHeaderLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 20,
         flex: 1,
     },
     chaptersTitle: {
