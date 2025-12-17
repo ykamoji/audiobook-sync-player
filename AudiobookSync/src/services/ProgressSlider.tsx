@@ -51,7 +51,7 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
 
     useAnimatedReaction(
         () => {
-            if (isSeekingSV.value) return progressSV.value;
+            // if (isSeekingSV.value) return progressSV.value;
             if (duration.value === 0) return 0;
             return currentTimeSV.value / duration.value;
         },

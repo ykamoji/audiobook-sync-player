@@ -57,6 +57,8 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
                         next;
         }).onEnd(() => {
             isInteracting.value = false;
+            isSeekingSV.value = false;
+
             const progress = MAX_VALUE === 0 ? 0 : offset.value / MAX_VALUE;
             runOnJS(onSeek)(progress * 100);
         });
@@ -74,6 +76,7 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
 
             offset.value = withTiming(newOffset, { duration: 50 }, () => {
                 isInteracting.value = false;
+                isSeekingSV.value = false;
 
                 const progress = MAX_VALUE === 0 ? 0 : newOffset / MAX_VALUE;
                 runOnJS(onSeek)(progress * 100);
