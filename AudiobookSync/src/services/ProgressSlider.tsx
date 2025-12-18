@@ -66,11 +66,10 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
 
             return currentTimeSV.value / duration.value;
         },
-        (next, previous) => {
+        (next) => {
             if (isScrubbingSV.value) {
-                lastScrubbedProgressSV.value = previous;
+                lastScrubbedProgressSV.value = next;
             }
-
             if (lastScrubbedProgressSV.value !== null
                 && Math.abs(currentTimeSV.value - lastScrubbedProgressSV.value * duration.value) <= SEEK_EPSILON) {
                 lastScrubbedProgressSV.value = null;
@@ -83,9 +82,11 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
 
     useAnimatedReaction(
         () => {
+
             if (isScrubbingSV.value) {
                 return progressSV.value * duration.value;
             }
+
             if(lastScrubbedProgressSV.value !== null) {
                 return lastScrubbedProgressSV.value * duration.value;
             }

@@ -242,9 +242,7 @@ export const usePlayer = ({
         isAutoUpdatingRef.current = false;
         const nextIndex = currentTrackIndex + 1;
         if (nextIndex < playlist.length) {
-            if(isPlaying) await TrackPlayer.pause()
             await playTrack(playlist[nextIndex], nextIndex, playlist, 1, false, isPlaying);
-            // if(isPlaying) await TrackPlayer.play()
         }
     };
 
@@ -252,9 +250,7 @@ export const usePlayer = ({
         isAutoUpdatingRef.current = false;
         const prevIndex = currentTrackIndex - 1;
         if (prevIndex >= 0) {
-            if(isPlaying) await TrackPlayer.pause()
             await playTrack(playlist[prevIndex], prevIndex, playlist, 1, false, isPlaying);
-            // if(isPlaying) await TrackPlayer.play()
         }
     };
 

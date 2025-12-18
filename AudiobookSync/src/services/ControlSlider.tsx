@@ -71,17 +71,20 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
             if (newOffset < 0) newOffset = 0;
             if (newOffset > MAX_VALUE) newOffset = MAX_VALUE;
 
+            progressSV.value = MAX_VALUE === 0 ? 0 : newOffset / MAX_VALUE;
+
             offset.value = withTiming(newOffset, { duration: 50 }, () => {
-                const progress = MAX_VALUE === 0 ? 0 : newOffset / MAX_VALUE;
                 isScrubbingSV.value = false;
-                runOnJS(onSeek)(progress * 100);
+                runOnJS(onSeek)(progressSV.value * 100);
             });
     });
 
     const filledTrackStyle = useAnimatedStyle(() => {
-        const filledWidth = progress.value * TRACK_WIDTH;
+
         return {
-            width: filledWidth,
+            transform: [
+                { translateX: -TRACK_WIDTH + progress.value * TRACK_WIDTH },
+            ],
         };
     });
 
@@ -126,14 +129,12 @@ const styles = StyleSheet.create({
     sliderOuterTrack: {
         width: TRACK_WIDTH,
         height: 80,
-        // backgroundColor: 'gray',
-        // borderRadius: 25,
         justifyContent: 'center',
+        overflow: 'hidden',
 
     },
     sliderFilledTrack: {
-        position: 'absolute',
-        left: 0,
+        width: TRACK_WIDTH,
         height: 5,
         backgroundColor: '#F86600',
     },
@@ -141,17 +142,6 @@ const styles = StyleSheet.create({
         width: TRACK_WIDTH,
         height: 5,
         backgroundColor: '#555',
-        // borderRadius: 25,
-        justifyContent: 'center',
-    },
-    sliderHandleOuter: {
-        width: HANDLE_SIZE,
-        height: 80,
-        // backgroundColor: 'white',
-        position: 'absolute',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     sliderHandleInner:{
         width: INNER_HANDLE_SIZE,
@@ -159,6 +149,7 @@ const styles = StyleSheet.create({
         borderRadius:INNER_HANDLE_SIZE,
         backgroundColor: '#F86600',
         position: 'absolute',
-        left: 0
+        left: 0,
+        top: -5,
     }
 });
