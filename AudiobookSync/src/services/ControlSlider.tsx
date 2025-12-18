@@ -19,14 +19,13 @@ const MAX_VALUE = TRACK_WIDTH - HANDLE_SIZE;
 export interface ControlSliderProps {
     registerGesture:(g: ExclusiveGesture) => void,
     progressSV: SharedValue<number>;
-    isSeekingSV: SharedValue<boolean>;
+    isScrubbingSV: SharedValue<boolean>;
     onSeek: (progress: number) => void;
 }
 
-export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progressSV, onSeek, isSeekingSV}) => {
+export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progressSV, onSeek,  isScrubbingSV}) => {
 
     const offset = useSharedValue(0);
-    const isInteracting = useSharedValue(false);
 
     const progress = useDerivedValue(() => {
         return MAX_VALUE === 0 ? 0 : offset.value / MAX_VALUE;
@@ -36,7 +35,7 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
         () => progressSV.value,
         (next, prev) => {
             if (next === prev) return;
-            if (isInteracting.value || isSeekingSV.value) return;
+            if(isScrubbingSV.value) return
 
             const clamped = Math.max(0, Math.min(1, next));
             offset.value = clamped * MAX_VALUE;
@@ -46,8 +45,7 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
 
     const pan = Gesture.Pan()
         .onBegin(() => {
-            isInteracting.value = true;
-            isSeekingSV.value = true;
+            isScrubbingSV.value = true;
         })
         .onChange((event) => {
             const next = offset.value + event.changeX;
@@ -55,19 +53,18 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
                 next < 0 ? 0 :
                     next > MAX_VALUE ? MAX_VALUE :
                         next;
+            progressSV.value = MAX_VALUE === 0 ? 0 : offset.value / MAX_VALUE;
         }).onEnd(() => {
-            isInteracting.value = false;
-            isSeekingSV.value = false;
+            // const progress = MAX_VALUE === 0 ? 0 : offset.value / MAX_VALUE;
+            isScrubbingSV.value = false;
+            runOnJS(onSeek)(progressSV.value * 100);
 
-            const progress = MAX_VALUE === 0 ? 0 : offset.value / MAX_VALUE;
-            runOnJS(onSeek)(progress * 100);
         });
 
     const tap = Gesture.Tap()
         .maxDistance(2)
         .onEnd((event) => {
-            isInteracting.value = true;
-            isSeekingSV.value = true;
+            isScrubbingSV.value = true;
             // Clamp to slider bounds
             let newOffset = event.x - HANDLE_SIZE / 2;
 
@@ -75,10 +72,8 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
             if (newOffset > MAX_VALUE) newOffset = MAX_VALUE;
 
             offset.value = withTiming(newOffset, { duration: 50 }, () => {
-                isInteracting.value = false;
-                isSeekingSV.value = false;
-
                 const progress = MAX_VALUE === 0 ? 0 : newOffset / MAX_VALUE;
+                isScrubbingSV.value = false;
                 runOnJS(onSeek)(progress * 100);
             });
     });

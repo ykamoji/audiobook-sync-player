@@ -244,7 +244,7 @@ export const usePlayer = ({
         if (nextIndex < playlist.length) {
             if(isPlaying) await TrackPlayer.pause()
             await playTrack(playlist[nextIndex], nextIndex, playlist, 1, false, isPlaying);
-            if(isPlaying) await TrackPlayer.play()
+            // if(isPlaying) await TrackPlayer.play()
         }
     };
 
@@ -254,7 +254,7 @@ export const usePlayer = ({
         if (prevIndex >= 0) {
             if(isPlaying) await TrackPlayer.pause()
             await playTrack(playlist[prevIndex], prevIndex, playlist, 1, false, isPlaying);
-            if(isPlaying) await TrackPlayer.play()
+            // if(isPlaying) await TrackPlayer.play()
         }
     };
 

@@ -19,7 +19,7 @@ interface ControlsProps {
     duration: SharedValue<number>;
     segmentMarkers: number[];
     currentTime: SharedValue<number>;
-    onSeek: (value: number) => void;
+    onSeek: (value: number) => Promise<void>;
     onOpenMetadata: () => void;
     onOpenChapters: () => void;
     onNext: () => void;

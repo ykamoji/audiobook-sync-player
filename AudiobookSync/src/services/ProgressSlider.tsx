@@ -1,5 +1,5 @@
 import React, {useState, FC, forwardRef, useRef, useImperativeHandle} from 'react';
-import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS} from 'react-native-reanimated';
+import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS, runOnUI, withDelay} from 'react-native-reanimated';
 import {StyleSheet, Text, View} from "react-native";
 import {ControlSlider} from "./ControlSlider.tsx";
 import {ExclusiveGesture} from "react-native-gesture-handler";
@@ -7,7 +7,7 @@ import {ExclusiveGesture} from "react-native-gesture-handler";
 type Props = {
     currentTimeSV: SharedValue<number>;
     duration: SharedValue<number>;
-    onSeek: (v: number) => void;
+    onSeek: (v: number) => Promise<void>;
     registerGesture:(g:ExclusiveGesture) => void;
 };
 
@@ -39,9 +39,12 @@ export const CurrentTime = forwardRef<CurrentTimeRef, CurrentTimeProps>(({curren
     return <Text style={styles.timeText}>{formatTime(time)}</Text>
 });
 
+const SEEK_EPSILON = 0.15;
+
 export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, registerGesture }) => {
     const progressSV = useSharedValue(0);
-    const isSeekingSV = useSharedValue(false);
+    const isScrubbingSV = useSharedValue(false);
+    const lastScrubbedProgressSV = useSharedValue<number | null>(null);
 
     const currentTimeRef = useRef<CurrentTimeRef>(null);
 
@@ -51,20 +54,43 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
 
     useAnimatedReaction(
         () => {
-            // if (isSeekingSV.value) return progressSV.value;
             if (duration.value === 0) return 0;
+            if (isScrubbingSV.value) {
+                return progressSV.value;
+            }
+
+            if (lastScrubbedProgressSV.value !== null &&
+                Math.abs(currentTimeSV.value - lastScrubbedProgressSV.value * duration.value) > SEEK_EPSILON){
+                    return lastScrubbedProgressSV.value;
+            }
+
             return currentTimeSV.value / duration.value;
         },
-        (next) => {
-            if (isSeekingSV.value) return;
+        (next, previous) => {
+            if (isScrubbingSV.value) {
+                lastScrubbedProgressSV.value = previous;
+            }
+
+            if (lastScrubbedProgressSV.value !== null
+                && Math.abs(currentTimeSV.value - lastScrubbedProgressSV.value * duration.value) <= SEEK_EPSILON) {
+                lastScrubbedProgressSV.value = null;
+            }
+
             progressSV.value = next;
-            isSeekingSV.value = false;
         },
         []
     );
 
     useAnimatedReaction(
-        () => currentTimeSV.value,
+        () => {
+            if (isScrubbingSV.value) {
+                return progressSV.value * duration.value;
+            }
+            if(lastScrubbedProgressSV.value !== null) {
+                return lastScrubbedProgressSV.value * duration.value;
+            }
+            return currentTimeSV.value
+        },
         (time, prev) => {
             if (time === prev) return;
             runOnJS(updateCurrentTime)(time);
@@ -72,11 +98,13 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
         []
     );
 
+
+
     return (
         <>
          <ControlSlider
              onSeek={onSeek}
-             isSeekingSV={isSeekingSV}
+             isScrubbingSV={isScrubbingSV}
              progressSV={progressSV}
              registerGesture={registerGesture}
          />

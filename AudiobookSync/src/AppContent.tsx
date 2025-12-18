@@ -199,7 +199,13 @@ const MainContent: React.FC = () => {
         if (playerRef.current) {
             // console.log('playTrackWrapper ', option, state.isPlaying);
 
-            playerRef.current!.playTrack(track, index, specificPlaylist || [track], option!, undefined, state.isPlaying).then();
+            playerRef.current!.playTrack(
+                track,
+                index,
+                specificPlaylist || [track],
+                option!,
+                undefined,
+                state.isPlaying || !state.audioState.name).then();
 
             if (option === 2) {
                 let delay = track.name === state.audioState.name ? 0 : 1000
