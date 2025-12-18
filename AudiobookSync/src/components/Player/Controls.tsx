@@ -54,20 +54,20 @@ export const Controls: React.FC<ControlsProps> = ({
 
             {/* PROGRESS + TIME */}
             <View style={styles.sliderContainer}>
+                <View style={styles.markerContainer}>
+                    {duration.value > 0 && segmentMarkers!.map((time, i) =>
+                        <View
+                            key={i}
+                            style={[styles.marker, { left: `${(time / duration.value) * 100 }%` }]}
+                        />
+                    )}
+                </View>
                 <ProgressSlider
                     currentTimeSV={currentTime}
                     duration={duration}
                     onSeek={onSeek}
                     registerGesture={registerGesture}
                 />
-                <View style={styles.markerContainer}>
-                    {duration.value > 0 && segmentMarkers!.map((time, i) =>
-                            <View
-                                key={i}
-                                style={[styles.marker, { left: `${(time / duration.value) * 100 }%` }]}
-                            />
-                    )}
-                </View>
             </View>
 
             {/* MAIN CONTROLS */}
@@ -129,11 +129,12 @@ const styles = StyleSheet.create({
         width: '100%',
         // paddingVertical: 12,
         paddingHorizontal: 8,
+        paddingTop:5
     },
 
     sliderContainer: {
         // paddingTop: 30,
-        paddingBottom:20,
+        paddingBottom:15,
         width: '100%',
         // backgroundColor: '#fff',
     },
@@ -171,10 +172,10 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     markerContainer: {
-        position: 'absolute',
+
+        position: 'relative',
         top: 12.5,
-        bottom: 0,
-        width: '100%',
+        zIndex: 10,
     },
     marker: {
         position: 'absolute',

@@ -23,7 +23,12 @@ export interface ControlSliderProps {
     onSeek: (progress: number) => void;
 }
 
-export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progressSV, onSeek,  isScrubbingSV}) => {
+export const ControlSlider: FC<ControlSliderProps> = ({
+                                                          registerGesture,
+                                                          progressSV,
+                                                          onSeek,
+                                                          isScrubbingSV,
+                                                      }) => {
 
     const offset = useSharedValue(0);
 
@@ -111,6 +116,14 @@ export const ControlSlider: FC<ControlSliderProps> = ({registerGesture, progress
                     <View style={styles.sliderInterTrack}>
                         <Animated.View style={[styles.sliderFilledTrack, filledTrackStyle]} />
                         <Animated.View style={[styles.sliderHandleInner, innerThumbStyle]}/>
+                        {/*<View style={styles.markerContainer}>*/}
+                        {/*    {duration.value > 0 && segmentMarkers!.map((time, i) =>*/}
+                        {/*            <View*/}
+                        {/*                key={i}*/}
+                        {/*                style={[styles.marker, { left: `${(time / duration.value) * 100 }%` }]}*/}
+                        {/*            />*/}
+                        {/*    )}*/}
+                        {/*</View>*/}
                     </View>
                 </View>
             </GestureDetector>

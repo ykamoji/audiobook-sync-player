@@ -36,12 +36,17 @@ export const CurrentTime = forwardRef<CurrentTimeRef, CurrentTimeProps>(({curren
         setTime,
     }));
 
-    return <Text style={styles.timeText}>{formatTime(time)}</Text>
+    return <Text style={[styles.textTime, styles.leftTime]}>{formatTime(time)}</Text>
 });
 
 const SEEK_EPSILON = 0.15;
 
-export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, registerGesture }) => {
+export const ProgressSlider: FC<Props> = ({
+                                              currentTimeSV,
+                                              duration,
+                                              onSeek,
+                                              registerGesture,
+                                          }) => {
     const progressSV = useSharedValue(0);
     const isScrubbingSV = useSharedValue(false);
     const lastScrubbedProgressSV = useSharedValue<number | null>(null);
@@ -99,8 +104,6 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
         []
     );
 
-
-
     return (
         <>
          <ControlSlider
@@ -111,7 +114,7 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
          />
         <View style={styles.timeRow}>
             <CurrentTime ref={currentTimeRef} currentTime={currentTimeSV.value} />
-            <Text style={styles.timeText}>{formatTime(duration.value)}</Text>
+            <Text style={[styles.textTime, styles.rightTime]}>{formatTime(duration.value)}</Text>
         </View>
         </>
     );
@@ -119,15 +122,20 @@ export const ProgressSlider: FC<Props> = ({ currentTimeSV, duration, onSeek, reg
 
 const styles = StyleSheet.create({
     timeRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop:10,
-        marginBottom:-10,
+        flex:1,
     },
-
-    timeText: {
+    textTime:{
+        position: 'absolute',
+        height: 10,
+        top: 5,
         color: '#aaa',
         fontSize: 11,
         fontWeight: '500',
+    },
+    leftTime:{
+        left: 0,
+    },
+    rightTime: {
+        right: 0,
     },
 })

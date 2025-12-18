@@ -162,7 +162,8 @@ export const Segments:FC<SegmentProps> = ({
                 <View style={[
                     {flexDirection:"row", height: '90%'},
                     !showEditedCues && { opacity : 0 }
-                ]}>
+                ]}
+                      pointerEvents={showEditedCues ? 'auto' : 'none'}>
                     <FlashList
                         data={subtitleState.cues.filter(cue => cue.isEdited)}
                         keyExtractor={(item) => String(item.id)}
