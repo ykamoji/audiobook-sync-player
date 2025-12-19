@@ -1,7 +1,14 @@
 import Video from 'react-native-video';
-import {FC, forwardRef, useEffect, useImperativeHandle, useRef} from "react";
+import {forwardRef, useEffect, useImperativeHandle, useRef} from "react";
 import {StyleProp, ViewStyle} from "react-native";
-import Animated, {useAnimatedProps, useSharedValue} from "react-native-reanimated";
+import Animated, {
+    cancelAnimation,
+    runOnJS,
+    useAnimatedProps, useAnimatedReaction,
+    useSharedValue,
+    withDelay,
+    withTiming
+} from "react-native-reanimated";
 
 
 export interface MediaHandle {
@@ -14,16 +21,17 @@ export interface MediaProps {
     style?: StyleProp<ViewStyle>;
 }
 
-const PAUSE_AFTER_END = 10000;
+const PAUSE_AFTER_END = 5000;
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 
 export const Media = forwardRef<MediaHandle, MediaProps>(({uri, isPlaying, style}, ref) => {
 
     const paused = useSharedValue(true);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const videoRef = useRef<Video>(null);
+    const restartTrigger = useSharedValue(0);
 
+    // @ts-ignore
+    const videoRef = useRef<Video>(null);
     const lastPositionRef = useRef(0);
     const didEndRef = useRef(false);
 
@@ -37,10 +45,6 @@ export const Media = forwardRef<MediaHandle, MediaProps>(({uri, isPlaying, style
 
     useImperativeHandle(ref, () => ({
         togglePlayback() {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
             paused.value = !paused.value;
         },
     }));
@@ -48,39 +52,47 @@ export const Media = forwardRef<MediaHandle, MediaProps>(({uri, isPlaying, style
     useEffect(() => {
         if (!isPlaying) {
             paused.value = true;
-
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
+            cancelAnimation(restartTrigger);
             return;
         }
 
-        if (!didEndRef.current) {
+        if (didEndRef.current) {
+            didEndRef.current = false;
+            videoRef.current?.seek(lastPositionRef.current);
+        } else {
             videoRef.current?.seek(lastPositionRef.current);
         }
 
         paused.value = false;
     }, [isPlaying]);
 
+    const restartFromBeginning = () => {
+        if (!isPlaying) return;
+
+        videoRef.current?.seek(0);
+        lastPositionRef.current = 0;
+        didEndRef.current = false;
+        paused.value = false;
+    };
+
+    useAnimatedReaction(
+        () => restartTrigger.value,
+        (value) => {
+            if (value === 1) {
+                restartTrigger.value = 0;
+                runOnJS(restartFromBeginning)();
+            }
+        }
+    );
+
     const handleEnd = () => {
         didEndRef.current = true;
         paused.value = true;
 
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-
-        timeoutRef.current = setTimeout(() => {
-            if (!isPlaying) return;
-
-            // restart from beginning ONLY after end
-            videoRef.current?.seek(0);
-            lastPositionRef.current = 0;
-            didEndRef.current = false;
-
-            paused.value = false;
-        }, PAUSE_AFTER_END);
+        restartTrigger.value = withDelay(
+            PAUSE_AFTER_END,
+            withTiming(1, { duration: 0 })
+        );
     };
 
     return (
@@ -91,11 +103,10 @@ export const Media = forwardRef<MediaHandle, MediaProps>(({uri, isPlaying, style
                 muted={true}
                 volume={0.0}
                 resizeMode="cover"
-                repeat={false}
+                repeat
                 onEnd={handleEnd}
                 onProgress={handleProgress}
                 animatedProps={animatedProps}
-                // paused={!paused.value}
                 playInBackground={false}
                 playWhenInactive={false}
                 ignoreSilentSwitch="ignore"
