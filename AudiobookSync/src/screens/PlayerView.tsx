@@ -1,6 +1,6 @@
-import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import React, {forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 import {Dimensions, Text, TouchableOpacity, View,} from 'react-native';
-import {Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
+import {ExclusiveGesture, Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
 
 import Animated, {
     Easing,
@@ -10,7 +10,7 @@ import Animated, {
     useAnimatedStyle,
     useDerivedValue,
     useSharedValue,
-    withRepeat,
+    withRepeat, withSequence,
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
@@ -39,7 +39,8 @@ interface PlayerViewProps {
 }
 
 export interface PlayerViewRef {
-    playTrack: (track: Track, index: number, newPlaylist: Track[], option: number) => Promise<void>;
+    playTrack: (track: Track, index: number, newPlaylist: Track[], option: number,
+                updateHistory?:boolean, overridePlay?:boolean) => Promise<void>;
     savePlayerProgress: () => void
 }
 
@@ -83,9 +84,10 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
     // UI
     const [showSegments, setShowSegments] = useState(false);
+    const [controlsGesture, setControlsGesture] = useState<ExclusiveGesture | null>(null);
 
     const scrollAtTop = useRef(true);
-    const { scheme, dims } = getTrackStaticData(audioState.name)
+    const { scheme, dims, intro } = getTrackStaticData(audioState.name)
 
     const miniOffset = SCREEN_HEIGHT - MINI_HEIGHT - insets.bottom - 37;
 
@@ -97,18 +99,20 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const expandedOnce = useSharedValue(false);
     const panDirection = useSharedValue(1);
 
+    const D = 15000;
     const panProgress = useDerivedValue(() => {
         if (fullImageProgress.value < 1) {
             return 0; // ALWAYS centered before and during zoom
         }
 
         return withRepeat(
-            withTiming(1, {
-                duration: 20000,
-                easing: Easing.linear,
-            }),
+            withSequence(
+                withTiming(-1, { duration:  D, easing: Easing.linear }),
+                withTiming(1, { duration: 2 *  D, easing: Easing.linear }),
+                withTiming(0, { duration:  D, easing: Easing.linear })
+            ),
             -1,
-            true
+            false // IMPORTANT: no auto-reverse
         );
     });
 
@@ -134,82 +138,95 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         }
     }, [playerMode, audioState.name]);
 
+
+    const onRegisterControlsGesture = (gesture: ExclusiveGesture) => {
+        setControlsGesture(gesture);
+    };
+
     const gestureStartY = useSharedValue(0);
 
-
     // ----- APPLE-MUSIC-STYLE DRAG -----
-    const dragGesture = Gesture.Pan()
-        .onStart(() => {
-            // capture current sheet position when gesture starts
-            gestureStartY.value = translateY.value;
-        })
-        .onUpdate((e) => {
-            if (!scrollAtTop.current) return;
+    const dragGesture = useMemo(() => {
+        const pan = Gesture.Pan()
+            // .requireExternalGestureToFail(controlsGestureRef.current! as any)
+            .onStart(() => {
+                // capture current sheet position when gesture starts
+                gestureStartY.value = translateY.value;
+            })
+            .onUpdate((e) => {
+                if (!scrollAtTop.current) return;
 
-            // combine the gesture translation with the starting sheet position
-            const rawY = gestureStartY.value + e.translationY;
+                // combine the gesture translation with the starting sheet position
+                const rawY = gestureStartY.value + e.translationY;
 
-            // clamp actual visual sheet position between full (0) and miniOffset
-            translateY.value = Math.min(Math.max(rawY, 0), miniOffset);
+                // clamp actual visual sheet position between full (0) and miniOffset
+                translateY.value = Math.min(Math.max(rawY, 0), miniOffset);
 
-            // use unclamped rawY for progress so artwork morph still triggers properly
-            progress.value = Math.min(Math.max(rawY / miniOffset, 0), 1);
-        })
-        .onEnd((e) => {
-            const currentY = translateY.value;
+                // use unclamped rawY for progress so artwork morph still triggers properly
+                progress.value = Math.min(Math.max(rawY / miniOffset, 0), 1);
+            })
+            .onEnd((e) => {
+                const currentY = translateY.value;
 
-            // How much user moved upward or downward relative to starting
-            const dragUpAmount = gestureStartY.value - currentY; // positive when dragging UP
-            const dragDownAmount = currentY - gestureStartY.value;
+                // How much user moved upward or downward relative to starting
+                const dragUpAmount = gestureStartY.value - currentY; // positive when dragging UP
+                const dragDownAmount = currentY - gestureStartY.value;
 
-            const flickUp = e.velocityY < -600;
-            const flickDown = e.velocityY > 600;
+                const flickUp = e.velocityY < -600;
+                const flickDown = e.velocityY > 600;
 
-            let target = 0;
+                let target = 0;
 
-            // MINI → FULL (drag up)
-            if (dragUpAmount > 30 || flickUp) {
-                target = 0;
-            }
-            // FULL → MINI (drag down)
-            else if (dragDownAmount > 120 || flickDown) {
-                target = miniOffset;
-            }
-            // If neither strong enough → go to nearest
-            else {
-                target = currentY < miniOffset / 2 ? 0 : miniOffset;
-            }
+                // MINI → FULL (drag up)
+                if (dragUpAmount > 30 || flickUp) {
+                    target = 0;
+                }
+                // FULL → MINI (drag down)
+                else if (dragDownAmount > 120 || flickDown) {
+                    target = miniOffset;
+                }
+                // If neither strong enough → go to nearest
+                else {
+                    target = currentY < miniOffset / 2 ? 0 : miniOffset;
+                }
 
-            translateY.value = withSpring(
-                target,
-                target === 0
-                    ? { stiffness: 38, damping: 16, mass: 1.25 }  // smooth upward slide
-                    : { stiffness: 70, damping: 25, mass: 1.1 }   // snappy collapse
-            );
+                translateY.value = withSpring(
+                    target,
+                    target === 0
+                        ? {stiffness: 38, damping: 16, mass: 1.25}  // smooth upward slide
+                        : {stiffness: 70, damping: 25, mass: 1.1}   // snappy collapse
+                );
 
-            progress.value = withSpring(target === 0 ? 0 : 1, {
-                stiffness: 38,
-                damping: 16,
-                mass: 1,
+                progress.value = withSpring(target === 0 ? 0 : 1, {
+                    stiffness: 38,
+                    damping: 16,
+                    mass: 1,
+                });
+
+                if (target === miniOffset) {
+                    // Going into MINI mode → collapse the fullscreen artwork
+                    // collapse artwork smoothly
+                    fullImageProgress.value = withTiming(
+                        0,
+                        {duration: 300},
+                        (finished) => {
+                            if (finished) {
+                                expandedOnce.value = false;
+                            }
+                        }
+                    );
+                }
+
+                runOnJS(onBack)(target === 0 ? "full" : "mini");
+
             });
 
-            if (target === miniOffset) {
-                // Going into MINI mode → collapse the fullscreen artwork
-                // collapse artwork smoothly
-                fullImageProgress.value = withTiming(
-                    0,
-                    { duration: 300 },
-                    (finished) => {
-                        if (finished) {
-                            expandedOnce.value = false;
-                        }
-                    }
-                );
-            }
+        if (controlsGesture) {
+            pan.requireExternalGestureToFail(controlsGesture as any);
+        }
 
-            runOnJS(onBack)(target === 0 ? "full" : "mini");
-
-        });
+        return pan
+    },[controlsGesture]);
 
     // ----- ANIMATED STYLES -----
     const containerStyle = useAnimatedStyle(() => {
@@ -372,6 +389,20 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         };
     });
 
+    const trackIntroPlayerMode = useAnimatedStyle(() => {
+        return {
+            color: interpolateColor(
+                progress.value,
+                [0, 1],
+                ["#e5e7eb", "#000"]
+            ),
+            fontSize: interpolate(progress.value,
+                [0, 0.5, 0.6, 1],
+                [14, 14, 12, 11]
+            )
+        }
+    });
+
     const controlsPlayerMode = useFadeWithProgress(progress, {start: 1, end: 0.95})
 
     const toggleFullImage = () => {
@@ -457,11 +488,11 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         let overflowX = 0;
         let overflowY = 0;
 
+        const targetWidth = SCREEN_HEIGHT * imageAspect;
+        const targetHeight = SCREEN_WIDTH / imageAspect;
         if (imageAspect > screenAspect) {
-            const targetWidth = SCREEN_HEIGHT * imageAspect;
             overflowX = targetWidth - SCREEN_WIDTH;
         } else {
-            const targetHeight = SCREEN_WIDTH / imageAspect;
             overflowY = targetHeight - SCREEN_HEIGHT;
         }
 
@@ -644,8 +675,11 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                     <Text style={playerStyles.nowPlayingLabel}>Now Playing</Text>
                                 </Animated.View>
                                 <Animated.View style={trackNamePosPlayerMode}>
-                                    <Animated.Text style={[playerStyles.trackTitle, trackNameColorPlayerMode ]} numberOfLines={2}>
-                                        {audioState.name}
+                                    <Animated.Text style={[playerStyles.trackTitle, trackNameColorPlayerMode ]} numberOfLines={1}>
+                                        {audioState.name.replace(/\s*\(Chapter\s+\d+\)\s*$/, '')}
+                                    </Animated.Text>
+                                    <Animated.Text style={[playerStyles.trackIntro, trackIntroPlayerMode ]} numberOfLines={2}>
+                                        {intro}
                                     </Animated.Text>
                                 </Animated.View>
                                 <Animated.View
@@ -689,7 +723,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                             <Controls
                                 isPlaying={isPlaying}
                                 currentTime={currentTimeSV}
-                                duration={duration.value}
+                                duration={duration}
                                 onPlayPause={()=>{
                                     controlSaveProgress()
                                     togglePlay()
@@ -706,6 +740,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                                 segmentMarkers={subtitleState.markers}
                                 hasNext={currentTrackIndex < playlist.length - 1}
                                 hasPrevious={currentTrackIndex > 0}
+                                registerGesture={onRegisterControlsGesture}
                             />
                         </View>
                     </View>

@@ -5,7 +5,7 @@ import {
     useSharedValue,
 } from "react-native-reanimated";
 import { FlashList } from "@shopify/flash-list";
-import {Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {Keyboard, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {FC, useRef, useState} from "react";
 import {playerStyles} from "../../utils/playerStyles.ts";
 import {findCueIndex} from "../../utils/mediaLoader.ts";
@@ -16,6 +16,7 @@ import {modelStyles} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import {usePlayerContext} from "../../context/PlayerContext.tsx";
 import {Toggle} from "../../services/Toggle.tsx";
+import { TextInput as PaperInput } from "react-native-paper"
 
 export interface PlayerScrollProps {
     displayedCues: SubtitleCue[];
@@ -119,6 +120,11 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
 
     }
 
+    const dismissKeyboard = () => {
+        TextInput.State.currentlyFocusedInput()?.blur();
+        Keyboard.dismiss();
+    };
+
     return (
         <>
             <FlashList
@@ -184,11 +190,14 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                             <Text style={modelStyles.closeText}>Close</Text>
                         </TouchableOpacity>
                     </View>
-                    <TextInput
+                    <PaperInput
+                        label="Cue"
                         defaultValue={cueTextRef.current}
                         multiline
+                        dense
+                        activeOutlineColor={"#ff8300"}
                         placeholder="Playlist Name"
-                        placeholderTextColor="#888"
+                        // placeholderTextColor="#888"
                         onChangeText={(val) => cueTextRef.current = val}
                         style={[modelStyles.input, { height: 120, }]}
                     />
@@ -196,6 +205,7 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                         label={""}
                         defaultValue={cueEditedRef.current}
                         onChange={(checked)=>{
+                            dismissKeyboard()
                             cueEditedRef.current = checked;
                         }}
                     />

@@ -6,24 +6,25 @@ import {pickDirectory} from "react-native-document-picker";
 import {Setup} from "./screens/Setup.tsx";
 import {LibraryContainer} from "./screens/LibraryContainer.tsx";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-} from "react-native-reanimated";
+import Animated, {useAnimatedStyle, useSharedValue, withSpring,} from "react-native-reanimated";
 import {Provider as PaperProvider} from 'react-native-paper';
 import {AppData, ProgressData, Track} from "./utils/types";
 import {checkLocalStorageAvailable, loadInitialNativeMetadata, savePlaylist} from "./utils/persistence";
 import {usePlaylistManager} from "./hooks/usePlaylistManager";
 import {useProgressManager} from "./hooks/useProgressManager";
 import {useLibrary} from "./hooks/useLibrary";
-import TrackPlayer, {Capability, IOSCategory, IOSCategoryOptions, IOSCategoryMode} from 'react-native-track-player';
+import TrackPlayer, {
+    Capability,
+    IOSCategory,
+    IOSCategoryMode,
+    IOSCategoryOptions,
+} from 'react-native-track-player';
 import {scanNativePath} from "./utils/fileScanner.ts";
 import {AlbumContainer} from "./screens/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
 import {Library, ListMusic, RefreshCw} from "lucide-react-native";
 import {PlayerView, PlayerViewRef} from "./screens/PlayerView.tsx";
-import { PlayerProvider } from "./context/PlayerProvider.tsx";
+import {PlayerProvider} from "./context/PlayerProvider.tsx";
 import {usePlayerContext} from "./context/PlayerContext.tsx";
 import {useStaticData} from "./hooks/useStaticData.ts";
 
@@ -33,11 +34,11 @@ export const setupPlayer = async () => {
         await TrackPlayer.setupPlayer(
             {
                 iosCategory:IOSCategory.Playback,
-                iosCategoryMode: IOSCategoryMode.SpokenAudio,
+                iosCategoryMode: IOSCategoryMode.MoviePlayback,
                 iosCategoryOptions: [
                     IOSCategoryOptions.AllowBluetoothA2DP,
                     IOSCategoryOptions.AllowAirPlay,
-                ]
+                ],
             }
         );
         await TrackPlayer.updateOptions({
@@ -48,11 +49,14 @@ export const setupPlayer = async () => {
                 Capability.SkipToNext,
                 Capability.SkipToPrevious,
                 Capability.SeekTo,
+                Capability.JumpForward,
+                Capability.JumpBackward
             ],
             compactCapabilities: [
                 Capability.Play,
                 Capability.Pause,
-                Capability.SeekTo,
+                Capability.JumpForward,
+                Capability.JumpBackward
             ],
         });
     }catch (e) {
@@ -194,7 +198,14 @@ const MainContent: React.FC = () => {
     ) => {
         if (playerRef.current) {
             // console.log('playTrackWrapper ', option, state.isPlaying);
-            playerRef.current!.playTrack(track, index, specificPlaylist || [track], option!).then();
+
+            playerRef.current!.playTrack(
+                track,
+                index,
+                specificPlaylist || [track],
+                option!,
+                undefined,
+                state.isPlaying || !state.audioState.name).then();
 
             if (option === 2) {
                 let delay = track.name === state.audioState.name ? 0 : 1000
@@ -344,6 +355,37 @@ const TabButton: React.FC<{
     </TouchableOpacity>
 );
 
+export const toastConfig: ToastConfig = {
+    snackbar: ({ text1, text2, props }) => (
+        <View style={styles.toastContainer}>
+            <View style={styles.toastTextContainer}>
+                <Text style={styles.toastMessage}>{text1}</Text>
+                {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
+            </View>
+            {props?.action ? (
+                <TouchableOpacity onPress={props.action.onPress}>
+                    <Text style={styles.toastAction}>{props.action.label}</Text>
+                </TouchableOpacity>
+            ) : null}
+        </View>
+    ),
+};
+
+export default function AppContent() {
+    return (
+        <GestureHandlerRootView style={{flex: 1}}>
+            <SafeAreaProvider>
+                <PaperProvider theme={{ version: 2 }}>
+                    <PlayerProvider>
+                        <MainContent/>
+                    </PlayerProvider>
+                    <Toast config={toastConfig} visibilityTime={1000} topOffset={120}  />
+                </PaperProvider>
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
+    );
+}
+
 const styles = StyleSheet.create({
     root: {
         flex: 1,
@@ -447,34 +489,3 @@ const styles = StyleSheet.create({
         marginLeft: 16,
     },
 });
-
-export const toastConfig: ToastConfig = {
-    snackbar: ({ text1, text2, props }) => (
-        <View style={styles.toastContainer}>
-            <View style={styles.toastTextContainer}>
-                <Text style={styles.toastMessage}>{text1}</Text>
-                {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
-            </View>
-            {props?.action ? (
-                <TouchableOpacity onPress={props.action.onPress}>
-                    <Text style={styles.toastAction}>{props.action.label}</Text>
-                </TouchableOpacity>
-            ) : null}
-        </View>
-    ),
-};
-
-export default function AppContent() {
-    return (
-        <GestureHandlerRootView style={{flex: 1}}>
-            <SafeAreaProvider>
-                <PaperProvider>
-                    <PlayerProvider>
-                        <MainContent/>
-                    </PlayerProvider>
-                    <Toast config={toastConfig} visibilityTime={1000} topOffset={120}  />
-                </PaperProvider>
-            </SafeAreaProvider>
-        </GestureHandlerRootView>
-    );
-}

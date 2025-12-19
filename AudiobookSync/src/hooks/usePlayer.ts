@@ -1,5 +1,9 @@
 import React, {useCallback, useEffect, useRef} from 'react';
-import TrackPlayer, {Event, State, usePlaybackState, useTrackPlayerEvents,} from 'react-native-track-player';
+import TrackPlayer, {
+    Event,
+    State, TrackType,
+    useTrackPlayerEvents,
+} from 'react-native-track-player';
 import {releaseSecureAccess} from 'react-native-document-picker'
 import {usePlayerContext} from "../context/PlayerContext.tsx";
 
@@ -61,7 +65,8 @@ export const usePlayer = ({
                                             index: number,
                                             newPlaylist: Track[],
                                             option:number,
-                                            updateHistory?:boolean
+                                            updateHistory?:boolean,
+                                            overridePlay?:boolean,
                                     ) => {
 
         if(track.name === audioState.name) {
@@ -108,14 +113,18 @@ export const usePlayer = ({
         /** Load local media */
         const { audioState: audioMeta, subtitleState: subMeta } = await loadTrackMedia(track);
 
+        const { intro, duration:track_duration } = getTrackStaticData(audioMeta.name)
+
         /** TrackPlayer loading */
         await TrackPlayer.reset();
 
         await TrackPlayer.add({
             id: track.id,
             url: audioMeta.path!,
-            title: audioMeta.name,
-            artwork: audioMeta.coverUrl || undefined,
+            title: audioMeta.name.replace(/\s*\(Chapter\s+\d+\)\s*$/, ''),
+            artwork: audioMeta.coverPath || undefined,
+            artist: intro,
+            duration: track_duration
         });
 
         /** Resume saved position */
@@ -129,10 +138,12 @@ export const usePlayer = ({
             index,
             audio: audioMeta,
             subtitle: subMeta,
-            isPlaying:true
+            isPlaying: overridePlay == undefined || overridePlay,
         });
 
-        await TrackPlayer.play()
+        if(overridePlay == undefined || overridePlay) {
+            await TrackPlayer.play()
+        }
 
     }, [audioState.name, isPlaying]);
 
@@ -188,7 +199,7 @@ export const usePlayer = ({
      *  SUBTITLE CLICK
      *  ───────────────────────────────────────────── */
     const jumpToTime = useCallback(async (time: number) => {
-        if(isPlaying)await TrackPlayer.pause()
+        if(isPlaying) await TrackPlayer.pause()
         await seek((time / durationSV.value) * 100, true);
         if(isPlaying) await TrackPlayer.play()
     },[isPlaying]);
@@ -231,9 +242,7 @@ export const usePlayer = ({
         isAutoUpdatingRef.current = false;
         const nextIndex = currentTrackIndex + 1;
         if (nextIndex < playlist.length) {
-            await TrackPlayer.pause()
-            await playTrack(playlist[nextIndex], nextIndex, playlist, 1, false);
-            await TrackPlayer.play()
+            await playTrack(playlist[nextIndex], nextIndex, playlist, 1, false, isPlaying);
         }
     };
 
@@ -241,9 +250,7 @@ export const usePlayer = ({
         isAutoUpdatingRef.current = false;
         const prevIndex = currentTrackIndex - 1;
         if (prevIndex >= 0) {
-            await TrackPlayer.pause()
-            await playTrack(playlist[prevIndex], prevIndex, playlist, 1, false);
-            await TrackPlayer.play()
+            await playTrack(playlist[prevIndex], prevIndex, playlist, 1, false, isPlaying);
         }
     };
 

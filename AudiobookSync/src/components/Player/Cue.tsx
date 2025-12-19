@@ -1,4 +1,4 @@
-import {ComponentRef, FC, memo, MutableRefObject, useRef} from "react";
+import {FC, useRef} from "react";
 import Animated, {SharedValue, useAnimatedStyle, withTiming} from "react-native-reanimated";
 import {playerStyles} from "../../utils/playerStyles.ts";
 import {SubtitleCue} from "../../utils/types.ts";

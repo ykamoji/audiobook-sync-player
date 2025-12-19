@@ -74,7 +74,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             audiobook_progress: progressMap,
             audiobook_playlists: playlists,
             exportedAt: Date.now(),
-            static: loadStaticData()
+            static: {}
         };
 
         const saved = await saveToNativeFilesystem(data);
@@ -140,8 +140,9 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
             const data = {} as any;
             stores.forEach(([key, value]) => {
-                if(!ignoreKeys.includes(key))
+                if(!ignoreKeys.includes(key) && !key.includes("edits_")) {
                     data[key] = JSON.parse(value!);
+                }
             });
 
             const path = `${RNFS.TemporaryDirectoryPath}/metadata.json`;

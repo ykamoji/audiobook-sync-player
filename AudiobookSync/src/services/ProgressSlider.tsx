@@ -1,12 +1,14 @@
-import React, {useState, useCallback} from 'react';
-import { Slider } from '@miblanchard/react-native-slider';
-import {useAnimatedReaction, runOnJS, useSharedValue, SharedValue} from 'react-native-reanimated';
+import React, {useState, FC, forwardRef, useRef, useImperativeHandle} from 'react';
+import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS, runOnUI, withDelay} from 'react-native-reanimated';
 import {StyleSheet, Text, View} from "react-native";
+import {ControlSlider} from "./ControlSlider.tsx";
+import {ExclusiveGesture} from "react-native-gesture-handler";
 
 type Props = {
     currentTimeSV: SharedValue<number>;
-    duration: number;
-    onSeek: (v: number) => void;
+    duration: SharedValue<number>;
+    onSeek: (v: number) => Promise<void>;
+    registerGesture:(g:ExclusiveGesture) => void;
 };
 
 const formatTime = (time: number) => {
@@ -16,54 +18,103 @@ const formatTime = (time: number) => {
     return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
+interface CurrentTimeRef {
+    setTime: (time: number) => void;
+}
 
-export const ProgressSlider: React.FC<Props> = ({ currentTimeSV, duration, onSeek }) => {
-    const [sliderValue, setSliderValue] = useState(0);
-    const lastSecond = useSharedValue(-1);
-    const isSliding = useSharedValue(false);
+interface CurrentTimeProps {
+    currentTime:number
+}
 
-    // Update slider once per second (Option B)
+
+export const CurrentTime = forwardRef<CurrentTimeRef, CurrentTimeProps>(({currentTime},
+                                                                                               ref) => {
+
+    const [time, setTime] = useState<number>(currentTime);
+
+    useImperativeHandle(ref, () => ({
+        setTime,
+    }));
+
+    return <Text style={[styles.textTime, styles.leftTime]}>{formatTime(time)}</Text>
+});
+
+const SEEK_EPSILON = 0.15;
+
+export const ProgressSlider: FC<Props> = ({
+                                              currentTimeSV,
+                                              duration,
+                                              onSeek,
+                                              registerGesture,
+                                          }) => {
+    const progressSV = useSharedValue(0);
+    const isScrubbingSV = useSharedValue(false);
+    const lastScrubbedProgressSV = useSharedValue<number | null>(null);
+
+    const currentTimeRef = useRef<CurrentTimeRef>(null);
+
+    const updateCurrentTime = (time: number) => {
+        currentTimeRef.current?.setTime(time);
+    };
+
     useAnimatedReaction(
-        () => Math.floor(currentTimeSV.value),
-        (sec) => {
-            if (isSliding.value) return;
-            // console.log(currentTimeSV.value, duration)
-            if (sec !== lastSecond.value) {
-                lastSecond.value = sec;
-                const progress = duration > 0 ? (sec / duration) * 100 : 0;
-                runOnJS(setSliderValue)(progress);
+        () => {
+            if (duration.value === 0) return 0;
+            if (isScrubbingSV.value) {
+                return progressSV.value;
             }
-        }
+
+            if (lastScrubbedProgressSV.value !== null &&
+                Math.abs(currentTimeSV.value - lastScrubbedProgressSV.value * duration.value) > SEEK_EPSILON){
+                    return lastScrubbedProgressSV.value;
+            }
+
+            return currentTimeSV.value / duration.value;
+        },
+        (next) => {
+            if (isScrubbingSV.value) {
+                lastScrubbedProgressSV.value = next;
+            }
+            if (lastScrubbedProgressSV.value !== null
+                && Math.abs(currentTimeSV.value - lastScrubbedProgressSV.value * duration.value) <= SEEK_EPSILON) {
+                lastScrubbedProgressSV.value = null;
+            }
+
+            progressSV.value = next;
+        },
+        []
     );
 
-    const handleSlidingStart = useCallback(() => {
-        isSliding.value = true;
-    }, [isSliding.value]);
+    useAnimatedReaction(
+        () => {
 
-    const handleSlidingComplete = useCallback(
-        (values: number[]) => {
-            isSliding.value = false;
-            onSeek(values[0]);
+            if (isScrubbingSV.value) {
+                return progressSV.value * duration.value;
+            }
+
+            if(lastScrubbedProgressSV.value !== null) {
+                return lastScrubbedProgressSV.value * duration.value;
+            }
+            return currentTimeSV.value
         },
-        [onSeek, isSliding.value]
+        (time, prev) => {
+            if (time === prev) return;
+            runOnJS(updateCurrentTime)(time);
+        },
+        []
     );
 
     return (
         <>
-        <Slider
-            value={sliderValue}
-            animateTransitions={false}
-            minimumValue={0}
-            maximumValue={100}
-            onSlidingStart={handleSlidingStart}
-            onSlidingComplete={handleSlidingComplete}
-            minimumTrackTintColor="#f97316"
-            maximumTrackTintColor="#555"
-            thumbTintColor="#F86600"
-        />
+         <ControlSlider
+             onSeek={onSeek}
+             isScrubbingSV={isScrubbingSV}
+             progressSV={progressSV}
+             registerGesture={registerGesture}
+         />
         <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{formatTime(currentTimeSV.value)}</Text>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            <CurrentTime ref={currentTimeRef} currentTime={currentTimeSV.value} />
+            <Text style={[styles.textTime, styles.rightTime]}>{formatTime(duration.value)}</Text>
         </View>
         </>
     );
@@ -71,14 +122,20 @@ export const ProgressSlider: React.FC<Props> = ({ currentTimeSV, duration, onSee
 
 const styles = StyleSheet.create({
     timeRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: -6,
+        flex:1,
     },
-
-    timeText: {
+    textTime:{
+        position: 'absolute',
+        height: 10,
+        top: 5,
         color: '#aaa',
         fontSize: 11,
         fontWeight: '500',
+    },
+    leftTime:{
+        left: 0,
+    },
+    rightTime: {
+        right: 0,
     },
 })
