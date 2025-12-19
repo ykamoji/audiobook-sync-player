@@ -17,8 +17,8 @@ export interface Track {
     audioPath: string;        // Required
     subtitlePath?: string;    // Optional
     coverPath?: string;       // Optional
-    // colorScheme?: object;
-    // audioSize: number;
+    mediaPath?: string;
+
 }
 
 export interface Playlist {
@@ -39,6 +39,8 @@ export interface AudioFileState {
 
     /** Cover image path */
     coverPath?: string | null;
+
+    mediaPath?: string | null;
 
     // colorScheme?: string | null;
 }

@@ -1284,6 +1284,49 @@ PODS:
   - react-native-track-player (3.2.0):
     - React-Core
     - SwiftAudioEx (= 0.15.3)
+  - react-native-video (6.18.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - react-native-video/Video (= 6.18.0)
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
+  - react-native-video/Video (6.18.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - React-nativeconfig (0.75.4)
   - React-NativeModulesApple (0.75.4):
     - glog
@@ -1648,6 +1691,7 @@ DEPENDENCIES:
   - "react-native-menu (from `../node_modules/@react-native-menu/menu`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-track-player (from `../node_modules/react-native-track-player`)
+  - react-native-video (from `../node_modules/react-native-video`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -1769,6 +1813,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-track-player:
     :path: "../node_modules/react-native-track-player"
+  react-native-video:
+    :path: "../node_modules/react-native-video"
   React-nativeconfig:
     :path: "../node_modules/react-native/ReactCommon"
   React-NativeModulesApple:
@@ -1878,6 +1924,7 @@ SPEC CHECKSUMS:
   react-native-menu: 03e17b6bc2f12f60e7e0ed1a2ca288f905c22c22
   react-native-safe-area-context: 6c8805194166a9d6b3e53ba69ca76756c9bfb052
   react-native-track-player: 12bd55f56b5557bfd9aa59d5284954529874fb57
+  react-native-video: da8f64edcfdff770865f68f67e8627a9d210ed3c
   React-nativeconfig: 8c83d992b9cc7d75b5abe262069eaeea4349f794
   React-NativeModulesApple: 97f606f09fd9840b3868333984d6a0e7bcc425b5
   React-perflogger: 59e1a3182dca2cee7b9f1f7aab204018d46d1914
