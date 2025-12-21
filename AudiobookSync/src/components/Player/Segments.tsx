@@ -7,7 +7,6 @@ import {SubtitleFileState} from "../../utils/types.ts";
 import {findCueIndex, getSegmentIndex} from "../../utils/mediaLoader.ts";
 import {Switch} from "react-native-paper";
 import {FlashList} from "@shopify/flash-list";
-import {Cue} from "./Cue.tsx";
 
 interface SegmentProps {
     showSegments: boolean;

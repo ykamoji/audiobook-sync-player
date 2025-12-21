@@ -1,5 +1,5 @@
 import React, {useState, FC, forwardRef, useRef, useImperativeHandle} from 'react';
-import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS, runOnUI, withDelay} from 'react-native-reanimated';
+import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS} from 'react-native-reanimated';
 import {StyleSheet, Text, View} from "react-native";
 import {ControlSlider} from "./ControlSlider.tsx";
 import {ExclusiveGesture} from "react-native-gesture-handler";

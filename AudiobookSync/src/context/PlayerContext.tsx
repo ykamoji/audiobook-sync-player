@@ -1,5 +1,5 @@
 import {AudioFileState, SubtitleCue, SubtitleFileState, Track} from "../utils/types.ts";
-import {createContext, useContext, useReducer} from "react";
+import {createContext, useContext} from "react";
 
 export type PlayerState = {
     playlist: Track[];

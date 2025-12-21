@@ -1,4 +1,4 @@
-import {Alert, FlatList, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {FlatList, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {PlaylistCard} from "./PlaylistCard.tsx";
 import {PlusIcon} from "lucide-react-native";
 import React, {FC, useRef} from "react";

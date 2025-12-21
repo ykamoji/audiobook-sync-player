@@ -1,9 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { XIcon } from 'lucide-react-native';
-import {formatBytes, formatDate, formatDuration, formatProgress} from '../utils/formatting';
+import {formatBytes, formatDuration, formatProgress} from '../utils/formatting';
 import { SlideWindow } from '../services/SlideWindow.tsx';
 import {Static} from "../hooks/useStaticData.ts";
 
