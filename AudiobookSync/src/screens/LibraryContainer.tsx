@@ -20,10 +20,9 @@ import {ListIcon} from "lucide-react-native";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {useStaticData} from "../hooks/useStaticData.ts";
 import {clearAllSubtitleEdits, exportAllEditedSubtitlesParsed} from "../utils/subtitleEdits.ts";
 import {zip} from "react-native-zip-archive";
-import {Action, PlayerState, usePlayerContext} from "../context/PlayerContext.tsx";
+import {Action, PlayerState} from "../context/PlayerContext.tsx";
 import {reloadSubtitleCues} from "../utils/mediaLoader.ts";
 
 interface LibraryContainerProps {
@@ -67,9 +66,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
 
     const playlists = playlistManager.savedPlaylists
 
-    const { loadStaticData } = useStaticData()
-
-    const handleExportData = async () => {
+    const handleSaveData = async () => {
         const data: AppData = {
             audiobook_progress: progressMap,
             audiobook_playlists: playlists,
@@ -85,7 +82,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                 setExportSuccess(false)
                 Toast.show({
                     type:"snackbar",
-                    text1:"Saved in storage"
+                    text1:"Saved"
                 });
             }, 1000);
         }
@@ -365,7 +362,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             onViewMetadata={onViewMetadata}
 
             // Exporting
-            onExportData={handleExportData}
+            onSaveData={handleSaveData}
             onExportCues={onExportCues}
             onCleanCues={onCleanCues}
             onClearStorage={onClearStorage}

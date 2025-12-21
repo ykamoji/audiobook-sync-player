@@ -6,6 +6,7 @@ import { Track, AppData } from './types.ts';
 const AUDIO_EXTS = ['.mp3', '.wav', '.aac', '.m4a', '.ogg', '.flac'];
 const SUBTITLE_EXTS = ['.srt', '.vtt'];
 const COVER_EXTS = ['.png', '.jpg', '.jpeg', '.webp'];
+const MEDIA_EXTS = ['.mp4'];
 
 const getExtension = (file: string) =>
     file.substring(file.lastIndexOf('.')).toLowerCase();
@@ -25,12 +26,6 @@ const sortTracks = (tracks: Track[]) =>
         return a.name.localeCompare(b.name, undefined, { numeric: true });
     });
 
-// const getFileSize = async (path: string): Promise<number> => {
-//     const cleanPath = decodeURI(path.replace("file://", ""));
-//     const stat = await RNFS.stat(cleanPath);
-//     return Number(stat.size);
-// };
-
 /**
  * scanNativePath()
  * ------------------------
@@ -46,6 +41,7 @@ export const scanNativePath = async (
     const audioMap = new Map<string, string>();
     const subtitleMap = new Map<string, string>();
     const coverMap = new Map<string, string>();
+    const mediaMap = new Map<string, string>();
     let appData: AppData | undefined = undefined;
     // let colorMap: Map<string, string> = new Map();
 
@@ -86,6 +82,12 @@ export const scanNativePath = async (
             continue;
         }
 
+        // Media File
+        if (MEDIA_EXTS.includes(ext)) {
+            mediaMap.set(name, path);
+            continue;
+        }
+
         // Subtitle file
         if (SUBTITLE_EXTS.includes(ext)) {
             subtitleMap.set(name, path);
@@ -122,6 +124,15 @@ export const scanNativePath = async (
             }
         }
 
+        let mediaPath: string | undefined = undefined;
+        for (const med of MEDIA_EXTS) {
+            const match = `${base}${med}`;
+            if (mediaMap.has(match)) {
+                mediaPath = mediaMap.get(match)!;
+                break;
+            }
+        }
+
 
         let trackData:Track = {
             id: uuid.v4().toString(),
@@ -130,6 +141,7 @@ export const scanNativePath = async (
             audioPath: path,
             subtitlePath:subtitlePath,
             coverPath: coverPath,
+            mediaPath: mediaPath,
             // colorScheme: colorMap.get(base) as Object ?? [255, 131, 0],
             // audioSize: 0
         };

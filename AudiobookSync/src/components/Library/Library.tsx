@@ -16,8 +16,7 @@ import {
     DownloadCloudIcon, InfoIcon,
     MoreVertical, PencilIcon,
     Save,
-    Trash2,
-    TrashIcon
+    Trash2
 } from "lucide-react-native";
 import {usePlayerContext} from "../../context/PlayerContext.tsx";
 
@@ -28,7 +27,7 @@ interface LibraryProps {
     progressMap: Record<string, ProgressData>;
     handleAlbumActions: (track: Track[]) => void;
     setShowModal: (showModal: boolean) => void;
-    onExportData: () => void;
+    onSaveData: () => void;
     onExportCues: () => void;
     onCleanCues: () => void;
     onDownloadData: () => void;
@@ -53,7 +52,7 @@ export const Library: React.FC<LibraryProps> = ({
                                                     progressMap,
                                                     handleAlbumActions,
                                                     setShowModal,
-                                                    onExportData,
+                                                    onSaveData,
                                                     onExportCues,
                                                     onCleanCues,
                                                     onDownloadData,
@@ -216,7 +215,7 @@ export const Library: React.FC<LibraryProps> = ({
                         <Menu.Item
                             onPress={() => {
                                 closeMenu();
-                                onExportData();
+                                onSaveData();
                             }}
                             titleStyle={{ color: "#050505" }}
                             title="Save"

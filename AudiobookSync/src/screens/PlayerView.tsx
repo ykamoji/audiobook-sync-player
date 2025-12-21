@@ -24,6 +24,7 @@ import {usePlayer} from "../hooks/usePlayer.ts";
 import {ProgressData, Track} from "../utils/types.ts";
 import {PlayerScroll} from "../components/Player/PlayerScroll.tsx";
 import {Segments} from "../components/Player/Segments.tsx";
+import {Media, MediaHandle} from "../components/Player/Media.tsx";
 
 interface PlayerViewProps {
     playerMode: PlayerMode;
@@ -85,6 +86,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     // UI
     const [showSegments, setShowSegments] = useState(false);
     const [controlsGesture, setControlsGesture] = useState<ExclusiveGesture | null>(null);
+    const [fullImage, setFullImage] = useState<boolean>(false);
 
     const scrollAtTop = useRef(true);
     const { scheme, dims, intro } = getTrackStaticData(audioState.name)
@@ -98,6 +100,8 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     const fullImageProgress = useSharedValue(0);
     const expandedOnce = useSharedValue(false);
     const panDirection = useSharedValue(1);
+
+    const mediaRef = useRef<MediaHandle>(null);
 
     const D = 15000;
     const panProgress = useDerivedValue(() => {
@@ -607,7 +611,6 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         return <></>
     }
 
-
     return (
         <>
             <GestureDetector gesture={dragGesture}>
@@ -635,17 +638,40 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                         )}
                         <Animated.View style={[[], bgStyle]}>
                             <Animated.View style={[playerStyles.coverContainer, artworkStyle]} pointerEvents={showSegments ? "none" : "auto"}>
-                                {audioState.coverPath ? (
+                                {audioState.coverPath || audioState.mediaPath ? (
                                     <>
                                     <Pressable
-                                        onPress={() => toggleFullImage()}
-                                        style={[playerStyles.coverWrapper,]}
+                                        onPress={() => {
+                                            toggleFullImage();
+                                            if(audioState.mediaPath){
+                                                setFullImage(prevState => !prevState);
+                                            }
+                                        }}
+                                        onLongPress={() => {
+                                            mediaRef.current?.togglePlayback();
+                                        }}
+                                        style={[playerStyles.coverWrapper]}
                                     >
-                                        <Animated.View style={animatedWrapperStyle}>
-                                        <Animated.Image
-                                            source={{ uri: audioState.coverPath }}
-                                            style={[playerStyles.coverImage, animatedImageStyle]}
-                                        />
+                                        {audioState.mediaPath &&
+                                            <Animated.View style={[
+                                                {display: (playerMode === 'full' && !fullImage) ? 'flex': 'none' },
+                                                animatedWrapperStyle
+                                            ]}>
+                                                <Media
+                                                    ref={mediaRef}
+                                                    uri={audioState.mediaPath}
+                                                    isPlaying={isPlaying}
+                                                    style={animatedImageStyle}/>
+                                            </Animated.View>
+                                        }
+                                        <Animated.View style={[
+                                            { display: (playerMode === 'mini' || !audioState.mediaPath || fullImage) ? 'flex' : 'none' },
+                                            animatedWrapperStyle
+                                        ]}>
+                                            <Animated.Image
+                                                source={{uri: audioState.coverPath!}}
+                                                style={[playerStyles.coverImage, animatedImageStyle]}
+                                            />
                                         </Animated.View>
                                     </Pressable>
                                     </>

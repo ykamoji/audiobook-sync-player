@@ -18,7 +18,7 @@ export const loadTrackMedia = async (
         path: track.audioPath || null,
         name: track.name,
         coverPath: track.coverPath || null,
-        // colorScheme: track.colorScheme || null,
+        mediaPath: track.mediaPath || null,
     };
 
     // 2. Subtitles
