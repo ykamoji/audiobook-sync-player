@@ -221,7 +221,7 @@ const palette = {
 };
 
 export function useTheme() {
-    // const scheme = useColorScheme();
-    const scheme = 'light';
+    const scheme = useColorScheme();
+    // const scheme = 'light';
     return palette[scheme === 'dark' ? 'dark' : 'light'];
 }
