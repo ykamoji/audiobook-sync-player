@@ -9,7 +9,7 @@ import {
 import { Track, Playlist, ProgressData } from '../../utils/types.ts';
 import { SpinnerIcon } from '../../services/SpinnerIcon.tsx';
 import { TrackRow } from '../TrackRow.tsx';
-import {Menu, MD3DarkTheme, MD3LightTheme,} from "react-native-paper";
+import {Menu,} from "react-native-paper";
 import {
     BrushCleaningIcon,
     Download,
@@ -19,6 +19,7 @@ import {
     Trash2
 } from "lucide-react-native";
 import {usePlayerContext} from "../../context/PlayerContext.tsx";
+import {useTheme} from "../../utils/themes.ts";
 
 interface LibraryProps {
     allTracks: Track[];
@@ -165,6 +166,8 @@ export const Library: React.FC<LibraryProps> = ({
 
     // ----- Main render -----
 
+    const styles = STYLES(useTheme())
+
     return (
         <View style={styles.root}>
             {/* Header */}
@@ -190,23 +193,13 @@ export const Library: React.FC<LibraryProps> = ({
                         visible={visible}
                         onDismiss={closeMenu}
                         mode="elevated"
-                        theme={{
-                            ...MD3LightTheme,
-                            colors: {
-                                ...MD3LightTheme.colors,
-                                onSurface: "#050505",
-                                onSurfaceVariant: "#050505",
-                                surface: "#CCC",
-                                elevation: { level2: "#CCC" },
-                            },
-                        }}
                         anchor={
                             <TouchableOpacity onPress={openMenu}>
                                 <View style={styles.saveButton}>
                                     {exportSuccess ? (
                                         <SpinnerIcon size={20} color="#22c55e" />
                                     ) : (
-                                        <MoreVertical size={20} style={{paddingHorizontal:14, paddingEnd:20}} color="#9ca3af" />
+                                        <MoreVertical size={20} style={{paddingHorizontal:14, paddingEnd:20}} color={styles.moreIcon.color} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -266,6 +259,24 @@ export const Library: React.FC<LibraryProps> = ({
                     </Menu>
                 </View>
             </View>
+            <View style={[
+                styles.bulkBar,
+                selectedTrackIds.size === 0 && styles.bulkHidden
+            ]}>
+                <Text style={styles.bulkText}>{selectedTrackIds.size} selected</Text>
+                <TouchableOpacity
+                    onPress={() => {
+                        const selected = allTracks.filter((t) => selectedTrackIds.has(t.id));
+                        setShowModal(true);
+                        // setIsSelectionMode((prev) => !prev);
+                        // setSelectedTrackIds(new Set());
+                        handleAlbumActions(selected);
+                    }}
+                    style={styles.bulkAddButton}
+                >
+                    <Text style={styles.bulkAddText}>Edit Playlist</Text>
+                </TouchableOpacity>
+            </View>
             {/* Content */}
             <View style={styles.content}>
                 <View style={styles.emptyFull}>
@@ -285,24 +296,6 @@ export const Library: React.FC<LibraryProps> = ({
                     }
                 </View>
             </View>
-            <View style={[
-                styles.bulkBar,
-                selectedTrackIds.size === 0 && styles.bulkHidden
-            ]}>
-                <Text style={styles.bulkText}>{selectedTrackIds.size} selected</Text>
-                <TouchableOpacity
-                    onPress={() => {
-                        const selected = allTracks.filter((t) => selectedTrackIds.has(t.id));
-                        setShowModal(true);
-                        // setIsSelectionMode((prev) => !prev);
-                        // setSelectedTrackIds(new Set());
-                        handleAlbumActions(selected);
-                    }}
-                    style={styles.bulkAddButton}
-                >
-                    <Text style={styles.bulkAddText}>Edit Playlist</Text>
-                </TouchableOpacity>
-            </View>
             <Modal
                 visible={trackMenu.visible}
                 transparent
@@ -316,7 +309,7 @@ export const Library: React.FC<LibraryProps> = ({
                         handleAlbumActions([trackMenu.track!]);
                         closeTrackMenu();
                     }}>
-                        <PencilIcon size={18} color="#fff" />
+                        <PencilIcon size={18} color={styles.menuIcon.color} />
                         <Text style={styles.menuText}>Edit Playlist</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -326,7 +319,7 @@ export const Library: React.FC<LibraryProps> = ({
                             closeTrackMenu();
                         }}
                     >
-                        <InfoIcon size={18} color="#fff" />
+                        <InfoIcon size={18} color={styles.menuIcon.color} />
                         <Text style={styles.menuText}>View Metadata</Text>
                     </TouchableOpacity>
                 </View>
@@ -335,10 +328,10 @@ export const Library: React.FC<LibraryProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#050505',
+        backgroundColor: theme.libraryBgColor,
     },
     header: {
         paddingHorizontal: 18,
@@ -346,7 +339,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#050505',
+        backgroundColor: theme.libraryBgColor,
     },
     headerLeft: {
         flexDirection: 'row',
@@ -360,7 +353,7 @@ const styles = StyleSheet.create({
     } as any,
     selectAllText: {
         fontSize: 14,
-        color: '#9ca3af',
+        color: theme.libraryHeaderColor,
     },
     selectToggleText: {
         fontSize: 14,
@@ -374,7 +367,7 @@ const styles = StyleSheet.create({
     } as any,
     saveText: {
         fontSize: 14,
-        color: '#9ca3af',
+        color: theme.libraryHeaderColor,
     },
     saveTextSuccess: {
         color: '#22c55e',
@@ -383,10 +376,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     listContent: {
-        paddingBottom: 20,
+        paddingBottom: 80,
     },
     iconButton: {
         padding: 6,
+    },
+    moreIcon:{
+        color: theme.libraryMoreColor,
     },
     selectText: {
         fontSize: 16,
@@ -400,7 +396,7 @@ const styles = StyleSheet.create({
         paddingVertical: 40,
     },
     emptyText: {
-        color: '#6b7280',
+        color: theme.libraryEmptyText,
         fontSize: 16,
         textAlign: 'center',
     },
@@ -410,10 +406,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     bulkBar: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 75,
         paddingHorizontal: 16,
         paddingVertical: 10,
         backgroundColor: '#1f2933',
@@ -461,14 +453,17 @@ const styles = StyleSheet.create({
         position: "absolute",
         right: 20,
         top: 120,
-        backgroundColor: "#2a2a2a",
+        backgroundColor: theme.libraryMenuBgColor,
         borderRadius: 0,
         paddingVertical: 6,
         width: 200,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
+        borderColor: theme.libraryMenuBorderColor,
     },
 
+    menuIcon:{
+        color: theme.libraryMenuColor,
+    },
     menuItem: {
         flexDirection: "row",
         alignItems: "center",
@@ -477,7 +472,7 @@ const styles = StyleSheet.create({
     },
 
     menuText: {
-        color: "white",
+        color: theme.libraryMenuColor,
         marginLeft: 10,
         fontSize: 16,
     },

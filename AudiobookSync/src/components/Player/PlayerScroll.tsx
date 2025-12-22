@@ -12,11 +12,12 @@ import {findCueIndex} from "../../utils/mediaLoader.ts";
 import {SubtitleCue} from "../../utils/types.ts";
 import {Cue} from "./Cue.tsx";
 import {removeSubtitleEdit, saveSubtitleEdit} from "../../utils/subtitleEdits.ts";
-import {modelStyles} from "../../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import {usePlayerContext} from "../../context/PlayerContext.tsx";
 import {Toggle} from "../../services/Toggle.tsx";
 import { TextInput as PaperInput } from "react-native-paper"
+import {useTheme} from "../../utils/themes.ts";
 
 export interface PlayerScrollProps {
     displayedCues: SubtitleCue[];
@@ -124,6 +125,8 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
         TextInput.State.currentlyFocusedInput()?.blur();
         Keyboard.dismiss();
     };
+
+    const modelStyles = MODEL_STYLES(useTheme())
 
     return (
         <>

@@ -4,9 +4,10 @@ import {PlusIcon} from "lucide-react-native";
 import React, {FC, useRef} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../../utils/types.ts";
-import {modelStyles} from "../../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
+import {useTheme} from "../../utils/themes.ts";
 
 interface AlbumsProps {
     playlists: Playlist[];
@@ -59,6 +60,8 @@ export const Albums : FC<AlbumsProps> = ({
         }
 
     };
+
+    const modelStyles = MODEL_STYLES(useTheme())
 
     return (
         <>

@@ -2,10 +2,11 @@ import {ActionSheetIOS, Modal, Text, TextInput, TouchableOpacity, View} from "re
 import React, {FC, useEffect, useRef, useState} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
-import {modelStyles} from "../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../utils/modelStyles.ts";
 import {Albums} from "../components/Albums/Albums.tsx";
 import {AlbumContent} from "../components/Albums/AlbumContent.tsx";
 import {Pressable} from "react-native-gesture-handler";
+import {useTheme} from "../utils/themes.ts";
 
 interface AlbumsContainerProps {
     allTracks: Track[];
@@ -109,6 +110,8 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
             }
         );
     };
+
+    const modelStyles = MODEL_STYLES(useTheme())
 
     return (<>
         <View style={[

@@ -27,6 +27,7 @@ import {PlayerView, PlayerViewRef} from "./screens/PlayerView.tsx";
 import {PlayerProvider} from "./context/PlayerProvider.tsx";
 import {usePlayerContext} from "./context/PlayerContext.tsx";
 import {useStaticData} from "./hooks/useStaticData.ts";
+import {useTheme} from "./utils/themes.ts";
 
 export const setupPlayer = async () => {
 
@@ -230,9 +231,11 @@ const MainContent: React.FC = () => {
         transform: [{ translateY: bottomBarTranslate.value }]
     }));
 
+    const styles = STYLE(useTheme());
+
     return (
         <View style={styles.root}>
-            <StatusBar barStyle="light-content"/>
+            <StatusBar barStyle="default"/>
 
             {/* Main content area */}
             <View style={styles.mainContent}>
@@ -340,42 +343,48 @@ const TabButton: React.FC<{
     icon: any;
     active: boolean;
     onPress: () => void;
-}> = ({ label, icon: Icon, active, onPress }) => (
-    <TouchableOpacity style={styles.tabButton} onPress={onPress}  activeOpacity={0.8}>
-        <View style={styles.iconRow}>
-            <Icon
-                size={20}
-                color={active ? "#fff" : "#888"}
-                style={{ marginRight: 6 }}
-            />
-            <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-                {label}
-            </Text>
-        </View>
-    </TouchableOpacity>
-);
+}> = ({ label, icon: Icon, active, onPress }) => {
+    const styles = STYLE(useTheme());
+    return(
+        <TouchableOpacity style={styles.tabButton} onPress={onPress}  activeOpacity={0.8}>
+            <View style={styles.iconRow}>
+                <Icon
+                    size={20}
+                    color={active ? styles.tabIconActive.color : styles.tabIconNonActive.color}
+                    style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                    {label}
+                </Text>
+            </View>
+        </TouchableOpacity>
+    );
+}
 
 export const toastConfig: ToastConfig = {
-    snackbar: ({ text1, text2, props }) => (
-        <View style={styles.toastContainer}>
-            <View style={styles.toastTextContainer}>
-                <Text style={styles.toastMessage}>{text1}</Text>
-                {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
+    snackbar: ({ text1, text2, props }) => {
+        const styles = STYLE(useTheme());
+        return(
+            <View style={styles.toastContainer}>
+                <View style={styles.toastTextContainer}>
+                    <Text style={styles.toastMessage}>{text1}</Text>
+                    {text2 ? <Text style={styles.toastSubMessage}>{text2}</Text> : null}
+                </View>
+                {props?.action ? (
+                    <TouchableOpacity onPress={props.action.onPress}>
+                        <Text style={styles.toastAction}>{props.action.label}</Text>
+                    </TouchableOpacity>
+                ) : null}
             </View>
-            {props?.action ? (
-                <TouchableOpacity onPress={props.action.onPress}>
-                    <Text style={styles.toastAction}>{props.action.label}</Text>
-                </TouchableOpacity>
-            ) : null}
-        </View>
-    ),
+        )
+    },
 };
 
 export default function AppContent() {
     return (
         <GestureHandlerRootView style={{flex: 1}}>
             <SafeAreaProvider>
-                <PaperProvider theme={{ version: 2 }}>
+                <PaperProvider theme={{ version: 3 }}>
                     <PlayerProvider>
                         <MainContent/>
                     </PlayerProvider>
@@ -386,10 +395,9 @@ export default function AppContent() {
     );
 }
 
-const styles = StyleSheet.create({
+const STYLE = (theme:any) => StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: "#050505",
     },
     mainContent: {
         flex: 1,
@@ -412,7 +420,7 @@ const styles = StyleSheet.create({
 
     safeAreaTopWrap: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: theme.libraryBgColor
     },
 
     playerOverlay: {
@@ -423,8 +431,8 @@ const styles = StyleSheet.create({
     /** Bottom Bar */
     bottomBar: {
         borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: "#222",
-        backgroundColor: "#111",
+        borderTopColor: theme.bottomBarBorderColor,
+        backgroundColor: theme.bottomBarBorderColor,
         position:'relative',
         zIndex:100
     },
@@ -442,10 +450,16 @@ const styles = StyleSheet.create({
     tabLabel: {
         fontSize: 12,
         fontWeight: "600",
-        color: "#777",
+        color: theme.tabLabelColor,
+    },
+    tabIconActive:{
+       color: theme.tabActiveIconColor,
+    },
+    tabIconNonActive:{
+        color: theme.tabIconNonActive,
     },
     tabLabelActive: {
-        color: "#ffffff",
+        color: theme.tabLabelActive
     },
     iconRow: {
         flexDirection: "column",

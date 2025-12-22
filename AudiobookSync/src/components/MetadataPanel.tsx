@@ -5,6 +5,7 @@ import { XIcon } from 'lucide-react-native';
 import {formatBytes, formatDuration, formatProgress} from '../utils/formatting';
 import { SlideWindow } from '../services/SlideWindow.tsx';
 import {Static} from "../hooks/useStaticData.ts";
+import {useTheme} from "../utils/themes.ts";
 
 export interface MetadataPanelData {
     name: string;
@@ -36,7 +37,7 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
         loudness = data.static.loudness > -20 ? 'Loud' : (data.static.loudness > -26 ? 'Normal' : 'Quite');
     }
 
-
+    const styles = STYLE(useTheme());
 
     return (
         <SlideWindow
@@ -133,10 +134,10 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ data, onClose }) =
     );
 };
 
-const styles = StyleSheet.create({
+const STYLE = (theme:any) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: theme.metadataBgColor,
         paddingHorizontal: 20,
     },
     headerRow: {
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontWeight: '700',
-        color: '#ffffff',
+        color: theme.metadataTitleColor,
     },
     closeButton: {
         padding: 4,
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         gap:2,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
+        borderBottomColor: theme.metadataBorderBottomColor,
     },
     column:{
         width: 150,
@@ -176,7 +177,8 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     value: {
-        color: '#e5e7eb',
+        color: theme.metadataValueColor,
+        fontWeight: theme.metadataValueFontWeight,
         fontSize: 14,
     },
     playlistTagsRow: {
@@ -186,7 +188,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     playlistTag: {
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: theme.playlistTag,
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 4,
