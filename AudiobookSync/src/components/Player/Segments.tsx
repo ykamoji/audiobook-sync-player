@@ -1,12 +1,13 @@
 import React, {FC} from "react";
-import {playerStyles} from "../../utils/playerStyles.ts";
-import {Text, TouchableOpacity, View} from "react-native";
+import {PLAYER_STYLE} from "../../utils/playerStyles.ts";
+import {Text, TouchableOpacity, useColorScheme, View} from "react-native";
 import {XIcon} from "lucide-react-native";
 import {SlideWindow} from "../../services/SlideWindow.tsx";
 import {SubtitleFileState} from "../../utils/types.ts";
 import {findCueIndex, getSegmentIndex} from "../../utils/mediaLoader.ts";
 import {Switch} from "react-native-paper";
 import {FlashList} from "@shopify/flash-list";
+import {useTheme} from "../../utils/themes.ts";
 
 interface SegmentProps {
     showSegments: boolean;
@@ -41,7 +42,7 @@ export const Segments:FC<SegmentProps> = ({
 
     let currentSegmentIndex = getSegmentIndex(currentTime, subtitleState.markers)
 
-    const segmentData = Object.entries(segmentHistory).map(([k, v]) => {
+    const segmentData = segmentHistory ? Object.entries(segmentHistory).map(([k, v]) => {
         const index = Number(k)
 
         const segment_duration = index < subtitleState.markers.length ?
@@ -54,11 +55,11 @@ export const Segments:FC<SegmentProps> = ({
             progress : (segment_progress / segment_duration),
             text: subtitleState.cues[findCueIndex(subtitleState.cues, v)].text.substring(0, 150).trim() + ' ...'
         }
-    });
+    }) : [{ progress: 0, text: "" }];
 
     const [showEditedCues, setShowEditedCues] = React.useState(false);
 
-    // console.log(subtitleState.cues.length)
+    const playerStyles = PLAYER_STYLE(useTheme())
 
     return (
         <SlideWindow style={playerStyles.chaptersOverlayRoot}
@@ -70,11 +71,11 @@ export const Segments:FC<SegmentProps> = ({
             <View style={[playerStyles.chaptersSheet, {}]}>
                 <View style={playerStyles.chaptersHeader} onTouchEndCapture={()=> setShowEditedCues(p=>!p)}>
                     <View style={playerStyles.chaptersHeaderLeft}>
-                        <Switch style={{}}
+                        <Switch style={{ }}
                                 theme={{
-                                    isV3:true,
-                                    colors:{
-                                        primary:"#f97316",
+                                    isV3: true,
+                                    colors: {
+                                        primary: "#f97316",
                                     }
                                 }}
                                 value={showEditedCues}/>
@@ -124,24 +125,14 @@ export const Segments:FC<SegmentProps> = ({
                                 activeOpacity={0.2}
                             >
                                 <View style={[
-                                    {
-                                        position:"absolute",
-                                        backgroundColor:'rgba(255,131,0,0.2)',
-                                        width:300,
-                                        height:60,
-                                    },
+                                    playerStyles.chapter,
                                     { width: (segmentData[i]  ? segmentData[i].progress : 0) * 380 }
                                 ]} />
-                                <Text
-                                    style={[
-                                        playerStyles.chapterIndex,
-                                        isActive && playerStyles.chapterIndexActive,
-                                    ]}
-                                >
+                                <Text style={playerStyles.chapterIndex}>
                                     1.{i + 1}
                                 </Text>
                                 <View style={{ width: 300}}>
-                                    <Text style={{color:'#aaa', paddingStart:5}}>
+                                    <Text style={{color:playerStyles.chapterIndex.color, paddingStart:5}}>
                                         {segmentData[i] ? segmentData[i].text :
                                             subtitleState.cues[i*CUES_PER_SEGMENT].text }
                                     </Text>
@@ -170,7 +161,7 @@ export const Segments:FC<SegmentProps> = ({
                         renderItem={({item, index}) => (
                             <View key={index} style={playerStyles.cueContainer}>
                                 <Text style={[playerStyles.cueText, {color:"#f97316"}]}>{item.id}</Text>
-                                <Text style={[playerStyles.cueText, {color:"#9ca3af"}]}>{item.text}</Text>
+                                <Text style={playerStyles.cueText}>{item.text}</Text>
                             </View>
                         )}
                         contentContainerStyle={{paddingVertical:20}}

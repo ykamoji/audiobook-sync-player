@@ -195,6 +195,6 @@ const STYLE = (theme:any) => StyleSheet.create({
     },
     playlistTagText: {
         fontSize: 12,
-        color: '#f97316',
+        color: theme.playlistTagText,
     },
 });

@@ -143,7 +143,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     onLongPress();
                     onToggleSelection(track.id);
                 }}
-                activeOpacity={0.5}
+                activeOpacity={0.8}
             >
                 {/* Thumbnail / Checkbox */}
                 <View style={styles.thumbnailBox}>
@@ -244,7 +244,7 @@ const STYLES = (theme:any) => StyleSheet.create({
     },
 
     selectedRow: {
-        backgroundColor: "rgba(255,131,0,0.15)",
+        backgroundColor: theme.selectedRow,
     },
 
     thumbnailBox: {
@@ -284,7 +284,7 @@ const STYLES = (theme:any) => StyleSheet.create({
     },
 
     selectedText: {
-        color: "#FF8300",
+        color: theme.selectedText,
     },
 
     metaRow: {
@@ -343,6 +343,7 @@ const STYLES = (theme:any) => StyleSheet.create({
         opacity: theme.playlistBadgeOpacity,
         fontSize: 10,
         marginLeft: 6,
+        fontWeight: theme.playlistBadgeWeight,
     },
 
     menuButton: {

@@ -9,7 +9,7 @@ import {
 import { Track, Playlist, ProgressData } from '../../utils/types.ts';
 import { SpinnerIcon } from '../../services/SpinnerIcon.tsx';
 import { TrackRow } from '../TrackRow.tsx';
-import {Menu,} from "react-native-paper";
+import {MD3LightTheme, Menu,} from "react-native-paper";
 import {
     BrushCleaningIcon,
     Download,
@@ -192,6 +192,12 @@ export const Library: React.FC<LibraryProps> = ({
                     <Menu
                         visible={visible}
                         onDismiss={closeMenu}
+                        theme={{
+                            colors: {
+                                surface: styles.menuContainer.backgroundColor,
+                                elevation: { level2: styles.menuContainer.backgroundColor },
+                            },
+                        }}
                         mode="elevated"
                         anchor={
                             <TouchableOpacity onPress={openMenu}>

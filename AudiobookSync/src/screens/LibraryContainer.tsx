@@ -401,11 +401,14 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                         <View style={modelStyles.section}>
                             <TextInput
                                 label="Playlist Name"
+                                contentStyle={{
+                                    color: modelStyles.input.color, // text color
+                                }}
                                 theme={{
                                     colors:{
-                                        primary: modelStyles.input.color,
-                                        surfaceVariant: modelStyles.input.backgroundColor,
-                                        background:  modelStyles.input.backgroundColor,
+                                        primary: modelStyles.input.color, //  label color, active
+                                        onSurfaceVariant:modelStyles.input.color, // label color, inactive
+                                        surfaceVariant: modelStyles.input.backgroundColor, // background
                                     }
                                 }}
                                 onChangeText={(val)=> (playlistChangeRef.current = val)}

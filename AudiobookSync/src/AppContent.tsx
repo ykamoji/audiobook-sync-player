@@ -89,7 +89,9 @@ const MainContent: React.FC = () => {
         if (result === null) return false
         await pickDirectory({});
         await loadStorage();
-        setView("library");
+        const { playlists } = await loadInitialNativeMetadata()
+        if(playlists.length > 0) setView("albums")
+        else setView("library")
         return true;
     };
 
@@ -133,7 +135,10 @@ const MainContent: React.FC = () => {
     const {allTracks, setAllTracks, isLoading, handleDirectoryUpload} =
         useLibrary({
             onMetadataLoaded,
-            onUploadSuccess: () => setView("library"),
+            onUploadSuccess: () => {
+                if (playlistManager.savedPlaylists.length > 0) setView("albums")
+                else setView("library")
+            },
             onReloadFromStorage
         });
 
@@ -321,16 +326,16 @@ const MainContent: React.FC = () => {
                         onPress={() => setView("setup")}
                     />
                     <TabButton
-                        label="Library"
-                        icon={Library}
-                        active={view === "library"}
-                        onPress={() => setView("library")}
-                    />
-                    <TabButton
                         label="Playlists"
                         icon={ListMusic}
                         active={view === "albums"}
                         onPress={() => setView("albums")}
+                    />
+                    <TabButton
+                        label="Library"
+                        icon={Library}
+                        active={view === "library"}
+                        onPress={() => setView("library")}
                     />
                 </View>
             </Animated.View>

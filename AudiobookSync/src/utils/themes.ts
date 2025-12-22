@@ -34,7 +34,8 @@ const metadata = {
         metadataBgColor: '#ddd',
         metadataTitleColor: '#222',
         metadataValueColor: '#222',
-        playlistTag:"#333444",
+        playlistTag:"#f97316",
+        playlistTagText:"#fff",
         metadataBorderBottomColor:'#aaa',
         metadataValueFontWeight : '500',
     },
@@ -43,6 +44,7 @@ const metadata = {
         metadataTitleColor: '#ffffff',
         metadataValueColor: '#e5e7eb',
         playlistTag:"rgba(255,255,255,0.06)",
+        playlistTagText:"#f97316",
         metadataBorderBottomColor:'rgba(255,255,255,0.08)',
         metadataValueFontWeight: '400'
     },
@@ -56,7 +58,7 @@ const library = {
         libraryMenuBgColor: '#ddd',
         libraryMenuColor: '#222',
         libraryMenuBorderColor: "rgba(0,0,0,0.2)",
-        libraryMoreColor: '#222',
+        libraryMoreColor: '#444',
     },
     dark: {
         libraryBgColor: '#050505',
@@ -73,10 +75,13 @@ const tracks = {
     light: {
         trackTitle:"#444",
         thumbnailBoxColor: '#ccc',
-        thumbnailMusic: '#000',
+        thumbnailMusic: '#222',
         trackIntro: "rgba(0,0,0,0.7)",
-        progressBarBackground:"#ddd",
+        progressBarBackground:"#999",
         playlistBadgeOpacity: 1,
+        playlistBadgeWeight:'700',
+        selectedRow:"rgba(255,131,0,0.4)",
+        selectedText:"#000",
     },
     dark: {
         trackTitle:"#fff",
@@ -85,6 +90,22 @@ const tracks = {
         thumbnailMusic: '#ccc',
         progressBarBackground:"#444",
         playlistBadgeOpacity: 0.6,
+        playlistBadgeWeight:'400',
+        selectedRow:"rgba(255,131,0,0.15)",
+        selectedText:"#FF8300"
+    },
+}
+
+const albums = {
+    light: {
+        createPlaylistButton:'rgba(249,115,22,1)',
+        createPlaylistText:'#f97316',
+        detailTitle:'#333'
+    },
+    dark: {
+        createPlaylistButton:'rgba(249,115,22,0.4)',
+        createPlaylistText:'#f97316',
+        detailTitle:'#fff'
     },
 }
 
@@ -98,9 +119,10 @@ const modals = {
         inputColor: "#ccc",
         sectionLabel:"#333",
         playlistRow:"#ccc",
-        iconBox:"#333",
+        iconBox:"#111",
         listIcon:"#fff",
-        playlistName:"#000"
+        playlistName:"#000",
+        closeText:"#333"
     },
     dark: {
         backdrop:"rgba(0,0,0,0.8)",
@@ -108,12 +130,68 @@ const modals = {
         modalContainerBorderColor:"rgba(255,255,255,0.1)",
         modelHeaderText:"#fff",
         inputText: "#2a2a2a",
-        inputColor: "#fff",
+        inputBgColor: "#ddd",
         sectionLabel: "#888",
         playlistRow: "rgba(255,255,255,0.05)",
         iconBox:"#111",
         listIcon:"#bbb",
-        playlistName:"#eee"
+        playlistName:"#eee",
+        closeText:"#ccc"
+    },
+}
+
+const playlist = {
+    light: {
+        trackCount:"#111",
+        playlistTitle:"#333"
+    },
+    dark: {
+        trackCount:"#888",
+        playlistTitle:"#fff"
+    },
+}
+
+const player = {
+    light: {
+        subtitlesContainer:"#ddd",
+        cueText:"#333",
+        checkbox:"rgba(255,131,0,1)",
+        checkboxWidth:1.5,
+        pencilIcon:"red",
+        chaptersOverlayRoot:"#eee",
+        thumbColor:"#222",
+        chapter:"rgba(255,131,0,0.5)",
+        chapterItem:"#fff",
+        chapterItemBorderColor:"#eee",
+        chapterIndex:"#222",
+        chapterItemActive:"rgba(255,131,0,1)",
+
+        sliderInterTrack:"#aaa",
+        sideIcon:"#222",
+        smallIcon:"#333",
+        playButton:"#222",
+        playIcon:"#ddd",
+
+    },
+    dark: {
+        subtitlesContainer:"#000",
+        cueText:"#9ca3af",
+        checkbox:"rgba(255,131,0,0.5)",
+        checkboxWidth:1,
+        pencilIcon:"orange",
+        chaptersOverlayRoot:"#222",
+        thumbColor:"#222",
+        chapter:"rgba(255,131,0,0.2)",
+        chapterItemBorderColor:"#222",
+        chapterItem:"rgba(255,255,255,0.05)",
+        chapterIndex:"#aaa",
+        chapterItemActive:"rgba(255,131,0,0.60)",
+
+        sliderInterTrack:"#555",
+        sideIcon:"#aaa",
+        smallIcon:"#ddd",
+        playButton:"#fff",
+        playIcon:"#000",
     },
 }
 
@@ -125,6 +203,9 @@ const palette = {
         ...library.light,
         ...tracks.light,
         ...modals.light,
+        ...albums.light,
+        ...playlist.light,
+        ...player.light,
     },
     dark: {
         ...bottom.dark,
@@ -133,11 +214,14 @@ const palette = {
         ...library.dark,
         ...tracks.dark,
         ...modals.dark,
+        ...albums.dark,
+        ...playlist.dark,
+        ...player.dark,
     },
 };
 
 export function useTheme() {
-    const scheme = useColorScheme();
-    // const scheme = 'dark';
+    // const scheme = useColorScheme();
+    const scheme = 'light';
     return palette[scheme === 'dark' ? 'dark' : 'light'];
 }

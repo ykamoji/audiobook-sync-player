@@ -2,7 +2,7 @@ import {Dimensions, StyleSheet} from "react-native";
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-export const playerStyles = StyleSheet.create({
+export const PLAYER_STYLE = (theme:any) => StyleSheet.create({
     root: {
         position: 'absolute',
         top: 0,
@@ -11,7 +11,7 @@ export const playerStyles = StyleSheet.create({
         bottom: 0,
         width: '100%',
         height: '100%',
-        backgroundColor: 'black',
+        backgroundColor: theme.libraryBgColor,
         flexDirection: 'column',
     },
     headerContainer: {
@@ -81,8 +81,9 @@ export const playerStyles = StyleSheet.create({
     },
     subtitlesContainer: {
         flex: 1,
-        marginTop: 20,
+        paddingTop:10,
         minHeight: 300,
+        backgroundColor: theme.subtitlesContainer,
     },
     subtitlesContent: {
         paddingHorizontal: 20,
@@ -98,13 +99,11 @@ export const playerStyles = StyleSheet.create({
         textAlign: 'left',
         letterSpacing: 0.5,
         fontFamily: 'CabinCondensed-Medium',
+        color: theme.cueText,
     },
     cueTextActive: {
         color: '#f97316',
         fontFamily: 'CabinCondensed-Semibold',
-    },
-    cueTextInactive: {
-        color: '#9ca3af',
     },
     noTextContainer: {
         alignItems: 'center',
@@ -117,7 +116,8 @@ export const playerStyles = StyleSheet.create({
     controlsContainer: {
         paddingTop: 8,
         paddingHorizontal: 8,
-        paddingBottom: 4
+        paddingBottom: 4,
+        backgroundColor: theme.subtitlesContainer,
     },
     miniLeft: {
         flexDirection: 'row',
@@ -163,6 +163,7 @@ export const playerStyles = StyleSheet.create({
     chaptersOverlayRoot: {
         // ...StyleSheet.absoluteFillObject,
         justifyContent: 'flex-start',
+        backgroundColor: theme.chaptersOverlayRoot,
     },
     chaptersSheet: {
         borderTopLeftRadius: 24,
@@ -186,7 +187,7 @@ export const playerStyles = StyleSheet.create({
     chaptersTitle: {
         marginLeft: 8,
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
         color: 'rgba(255,131,0,1)',
     },
     chaptersCloseButton: {
@@ -210,20 +211,25 @@ export const playerStyles = StyleSheet.create({
         // borderRadius: 12,
         marginBottom: 6,
         borderLeftWidth: 5,
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderLeftColor: theme.chapterItemBorderColor,
+        backgroundColor: theme.chapterItem,
     },
     chapterItemActive: {
         // backgroundColor: '#f97316',
         borderLeftWidth: 5,
-        borderLeftColor: 'rgba(255,131,0,0.60)'
+        borderLeftColor: theme.chapterItemActive
     },
+    chapter:{
+        position:"absolute",
+        backgroundColor:theme.chapter,
+        width:300,
+        height:60,
+    },
+
     chapterIndex: {
         fontSize: 14,
-        color: '#aaa',
+        color: theme.chapterIndex,
         fontWeight: '600',
-    },
-    chapterIndexActive: {
-        // color: '#111827',
     },
     chapterDuration: {
         fontSize: 12,
@@ -236,6 +242,12 @@ export const playerStyles = StyleSheet.create({
         position: 'absolute',
         top: 10,
         right: 15,
+    },
+    thumbColor:{
+        color: theme.thumbColor
+    },
+    pencilIcon:{
+        color: theme.pencilIcon
     }
 });
 

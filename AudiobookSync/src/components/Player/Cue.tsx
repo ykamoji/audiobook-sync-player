@@ -1,8 +1,9 @@
 import {FC, useRef} from "react";
 import Animated, {SharedValue, useAnimatedStyle, withTiming} from "react-native-reanimated";
-import {playerStyles} from "../../utils/playerStyles.ts";
+import {PLAYER_STYLE} from "../../utils/playerStyles.ts";
 import {SubtitleCue} from "../../utils/types.ts";
 import {Pencil} from "lucide-react-native";
+import {useTheme} from "../../utils/themes.ts";
 
 export interface CueProps {
     cue: SubtitleCue;
@@ -22,11 +23,14 @@ export const Cue: FC<CueProps> = ({
                                  }) => {
 
 
+    const playerStyles = PLAYER_STYLE(useTheme())
+
 
         const animatedTextStyle =  useAnimatedStyle(() => {
             const isActive = index === currentCueIndexSV.value;
             return {
-                color: withTiming(isActive ? '#f97316' : '#9ca3af', { duration: 50 }),
+                color: withTiming(isActive ? playerStyles.cueTextActive.color : playerStyles.cueText.color,
+                    { duration: 50 }),
                 fontFamily: isActive ? 'CabinCondensed-Semibold' : 'CabinCondensed-Medium',
                 marginLeft: withTiming(isActive ? 5 : 0, { duration: 50})
             };
@@ -71,7 +75,7 @@ export const Cue: FC<CueProps> = ({
                     {cue.text}
                 </Animated.Text>
                 <Animated.View style={[playerStyles.edited, animatedPencilStyle]}>
-                    <Pencil size={"8"} stroke={"orange"}/>
+                    <Pencil size={"8"}  stroke={playerStyles.pencilIcon.color}/>
                 </Animated.View>
             </Animated.View>
     );

@@ -43,7 +43,7 @@ export const MODEL_STYLES = (theme:any) => StyleSheet.create({
         color: theme.modelHeaderText,
     },
     closeText: {
-        color: "#ccc",
+        color: theme.closeText,
     },
     section: {
         marginBottom: 16,
@@ -56,7 +56,7 @@ export const MODEL_STYLES = (theme:any) => StyleSheet.create({
     },
     input: {
         color: theme.inputText,
-        backgroundColor: theme.inputColor
+        backgroundColor: theme.inputBgColor
     },
     primaryButton: {
         backgroundColor: "#ff8300",
