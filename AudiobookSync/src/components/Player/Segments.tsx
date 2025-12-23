@@ -69,8 +69,8 @@ export const Segments:FC<SegmentProps> = ({
                      onClose={() => setShowSegments(false)}>
 
             <View style={[playerStyles.chaptersSheet, {}]}>
-                <View style={playerStyles.chaptersHeader} onTouchEndCapture={()=> setShowEditedCues(p=>!p)}>
-                    <View style={playerStyles.chaptersHeaderLeft}>
+                <View style={playerStyles.chaptersHeader}>
+                    <View style={playerStyles.chaptersHeaderLeft} onTouchEndCapture={()=> setShowEditedCues(p=>!p)}>
                         <Switch style={{ }}
                                 theme={{
                                     isV3: true,

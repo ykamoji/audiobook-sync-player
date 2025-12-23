@@ -363,8 +363,8 @@ const STYLES = (theme:any) => StyleSheet.create({
     },
     selectToggleText: {
         fontSize: 14,
-        color: '#f97316',
-        fontWeight: '600',
+        color: theme.selectToggleText,
+        fontWeight: 'bold',
     },
     saveButton: {
         flexDirection: 'row',
@@ -382,7 +382,7 @@ const STYLES = (theme:any) => StyleSheet.create({
         flex: 1,
     },
     listContent: {
-        paddingBottom: 80,
+        paddingBottom: 100,
     },
     iconButton: {
         padding: 6,

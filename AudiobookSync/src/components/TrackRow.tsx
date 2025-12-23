@@ -303,7 +303,7 @@ const STYLES = (theme:any) => StyleSheet.create({
 
     progressBarFill: {
         height: "100%",
-        backgroundColor: "#FF8300",
+        backgroundColor: theme.progressBarFill,
     },
 
     completedBar: {
@@ -339,7 +339,7 @@ const STYLES = (theme:any) => StyleSheet.create({
     },
 
     playlistBadge: {
-        color: "#FF8300",
+        color: theme.playlistBadge,
         opacity: theme.playlistBadgeOpacity,
         fontSize: 10,
         marginLeft: 6,

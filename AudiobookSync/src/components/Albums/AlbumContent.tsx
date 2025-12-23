@@ -160,19 +160,17 @@ export const AlbumContent: FC<AlbumContentProps> = ({
                         >
                             <ChevronLeftIcon size={20} color={styles.iconButton.color}/>
                         </TouchableOpacity>
-                        <Text
-                            style={styles.detailTitle}
-                            numberOfLines={1}
-                        >
-                            {selectedPlaylist?.name}
-                        </Text>
                         <TouchableOpacity
+                            activeOpacity={0.8}
                             onPress={() => {
-                                playlistNameChange();
-                            }}
-                            style={styles.iconButton}
-                        >
-                            <PencilIcon size={14} color={styles.iconButton.color}/>
+                            playlistNameChange();
+                        }}>
+                            <Text
+                                style={styles.detailTitle}
+                                numberOfLines={1}
+                            >
+                                {selectedPlaylist?.name}
+                            </Text>
                         </TouchableOpacity>
                     </View>
 

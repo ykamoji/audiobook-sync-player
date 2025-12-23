@@ -88,7 +88,7 @@ export const Albums : FC<AlbumsProps> = ({
                         style={styles.createPlaylistButton}
                         activeOpacity={0.8}
                     >
-                        <PlusIcon size={22} color="#f97316" />
+                        <PlusIcon size={22} color={styles.createPlaylistText.color} />
                         <Text style={styles.createPlaylistText}>Create New Playlist</Text>
                     </TouchableOpacity>
                 }

@@ -320,12 +320,6 @@ const MainContent: React.FC = () => {
             <Animated.View style={[styles.bottomBar, bottomStyle]}>
                 <View style={styles.tabRow}>
                     <TabButton
-                        label="Sync"
-                        icon={RefreshCw}
-                        active={view === "setup"}
-                        onPress={() => setView("setup")}
-                    />
-                    <TabButton
                         label="Playlists"
                         icon={ListMusic}
                         active={view === "albums"}
@@ -336,6 +330,12 @@ const MainContent: React.FC = () => {
                         icon={Library}
                         active={view === "library"}
                         onPress={() => setView("library")}
+                    />
+                    <TabButton
+                        label="Sync"
+                        icon={RefreshCw}
+                        active={view === "setup"}
+                        onPress={() => setView("setup")}
                     />
                 </View>
             </Animated.View>

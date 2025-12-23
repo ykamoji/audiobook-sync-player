@@ -16,7 +16,7 @@ type Layer = {
 
 export const Thumbnail: React.FC<ThumbnailProps> = ({
                                                         images,
-                                                        intervalMs = 4000,
+                                                        intervalMs = 8000,
                                                         fadeDurationMs = 450,
                                                     }) => {
     const [layers, setLayers] = useState<Layer[]>([]);

@@ -3,11 +3,11 @@ import { useColorScheme } from 'react-native';
 
 const bottom = {
     light:{
-        tabIconNonActive: '#888',
-        tabActiveIconColor: '#fff',
+        tabIconNonActive: '#777',
+        tabActiveIconColor: '#000',
         tabLabelColor: '#777',
-        tabLabelActive: '#fff',
-        bottomBarBorderColor: '#222',
+        tabLabelActive: '#000',
+        bottomBarBorderColor: '#ddd',
     },
     dark:{
         tabIconNonActive: '#888',
@@ -59,6 +59,7 @@ const library = {
         libraryMenuColor: '#222',
         libraryMenuBorderColor: "rgba(0,0,0,0.2)",
         libraryMoreColor: '#444',
+        selectToggleText: 'maroon'
     },
     dark: {
         libraryBgColor: '#050505',
@@ -68,6 +69,7 @@ const library = {
         libraryMenuColor: '#fff',
         libraryMenuBorderColor: "rgba(255,255,255,0.1)",
         libraryMoreColor: '#9ca3af',
+        selectToggleText: '#f97316'
     },
 }
 
@@ -79,9 +81,11 @@ const tracks = {
         trackIntro: "rgba(0,0,0,0.7)",
         progressBarBackground:"#999",
         playlistBadgeOpacity: 1,
+        playlistBadge:'maroon',
         playlistBadgeWeight:'700',
         selectedRow:"rgba(255,131,0,0.4)",
         selectedText:"#000",
+        progressBarFill:"maroon",
     },
     dark: {
         trackTitle:"#fff",
@@ -90,16 +94,18 @@ const tracks = {
         thumbnailMusic: '#ccc',
         progressBarBackground:"#444",
         playlistBadgeOpacity: 0.6,
+        playlistBadge:'#FF8300',
         playlistBadgeWeight:'400',
         selectedRow:"rgba(255,131,0,0.15)",
-        selectedText:"#FF8300"
+        selectedText:"#FF8300",
+        progressBarFill:"#FF8300",
     },
 }
 
 const albums = {
     light: {
-        createPlaylistButton:'rgba(249,115,22,1)',
-        createPlaylistText:'#f97316',
+        createPlaylistButton:'maroon',
+        createPlaylistText:'maroon',
         detailTitle:'#333'
     },
     dark: {

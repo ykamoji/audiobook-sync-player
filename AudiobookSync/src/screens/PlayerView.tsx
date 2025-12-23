@@ -1,5 +1,5 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
-import {Dimensions, Text, TouchableOpacity, View,} from 'react-native';
+import {Dimensions, Text, TouchableOpacity, useColorScheme, View,} from 'react-native';
 import {ExclusiveGesture, Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
 
 import Animated, {
@@ -295,6 +295,8 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         };
     });
 
+    const systemScheme = useColorScheme();
+
     // Main header/subtitle/controls fade in theme color as it collapses
     const bgStyle = useAnimatedStyle(() => {
         // Same shrink math you already trust
@@ -322,7 +324,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         const bgColor = interpolateColor(
             fastShrink,
             [0.60, 1],
-            ["rgb(0,0,0)", `rgba(${colorScheme.value},0.65)`],
+            ["rgb(0,0,0)", `rgba(${colorScheme.value},${ systemScheme === 'light' ? 1: 0.65 })`],
         )
 
         return {
@@ -607,12 +609,11 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     // ----------------------------------------------------
     // RENDER
     // ----------------------------------------------------
+    const playerStyles = PLAYER_STYLE(useTheme())
 
     if(!audioState.name){
         return <></>
     }
-
-    const playerStyles = PLAYER_STYLE(useTheme())
 
     return (
         <>

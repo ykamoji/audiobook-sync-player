@@ -117,7 +117,6 @@ export const PLAYER_STYLE = (theme:any) => StyleSheet.create({
         paddingTop: 8,
         paddingHorizontal: 8,
         paddingBottom: 4,
-        backgroundColor: theme.subtitlesContainer,
     },
     miniLeft: {
         flexDirection: 'row',
