@@ -2,14 +2,14 @@ import React, {Dispatch, useRef} from 'react';
 import { Library } from '../components/Library/Library.tsx';
 import RNFS from 'react-native-fs';
 import { Track, Playlist, AppData, ProgressData } from '../utils/types.ts';
-import { modelStyles } from "../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../utils/modelStyles.ts";
 import { saveToNativeFilesystem } from '../utils/persistence.ts';
+import { TextInput } from 'react-native-paper';
 import {
     Dimensions,
     Modal,
     ScrollView,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
     Keyboard,
@@ -24,6 +24,7 @@ import {clearAllSubtitleEdits, exportAllEditedSubtitlesParsed} from "../utils/su
 import {zip} from "react-native-zip-archive";
 import {Action, PlayerState} from "../context/PlayerContext.tsx";
 import {reloadSubtitleCues} from "../utils/mediaLoader.ts";
+import {useTheme} from "../utils/themes.ts";
 
 interface LibraryContainerProps {
     allTracks: Track[];
@@ -325,6 +326,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         );
     }
 
+    const modelStyles = MODEL_STYLES(useTheme())
 
     const renderPlaylistItem = (p: Playlist, isCurrent: boolean) => (
         <View key={p.id} style={modelStyles.playlistRow}>
@@ -332,7 +334,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                     onPress={() => {if(!isCurrent) changeAlbumActions('add', p.id)}}
                     style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
                     <View style={modelStyles.iconBox}>
-                        <ListIcon size={18} color="#bbb" />
+                        <ListIcon size={18} color={modelStyles.listIcon.color} />
                     </View>
                     <Text style={modelStyles.playlistName}>{p.name}</Text>
 
@@ -398,11 +400,18 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                         {/* Create New Playlist */}
                         <View style={modelStyles.section}>
                             <TextInput
-                                key={showModal ? "open" : "closed"}
-                                placeholder="New Playlist Name"
-                                placeholderTextColor="#888"
+                                label="Playlist Name"
+                                contentStyle={{
+                                    color: modelStyles.input.color, // text color
+                                }}
+                                theme={{
+                                    colors:{
+                                        primary: modelStyles.input.color, //  label color, active
+                                        onSurfaceVariant:modelStyles.input.color, // label color, inactive
+                                        surfaceVariant: modelStyles.input.backgroundColor, // background
+                                    }
+                                }}
                                 onChangeText={(val)=> (playlistChangeRef.current = val)}
-                                style={modelStyles.input}
                             />
 
                             <TouchableOpacity

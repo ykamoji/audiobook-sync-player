@@ -12,6 +12,7 @@ import {
 import {Forward10Icon, Rewind10Icon} from "../../services/Icons.tsx";
 import {SharedValue} from "react-native-reanimated";
 import {ExclusiveGesture} from "react-native-gesture-handler";
+import {useTheme} from "../../utils/themes.ts";
 
 interface ControlsProps {
     isPlaying: boolean;
@@ -49,6 +50,8 @@ export const Controls: React.FC<ControlsProps> = ({
                                                       registerGesture
                                                   }) => {
 
+    const styles = STYLES(useTheme())
+
     return (
         <View style={styles.root}>
 
@@ -75,7 +78,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Left – Chapters */}
                 <TouchableOpacity onPress={onOpenChapters} style={styles.sideButton}>
-                    <LucideMenu size={22} color="#aaa" />
+                    <LucideMenu size={22} color={styles.sideIcon.color} />
                 </TouchableOpacity>
 
                 {/* Previous */}
@@ -84,7 +87,7 @@ export const Controls: React.FC<ControlsProps> = ({
                     onPress={onPrevious}
                     style={[styles.smallControl, {paddingTop:10} , !hasPrevious && styles.disabled]}
                 >
-                    <SkipBackIcon size={24} style={{marginLeft:10}} color="#ddd" />
+                    <SkipBackIcon size={24} style={{marginLeft:10}} color={styles.smallIcon.color} />
                 </TouchableOpacity>
 
                 {/* Rewind 10 */}
@@ -95,9 +98,9 @@ export const Controls: React.FC<ControlsProps> = ({
                 {/* Play / Pause */}
                 <TouchableOpacity onPress={onPlayPause} style={styles.playButton}>
                     {isPlaying ? (
-                        <PauseIcon size={30} color="#000" />
+                        <PauseIcon size={30} color={styles.playIcon.color} />
                     ) : (
-                        <PlayIcon size={30} color="#000" />
+                        <PlayIcon size={30} color={styles.playIcon.color} />
                     )}
                 </TouchableOpacity>
 
@@ -112,31 +115,28 @@ export const Controls: React.FC<ControlsProps> = ({
                     onPress={onNext}
                     style={[styles.smallControl,  {paddingTop:10}, !hasNext && styles.disabled]}
                 >
-                    <SkipForwardIcon size={24} color="#ddd" />
+                    <SkipForwardIcon size={24} color={styles.smallIcon.color} />
                 </TouchableOpacity>
 
                 {/* Metadata */}
                 <TouchableOpacity onPress={onOpenMetadata} style={styles.sideButton}>
-                    <MoreHorizontalIcon size={22} color="#aaa" />
+                    <MoreHorizontalIcon size={22} color={styles.sideIcon.color} />
                 </TouchableOpacity>
             </View>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     root: {
         width: '100%',
-        // paddingVertical: 12,
         paddingHorizontal: 8,
-        paddingTop:5
+        paddingTop:5,
     },
 
     sliderContainer: {
-        // paddingTop: 30,
         paddingBottom:15,
         width: '100%',
-        // backgroundColor: '#fff',
     },
 
     controlsRow: {
@@ -149,30 +149,39 @@ const styles = StyleSheet.create({
 
     sideButton: {
         padding: 8,
-        // backgroundColor:"white"
+    },
+
+    sideIcon:{
+        color: theme.sideIcon,
     },
 
     smallControl: {
         padding: 6,
         height: 48,
         width: 48,
-        // backgroundColor:"white"
+    },
+
+    smallIcon:{
+        color: theme.smallIcon,
     },
 
     playButton: {
         width: 60,
         height: 60,
         borderRadius: 60,
-        backgroundColor: '#fff',
+        backgroundColor: theme.playButton,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+
+    playIcon:{
+        color: theme.playIcon,
     },
 
     disabled: {
         opacity: 0.6,
     },
     markerContainer: {
-
         position: 'relative',
         top: 12.5,
         zIndex: 10,

@@ -1,12 +1,14 @@
-import {FlatList, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {FlatList, Modal, Text, TouchableOpacity, View} from "react-native";
+import {TextInput} from "react-native-paper";
 import {PlaylistCard} from "./PlaylistCard.tsx";
 import {PlusIcon} from "lucide-react-native";
 import React, {FC, useRef} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../../utils/types.ts";
-import {modelStyles} from "../../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import Toast from 'react-native-toast-message';
+import {useTheme} from "../../utils/themes.ts";
 
 interface AlbumsProps {
     playlists: Playlist[];
@@ -60,6 +62,10 @@ export const Albums : FC<AlbumsProps> = ({
 
     };
 
+    const modelStyles = MODEL_STYLES(useTheme())
+
+    const styles = STYLES(useTheme())
+
     return (
         <>
       {closeAlbums && (<>
@@ -82,7 +88,7 @@ export const Albums : FC<AlbumsProps> = ({
                         style={styles.createPlaylistButton}
                         activeOpacity={0.8}
                     >
-                        <PlusIcon size={22} color="#f97316" />
+                        <PlusIcon size={22} color={styles.createPlaylistText.color} />
                         <Text style={styles.createPlaylistText}>Create New Playlist</Text>
                     </TouchableOpacity>
                 }
@@ -97,7 +103,7 @@ export const Albums : FC<AlbumsProps> = ({
                 }/>
                     <View style={modelStyles.modalContainer}>
                         <View style={modelStyles.headerRow}>
-                            <Text style={modelStyles.headerText}>Edit Playlist</Text>
+                            <Text style={modelStyles.headerText}>Add Playlist</Text>
                             <TouchableOpacity onPress={() => {
                                 newAlbumRef.current = ""
                                 setShowModal(false)
@@ -106,8 +112,17 @@ export const Albums : FC<AlbumsProps> = ({
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            placeholder="Playlist Name"
-                            placeholderTextColor="#888"
+                            label="Playlist Name"
+                            contentStyle={{
+                                color: modelStyles.input.color, // text color
+                            }}
+                            theme={{
+                                colors:{
+                                    primary: modelStyles.input.color, //  label color, active
+                                    onSurfaceVariant:modelStyles.input.color, // label color, inactive
+                                    surfaceVariant: modelStyles.input.backgroundColor, // background
+                                }
+                            }}
                             onChangeText={(val) => newAlbumRef.current = val}
                             style={[modelStyles.input, { marginVertical: 20 }]}
                         />
@@ -139,33 +154,28 @@ export const Albums : FC<AlbumsProps> = ({
     )
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     playlistsContainer: {
         flex: 1,
+        paddingBottom:90,
     },
     emptyPlaylists: {
         paddingVertical: 16,
         alignItems: 'center',
     },
     createPlaylistButton: {
-        marginTop: 18,
-        height: 72,
-        borderRadius: 12,
+        height: 50,
         borderWidth: 1,
-        borderColor: 'rgba(249,115,22,0.4)',
+        borderColor: theme.createPlaylistButton,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
-        gap: 8,
     } as any,
+
     createPlaylistText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#f97316',
-    },
-    emptyText: {
-        color: '#6b7280',
-        fontSize: 16,
+        fontWeight: '700',
+        color: theme.createPlaylistText,
     },
     playlistsListContent: {
         paddingHorizontal: 5,

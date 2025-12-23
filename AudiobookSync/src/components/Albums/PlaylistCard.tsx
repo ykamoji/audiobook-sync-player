@@ -8,6 +8,7 @@ import {
 import { Playlist, Track, ProgressData } from "../../utils/types.ts";
 import { MusicIcon } from "lucide-react-native";
 import {Thumbnail} from "./Thumbnail.tsx";
+import {useTheme} from "../../utils/themes.ts";
 
 interface PlaylistCardProps {
     playlist: Playlist;
@@ -46,22 +47,37 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
         };
     }, [allTracks, progressMap, playlist.trackNames]);
 
+    const shuffle = <T,>(arr: T[]): T[] => {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    };
+
+    const shuffledCovers = useMemo(() => {
+        return covers.length > 1 ? shuffle(covers) : covers;
+    }, [covers]);
+
+    const styles = STYLES(useTheme())
+
     return (
         <TouchableOpacity onPress={onClick} activeOpacity={0.85} style={styles.card}>
             {/* Cover Image */}
-            <View style={styles.coverContainer}>
                 {covers.length > 0 ? (
-                    <Thumbnail
-                        images={covers}
-                        intervalMs={4000}
-                        fadeDurationMs={300}
-                    />
+                        <View style={styles.coverContainer}>
+                            <Thumbnail
+                                images={shuffledCovers}
+                                intervalMs={8000}
+                                fadeDurationMs={800}
+                            />
+                        </View>
                 ) : (
                     <View style={styles.emptyCover}>
-                        <MusicIcon size={60} color="#999" />
+                        <MusicIcon size={60} color={styles.emptyCoverMusic.color} />
                     </View>
                 )}
-            </View>
 
             {/* Playlist Name + Progress */}
             <View style={styles.infoContainer}>
@@ -84,9 +100,9 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     card: {
-        marginBottom: 16,
+        marginVertical: 20,
         width: "100%",
     },
 
@@ -101,12 +117,14 @@ const styles = StyleSheet.create({
         height: "100%",
     },
 
+    emptyCoverMusic : {
+        color: theme.thumbnailMusic,
+    },
+
     emptyCover: {
-        width: "100%",
-        height: "100%",
+        opacity: 0.5,
         alignItems: "center",
         justifyContent: "center",
-        opacity: 0.2,
     },
 
     infoContainer: {
@@ -115,7 +133,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        color: "white",
+        color: theme.playlistTitle,
         fontSize: 20,
         fontWeight: "700",
     },
@@ -127,7 +145,7 @@ const styles = StyleSheet.create({
     },
 
     trackCount: {
-        color: "#888",
+        color: theme.trackCount,
         fontSize: 14,
     },
 
@@ -140,7 +158,7 @@ const styles = StyleSheet.create({
     },
 
     percentage: {
-        color: "#FF8300",
+        color: theme.createPlaylistText,
         fontSize: 12,
         fontWeight: "700",
     },

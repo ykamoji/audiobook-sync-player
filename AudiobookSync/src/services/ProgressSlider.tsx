@@ -3,6 +3,7 @@ import {useAnimatedReaction, useSharedValue, SharedValue, runOnJS} from 'react-n
 import {StyleSheet, Text, View} from "react-native";
 import {ControlSlider} from "./ControlSlider.tsx";
 import {ExclusiveGesture} from "react-native-gesture-handler";
+import {useTheme} from "../utils/themes.ts";
 
 type Props = {
     currentTimeSV: SharedValue<number>;
@@ -35,6 +36,8 @@ export const CurrentTime = forwardRef<CurrentTimeRef, CurrentTimeProps>(({curren
     useImperativeHandle(ref, () => ({
         setTime,
     }));
+
+    const styles = STYLES(useTheme())
 
     return <Text style={[styles.textTime, styles.leftTime]}>{formatTime(time)}</Text>
 });
@@ -104,6 +107,8 @@ export const ProgressSlider: FC<Props> = ({
         []
     );
 
+    const styles = STYLES(useTheme())
+
     return (
         <>
          <ControlSlider
@@ -120,7 +125,7 @@ export const ProgressSlider: FC<Props> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     timeRow: {
         flex:1,
     },
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         height: 10,
         top: 5,
-        color: '#aaa',
+        color: theme.cueText,
         fontSize: 11,
         fontWeight: '500',
     },

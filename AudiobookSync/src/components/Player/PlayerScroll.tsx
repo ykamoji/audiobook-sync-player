@@ -5,18 +5,19 @@ import {
     useSharedValue,
 } from "react-native-reanimated";
 import { FlashList } from "@shopify/flash-list";
-import {Keyboard, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {Keyboard, Modal, Text, TouchableOpacity, View} from "react-native";
 import {FC, useRef, useState} from "react";
-import {playerStyles} from "../../utils/playerStyles.ts";
+import {PLAYER_STYLE} from "../../utils/playerStyles.ts";
 import {findCueIndex} from "../../utils/mediaLoader.ts";
 import {SubtitleCue} from "../../utils/types.ts";
 import {Cue} from "./Cue.tsx";
 import {removeSubtitleEdit, saveSubtitleEdit} from "../../utils/subtitleEdits.ts";
-import {modelStyles} from "../../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../../utils/modelStyles.ts";
 import {Pressable} from "react-native-gesture-handler";
 import {usePlayerContext} from "../../context/PlayerContext.tsx";
 import {Toggle} from "../../services/Toggle.tsx";
-import { TextInput as PaperInput } from "react-native-paper"
+import { TextInput } from "react-native-paper"
+import {useTheme} from "../../utils/themes.ts";
 
 export interface PlayerScrollProps {
     displayedCues: SubtitleCue[];
@@ -121,9 +122,13 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
     }
 
     const dismissKeyboard = () => {
-        TextInput.State.currentlyFocusedInput()?.blur();
+        // TextInput.State.currentlyFocusedInput()?.blur();
         Keyboard.dismiss();
     };
+
+    const modelStyles = MODEL_STYLES(useTheme())
+
+    const playerStyles = PLAYER_STYLE(useTheme())
 
     return (
         <>
@@ -190,16 +195,25 @@ export const PlayerScroll: FC<PlayerScrollProps> = ({
                             <Text style={modelStyles.closeText}>Close</Text>
                         </TouchableOpacity>
                     </View>
-                    <PaperInput
+                    <TextInput
                         label="Cue"
                         defaultValue={cueTextRef.current}
                         multiline
                         dense
+                        contentStyle={{
+                            color: modelStyles.input.color, // text color
+                        }}
+                        theme={{
+                            colors:{
+                                primary: modelStyles.input.color, //  label color, active
+                                onSurfaceVariant:modelStyles.input.color, // label color, inactive
+                                surfaceVariant: modelStyles.input.backgroundColor, // background
+                            }
+                        }}
                         activeOutlineColor={"#ff8300"}
                         placeholder="Playlist Name"
-                        // placeholderTextColor="#888"
                         onChangeText={(val) => cueTextRef.current = val}
-                        style={[modelStyles.input, { height: 120, }]}
+                        style={[modelStyles.input, { }]}
                     />
                     <Toggle
                         label={""}

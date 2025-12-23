@@ -19,6 +19,7 @@ import { Track, Playlist, ProgressData } from "../utils/types";
 import {PlayingIndicator} from "../services/PlayingIndicator.tsx";
 import {runOnJS} from "react-native-reanimated";
 import {useStaticData} from "../hooks/useStaticData.ts";
+import {useTheme} from "../utils/themes.ts";
 
 interface TrackRowProps {
     track: Track;
@@ -59,6 +60,10 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                                                    style,
                                                    onOpenMenu
                                                }) => {
+
+
+    const styles = STYLES(useTheme())
+
 
     const rowRef = useRef<View>(null);
 
@@ -133,12 +138,11 @@ export const TrackRow: React.FC<TrackRowProps> = ({
             <GestureDetector gesture={Gesture.Exclusive(doubleTap, singleTap)}>
             <TouchableOpacity
                 style={[styles.mainRow, isSelected && styles.selectedRow]}
-                // onPress={()=> handlePress(1)}
                 onLongPress={() => {
                     onLongPress();
                     onToggleSelection(track.id);
                 }}
-                activeOpacity={0.5}
+                activeOpacity={0.8}
             >
                 {/* Thumbnail / Checkbox */}
                 <View style={styles.thumbnailBox}>
@@ -155,7 +159,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                             resizeMode="cover"
                         />
                     ) : (
-                        <MusicIcon size={28} color="#ccc" />
+                        <MusicIcon size={28} color={styles.thumbnailMusic.color} />
                     )}
                 </View>
 
@@ -217,7 +221,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
                     onPress={openMenu}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <MoreHorizontalIcon size={22} color="#aaa" />
+                    <MoreHorizontalIcon size={22} color={styles.moreIcon.color} />
                 </TouchableOpacity>
             )}
         </View>
@@ -225,7 +229,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({
 };
 
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     rowContainer: {
         width: "100%",
         paddingVertical: 4,
@@ -234,20 +238,19 @@ const styles = StyleSheet.create({
     mainRow: {
         flexDirection: "row",
         alignItems: "flex-end",
-        // backgroundColor: "#1a1a1a",
         padding: 12,
         borderRadius: 10,
     },
 
     selectedRow: {
-        backgroundColor: "rgba(255,131,0,0.15)",
+        backgroundColor: theme.selectedRow,
     },
 
     thumbnailBox: {
         width: 65,
         height: 65,
         borderRadius: 6,
-        backgroundColor: "#333",
+        backgroundColor: theme.thumbnailBoxColor,
         justifyContent: "center",
         alignItems: "center",
         overflow: "hidden",
@@ -259,24 +262,28 @@ const styles = StyleSheet.create({
         height: "100%",
     },
 
+    thumbnailMusic: {
+        color: theme.thumbnailMusic
+    },
+
     infoBox: {
         flex: 1,
     },
 
     trackTitle: {
-        color: "white",
+        color: theme.trackTitle,
         fontSize: 14,
         fontWeight: "600",
     },
 
     trackIntro:{
-      color: "rgba(255,255,255,0.7)",
+      color: theme.trackIntro,
       marginTop:5,
       fontSize: 10,
     },
 
     selectedText: {
-        color: "#FF8300",
+        color: theme.selectedText,
     },
 
     metaRow: {
@@ -288,14 +295,14 @@ const styles = StyleSheet.create({
 
     progressBarBackground: {
         height: 1,
-        backgroundColor: "#444",
+        backgroundColor: theme.progressBarBackground,
         width: "80%",
         overflow: "hidden",
     },
 
     progressBarFill: {
         height: "100%",
-        backgroundColor: "#FF8300",
+        backgroundColor: theme.progressBarFill,
     },
 
     completedBar: {
@@ -313,7 +320,7 @@ const styles = StyleSheet.create({
     },
 
     mediumText: {
-        color: "#aaa",
+        color: theme.trackIntro,
         fontSize: 10,
     },
 
@@ -326,11 +333,16 @@ const styles = StyleSheet.create({
         position: "absolute",
     },
 
+    moreIcon:{
+        color: theme.libraryMoreColor,
+    },
+
     playlistBadge: {
-        color: "#FF8300",
-        opacity: 0.6,
+        color: theme.playlistBadge,
+        opacity: theme.playlistBadgeOpacity,
         fontSize: 10,
         marginLeft: 6,
+        fontWeight: theme.playlistBadgeWeight,
     },
 
     menuButton: {

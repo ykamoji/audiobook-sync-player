@@ -1,11 +1,13 @@
-import {ActionSheetIOS, Modal, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {ActionSheetIOS, Modal, Text, TouchableOpacity, View} from "react-native";
 import React, {FC, useEffect, useRef, useState} from "react";
 import { StyleSheet} from "react-native";
 import {Playlist, ProgressData, Track} from "../utils/types.ts";
-import {modelStyles} from "../utils/modelStyles.ts";
+import {MODEL_STYLES} from "../utils/modelStyles.ts";
 import {Albums} from "../components/Albums/Albums.tsx";
 import {AlbumContent} from "../components/Albums/AlbumContent.tsx";
 import {Pressable} from "react-native-gesture-handler";
+import {useTheme} from "../utils/themes.ts";
+import {TextInput } from 'react-native-paper'
 
 interface AlbumsContainerProps {
     allTracks: Track[];
@@ -110,6 +112,8 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
         );
     };
 
+    const modelStyles = MODEL_STYLES(useTheme())
+
     return (<>
         <View style={[
             styles.container,
@@ -150,12 +154,20 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
                 <View style={modelStyles.modalContainer}>
                     <Text style={modelStyles.headerText}>Rename Playlist</Text>
                     <TextInput
-                        placeholder="New Playlist Name"
-                        placeholderTextColor="#888"
+                        label="New Playlist Name"
+                        contentStyle={{
+                            color: modelStyles.input.color, // text color
+                        }}
+                        theme={{
+                            colors:{
+                                primary: modelStyles.input.color, //  label color, active
+                                onSurfaceVariant:modelStyles.input.color, // label color, inactive
+                                surfaceVariant: modelStyles.input.backgroundColor, // background
+                            }
+                        }}
                         defaultValue={selectedPlaylist?.name}
                         onChangeText={(val)=> renameAlbumRef.current = val}
                         style={[modelStyles.input, { marginVertical: 20 }]}
-                        autoFocus
                     />
 
                     <View style={modelStyles.buttonRow}>
