@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import {FolderIcon, HeadphonesIcon} from 'lucide-react-native';
+import {useTheme} from "../utils/themes.ts";
 
 interface SetupProps {
     onDirectoryUpload: () => void; // no event needed now
@@ -11,6 +12,8 @@ export const Setup: React.FC<SetupProps> = ({
                                                 onDirectoryUpload,
                                                 isLoading
                                             }) => {
+
+    const styles = STYLE(useTheme());
 
     return (
         <View style={styles.container}>
@@ -42,10 +45,10 @@ export const Setup: React.FC<SetupProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const STYLE = (theme:any)=> StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0d0d0d',
+        backgroundColor: theme.setupBgColor,
         padding: 24,
         justifyContent: 'center',
         alignItems: 'center'
@@ -59,7 +62,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#fff',
+        color: theme.setupTitleColor,
         marginTop: 16
     },
 
@@ -79,12 +82,12 @@ const styles = StyleSheet.create({
     uploadTitle: {
         fontSize: 22,
         fontWeight: '600',
-        color: '#fff'
+        color: theme.setupTitleColor
     },
 
     loadingText: {
         marginTop: 6,
         fontSize: 14,
-        color: '#aaa'
+        color: theme.setupTitleColor
     }
 });

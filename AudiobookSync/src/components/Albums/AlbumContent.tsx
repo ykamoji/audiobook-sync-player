@@ -5,11 +5,14 @@ import {ChevronLeftIcon, InfoIcon, PencilIcon, Trash, TrashIcon} from "lucide-re
 import {TrackRow} from "../TrackRow.tsx";
 import {FlashList} from "@shopify/flash-list";
 import {usePlayerContext} from "../../context/PlayerContext.tsx";
+import {useTheme} from "../../utils/themes.ts";
+import {Gesture, GestureDetector, PanGestureHandler} from "react-native-gesture-handler";
+import Animated, {runOnJS, useSharedValue} from "react-native-reanimated";
 
 interface AlbumContentProps {
     playlistTracks?: Track[];
     selectedPlaylist?: Playlist;
-    onBack?: () => void;
+    onBack: () => void;
     playlistNameChange: () => void;
     onViewMetadata: (name: string) => void;
     progressMap: Record<string, ProgressData>;
@@ -20,6 +23,7 @@ interface AlbumContentProps {
 }
 
 const ROW_HEIGHT = 88;
+const SWIPE_THRESHOLD = 60;
 
 type TrackMenuState = {
     visible: boolean;
@@ -146,90 +150,112 @@ export const AlbumContent: FC<AlbumContentProps> = ({
         ]
     );
 
+    const styles = STYLES(useTheme())
+
+    const hasTriggeredBack = useSharedValue(false);
+
+    const backSwipeGesture = Gesture.Pan()
+        .enabled(!isSelectionMode)
+        .hitSlop({ left: 0, width: 40 })
+        .activeOffsetX(25)
+        .failOffsetY([-30, 30])
+        .onBegin(() => {
+            hasTriggeredBack.value = false;
+        })
+        .onUpdate((event) => {
+            const fastSwipe = event.velocityX > 1100;
+            const longSwipe = event.translationX > SWIPE_THRESHOLD;
+
+            if (!hasTriggeredBack.value && (fastSwipe || longSwipe)) {
+                hasTriggeredBack.value = true;
+                runOnJS(onBack)();
+            }
+        });
+
     return (
         <>
-            <View style={styles.detailContainer}>
-                <View style={styles.detailHeader}>
-                    <View style={styles.detailTitleRow}>
-                        <TouchableOpacity
-                            onPress={onBack}
-                            style={styles.iconButton}
-                        >
-                            <ChevronLeftIcon size={20} color="#ffffff"/>
-                        </TouchableOpacity>
-                        <Text
-                            style={styles.detailTitle}
-                            numberOfLines={1}
-                        >
-                            {selectedPlaylist?.name}
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => {
+            <GestureDetector gesture={backSwipeGesture}>
+                <Animated.View style={styles.detailContainer}>
+                    <View style={styles.detailHeader}>
+                        <View style={styles.detailTitleRow}>
+                            <TouchableOpacity
+                                onPress={onBack}
+                                style={styles.iconButton}
+                            >
+                                <ChevronLeftIcon size={20} color={styles.iconButton.color}/>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => {
                                 playlistNameChange();
-                            }}
-                            style={styles.iconButton}
-                        >
-                            <PencilIcon size={18} color="#9ca3af"/>
-                        </TouchableOpacity>
-                    </View>
+                            }}>
+                                <Text
+                                    style={styles.detailTitle}
+                                    numberOfLines={1}
+                                >
+                                    {selectedPlaylist?.name}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
 
-                    <View style={styles.detailRightRow}>
-                        {selectedTrackIds.size > 0 && isSelectionMode && (
-                                <TouchableOpacity onPress={handleSelectAll}>
-                                    <Text style={styles.selectAllText}>
-                                        {selectedTrackIds.size === playlistTracks?.length ? 'Unselect All' : 'Select All'}
+                        <View style={styles.detailRightRow}>
+                            {selectedTrackIds.size > 0 && isSelectionMode && (
+                                    <TouchableOpacity onPress={handleSelectAll}>
+                                        <Text style={styles.selectAllText}>
+                                            {selectedTrackIds.size === playlistTracks?.length ? 'Unselect All' : 'Select All'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            {selectedTrackIds.size > 0 && (
+                                <TouchableOpacity
+                                    onPress={() => setIsSelectionMode((prev) => !prev)}
+                                >
+                                    <Text style={styles.selectToggleText}>
+                                        {isSelectionMode ? 'Cancel' : 'Select'}
                                     </Text>
                                 </TouchableOpacity>
                             )}
-                        {selectedTrackIds.size > 0 && (
-                            <TouchableOpacity
-                                onPress={() => setIsSelectionMode((prev) => !prev)}
-                            >
-                                <Text style={styles.selectToggleText}>
-                                    {isSelectionMode ? 'Cancel' : 'Select'}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    <TouchableOpacity
-                        onPress={handlePlaylistDelete}
-                        style={styles.iconButton}
-                    >
-                        <Trash size={18} color="#9ca3af"/>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handlePlaylistDelete}
+                            style={styles.iconButton}
+                        >
+                            <Trash size={18} color={styles.iconButton.color}/>
+                        </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
-
-                {playlistTracks?.length === 0 ? (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>This playlist is empty.</Text>
+                    <View style={[
+                        styles.bulkBar,
+                        selectedTrackIds.size === 0 && styles.bulkHidden
+                    ]}>
+                        <Text style={styles.bulkText}>{selectedTrackIds.size} selected</Text>
+                        <TouchableOpacity
+                            onPress={() => handleBulkAction}
+                            style={styles.bulkRemoveButton}
+                        >
+                            <Text style={styles.bulkRemoveText}>Remove from Playlist</Text>
+                        </TouchableOpacity>
                     </View>
-                ) : (
-                    <FlashList
-                        data={playlistTracks}
-                        estimatedItemSize={ROW_HEIGHT}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderTrackItem}
-                        extraData={{
-                            isSelectionMode,
-                            selectedTrackIds
-                        }}
-                        contentContainerStyle={styles.listContent}
-                    />
-                )}
-            </View>
-            <View style={[
-                styles.bulkBar,
-                selectedTrackIds.size === 0 && styles.bulkHidden
-            ]}>
-                <Text style={styles.bulkText}>{selectedTrackIds.size} selected</Text>
-                <TouchableOpacity
-                    onPress={() => handleBulkAction}
-                    style={styles.bulkRemoveButton}
-                >
-                    <Text style={styles.bulkRemoveText}>Remove from Playlist</Text>
-                </TouchableOpacity>
-            </View>
+                    {playlistTracks?.length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyText}>This playlist is empty.</Text>
+                        </View>
+                    ) : (
+                        <FlashList
+                            data={playlistTracks}
+                            estimatedItemSize={ROW_HEIGHT}
+                            decelerationRate={0.9}
+                            keyExtractor={(item) => item.id}
+                            renderItem={renderTrackItem}
+                            extraData={{
+                                isSelectionMode,
+                                selectedTrackIds
+                            }}
+                            contentContainerStyle={styles.listContent}
+                        />
+                    )}
+                </Animated.View>
+            </GestureDetector>
             <Modal
                 visible={trackMenu.visible}
                 transparent
@@ -241,7 +267,7 @@ export const AlbumContent: FC<AlbumContentProps> = ({
                     <TouchableOpacity style={styles.menuItem} onPress={()=>{
                         onRemoveTrack(trackMenu.track!, closeTrackMenu);
                     }}>
-                        <TrashIcon size={18} color={"#fff"} />
+                        <TrashIcon size={18} color={styles.menuIcon.color} />
                         <Text style={styles.menuText}>Remove</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -251,7 +277,7 @@ export const AlbumContent: FC<AlbumContentProps> = ({
                             closeTrackMenu();
                         }}
                     >
-                        <InfoIcon size={18} color="#fff" />
+                        <InfoIcon size={18} color={styles.menuIcon.color} />
                         <Text style={styles.menuText}>View Metadata</Text>
                     </TouchableOpacity>
                 </View>
@@ -260,12 +286,13 @@ export const AlbumContent: FC<AlbumContentProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     detailContainer: {
         flex: 1,
     },
     iconButton: {
         padding: 6,
+        color: theme.iconBox,
     },
     detailHeader: {
         paddingHorizontal: 16,
@@ -284,7 +311,7 @@ const styles = StyleSheet.create({
     detailTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#ffffff',
+        color: theme.detailTitle,
         maxWidth: 220,
     },
     detailRightRow: {
@@ -294,7 +321,7 @@ const styles = StyleSheet.create({
     } as any,
     selectText: {
         fontSize: 13,
-        color: '#f97316',
+        color: theme.libraryHeaderColor,
         fontWeight: '600',
     },
     emptyState: {
@@ -304,7 +331,7 @@ const styles = StyleSheet.create({
         paddingVertical: 40,
     },
     emptyText: {
-        color: '#6b7280',
+        color: theme.libraryEmptyText,
         fontSize: 16,
     },
     emptyFull: {
@@ -315,11 +342,10 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingBottom: 80,
-        paddingHorizontal: 12,
     },
     selectAllText: {
         fontSize: 13,
-        color: '#9ca3af',
+        color: theme.libraryHeaderColor,
     },
     selectToggleText: {
         fontSize: 13,
@@ -332,10 +358,8 @@ const styles = StyleSheet.create({
         gap: 6,
     } as any,
     bulkBar: {
-        position: 'absolute',
         left: 0,
         right: 0,
-        bottom: 0,
         paddingHorizontal: 16,
         paddingVertical: 10,
         backgroundColor: '#1f2933',
@@ -353,10 +377,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
         paddingVertical: 8,
         borderRadius: 999,
-        backgroundColor: 'rgba(248,113,113,0.12)',
+        backgroundColor: '#f97316',
     },
     bulkRemoveText: {
-        color: '#f87171',
+        color: '#000000',
         fontWeight: '600',
         fontSize: 13,
     },
@@ -383,14 +407,16 @@ const styles = StyleSheet.create({
         position: "absolute",
         right: 20,
         top: 120,
-        backgroundColor: "#2a2a2a",
+        backgroundColor: theme.libraryMenuBgColor,
         borderRadius: 0,
         paddingVertical: 6,
         width: 200,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
+        borderColor: theme.libraryMenuBorderColor,
     },
-
+    menuIcon:{
+        color: theme.libraryMenuColor,
+    },
     menuItem: {
         flexDirection: "row",
         alignItems: "center",
@@ -399,7 +425,7 @@ const styles = StyleSheet.create({
     },
 
     menuText: {
-        color: "white",
+        color: theme.libraryMenuColor,
         marginLeft: 10,
         fontSize: 16,
     },

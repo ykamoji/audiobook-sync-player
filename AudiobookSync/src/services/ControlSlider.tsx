@@ -8,6 +8,7 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle, withTiming, useDerivedValue, SharedValue, useAnimatedReaction, runOnJS,
 } from 'react-native-reanimated';
+import {useTheme} from "../utils/themes.ts";
 
 const HANDLE_SIZE = 50;
 const INNER_HANDLE_SIZE = 15;
@@ -109,6 +110,8 @@ export const ControlSlider: FC<ControlSliderProps> = ({
         registerGesture?.(sliderGesture);
     }, []);
 
+    const styles = STYLES(useTheme())
+
     return (<>
         <View style={styles.container}>
             <GestureDetector gesture={sliderGesture}>
@@ -116,14 +119,6 @@ export const ControlSlider: FC<ControlSliderProps> = ({
                     <View style={styles.sliderInterTrack}>
                         <Animated.View style={[styles.sliderFilledTrack, filledTrackStyle]} />
                         <Animated.View style={[styles.sliderHandleInner, innerThumbStyle]}/>
-                        {/*<View style={styles.markerContainer}>*/}
-                        {/*    {duration.value > 0 && segmentMarkers!.map((time, i) =>*/}
-                        {/*            <View*/}
-                        {/*                key={i}*/}
-                        {/*                style={[styles.marker, { left: `${(time / duration.value) * 100 }%` }]}*/}
-                        {/*            />*/}
-                        {/*    )}*/}
-                        {/*</View>*/}
                     </View>
                 </View>
             </GestureDetector>
@@ -132,7 +127,7 @@ export const ControlSlider: FC<ControlSliderProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     container: {
         justifyContent: 'center',
         alignItems: 'center',
@@ -154,7 +149,7 @@ const styles = StyleSheet.create({
     sliderInterTrack:{
         width: TRACK_WIDTH,
         height: 5,
-        backgroundColor: '#555',
+        backgroundColor: theme.sliderInterTrack,
     },
     sliderHandleInner:{
         width: INNER_HANDLE_SIZE,

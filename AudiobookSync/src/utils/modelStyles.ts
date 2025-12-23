@@ -1,7 +1,7 @@
 import {StyleSheet} from "react-native";
 
 
-export const modelStyles = StyleSheet.create({
+export const MODEL_STYLES = (theme:any) => StyleSheet.create({
     wrapper: {
         flex: 1,
         justifyContent: "center",
@@ -13,11 +13,11 @@ export const modelStyles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.8)"
+        backgroundColor: theme.backdrop
     },
     backdrop: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.8)",
+        backgroundColor: theme.backdrop,
         justifyContent: "center",
         alignItems: "center",
         padding: 20,
@@ -25,11 +25,11 @@ export const modelStyles = StyleSheet.create({
     modalContainer: {
         width: "100%",
         maxWidth: 380,
-        backgroundColor: "#2a2a2a",
+        backgroundColor: theme.modalContainerBgColor,
         borderRadius: 14,
         padding: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
+        borderColor: theme.modalContainerBorderColor,
     },
     headerRow: {
         flexDirection: "row",
@@ -40,27 +40,23 @@ export const modelStyles = StyleSheet.create({
     headerText: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#fff",
+        color: theme.modelHeaderText,
     },
     closeText: {
-        color: "#ccc",
+        color: theme.closeText,
     },
     section: {
         marginBottom: 16,
     },
     sectionLabel: {
         fontSize: 12,
-        color: "#888",
+        color: theme.sectionLabel,
         marginBottom: 6,
         marginTop: 10,
     },
     input: {
-        backgroundColor: "#aaa",
-        // borderColor: "#666",
-        borderWidth: 1,
-        padding: 12,
-        // color: "#fff",
-        borderRadius: 8,
+        color: theme.inputText,
+        backgroundColor: theme.inputBgColor
     },
     primaryButton: {
         backgroundColor: "#ff8300",
@@ -92,22 +88,25 @@ export const modelStyles = StyleSheet.create({
         alignItems: "center",
         padding: 10,
         borderRadius: 8,
-        backgroundColor: "rgba(255,255,255,0.05)",
+        backgroundColor: theme.playlistRow,
         marginBottom: 6,
     },
     iconBox: {
-        backgroundColor: "#111",
+        backgroundColor: theme.iconBox,
         padding: 6,
         borderRadius: 6,
         marginRight: 10,
     },
+    listIcon:{
+        color: theme.listIcon,
+    },
     playlistName: {
-        color: "#eee",
+        color: theme.playlistName,
         fontSize: 15,
         flex: 1,
     },
     trackCount: {
-        color: "#888",
+        color: theme.playlistName,
         fontSize: 12,
     },
     buttonRow: {

@@ -7,6 +7,7 @@ import Animated, {
     useSharedValue,
     withTiming
 } from "react-native-reanimated";
+import {useTheme} from "../utils/themes.ts";
 
 interface toggleProps {
     label:string,
@@ -44,6 +45,8 @@ export const Toggle:FC<toggleProps> = ({
         });
     };
 
+    const styles = STYLES(useTheme())
+
     return (
         <Pressable onPress={toggle} style={styles.container}>
             <Animated.View style={styles.box}>
@@ -56,7 +59,7 @@ export const Toggle:FC<toggleProps> = ({
     );
 }
 
-const styles = StyleSheet.create({
+const STYLES = (theme:any) => StyleSheet.create({
     container: {
         alignItems: "flex-end",
         paddingHorizontal: 5,
@@ -67,8 +70,8 @@ const styles = StyleSheet.create({
         height: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,131,0,0.5)',
+        borderWidth: theme.checkboxWidth,
+        borderColor: theme.checkbox,
     },
     label: {
         marginLeft: 12,

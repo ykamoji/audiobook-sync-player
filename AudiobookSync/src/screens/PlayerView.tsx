@@ -1,5 +1,5 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
-import {Dimensions, Text, TouchableOpacity, View,} from 'react-native';
+import {Dimensions, Text, TouchableOpacity, useColorScheme, View,} from 'react-native';
 import {ExclusiveGesture, Gesture, GestureDetector, Pressable,} from 'react-native-gesture-handler';
 
 import Animated, {
@@ -18,13 +18,14 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Controls} from '../components/Player/Controls.tsx';
 import {ChevronDownIcon, PauseIcon, PlayIcon,} from 'lucide-react-native';
 import {PlayerMode} from "../AppContent.tsx";
-import {miniStyles, playerStyles} from "../utils/playerStyles.ts";
+import {miniStyles, PLAYER_STYLE} from "../utils/playerStyles.ts";
 import {useStaticData} from "../hooks/useStaticData.ts";
 import {usePlayer} from "../hooks/usePlayer.ts";
 import {ProgressData, Track} from "../utils/types.ts";
 import {PlayerScroll} from "../components/Player/PlayerScroll.tsx";
 import {Segments} from "../components/Player/Segments.tsx";
 import {Media, MediaHandle} from "../components/Player/Media.tsx";
+import {useTheme} from "../utils/themes.ts";
 
 interface PlayerViewProps {
     playerMode: PlayerMode;
@@ -294,6 +295,8 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         };
     });
 
+    const systemScheme = useColorScheme();
+
     // Main header/subtitle/controls fade in theme color as it collapses
     const bgStyle = useAnimatedStyle(() => {
         // Same shrink math you already trust
@@ -321,7 +324,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
         const bgColor = interpolateColor(
             fastShrink,
             [0.60, 1],
-            ["rgb(0,0,0)", `rgba(${colorScheme.value},0.65)`],
+            ["rgb(0,0,0)", `rgba(${colorScheme.value},${ systemScheme === 'light' ? 1: 0.65 })`],
         )
 
         return {
@@ -606,6 +609,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
     // ----------------------------------------------------
     // RENDER
     // ----------------------------------------------------
+    const playerStyles = PLAYER_STYLE(useTheme())
 
     if(!audioState.name){
         return <></>
@@ -776,7 +780,7 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
                 changeSegment={changeSegment}
                 setShowSegments={setShowSegments}
                 duration={duration.value}
-                segmentHistory={progressMapRef.current[audioState.name].segmentHistory!}
+                segmentHistory={progressMapRef.current[audioState.name]?.segmentHistory!}
                 currentTime={currentTimeSV.value}
                 showSegments={showSegments}
                 subtitleState={subtitleState}
