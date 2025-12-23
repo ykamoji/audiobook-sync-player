@@ -138,7 +138,6 @@ export const TrackRow: React.FC<TrackRowProps> = ({
             <GestureDetector gesture={Gesture.Exclusive(doubleTap, singleTap)}>
             <TouchableOpacity
                 style={[styles.mainRow, isSelected && styles.selectedRow]}
-                // onPress={()=> handlePress(1)}
                 onLongPress={() => {
                     onLongPress();
                     onToggleSelection(track.id);

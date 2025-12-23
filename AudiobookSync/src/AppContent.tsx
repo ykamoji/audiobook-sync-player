@@ -6,7 +6,7 @@ import {pickDirectory} from "react-native-document-picker";
 import {Setup} from "./screens/Setup.tsx";
 import {LibraryContainer} from "./screens/LibraryContainer.tsx";
 import {MetadataPanel, MetadataPanelData,} from "./components/MetadataPanel";
-import Animated, {useAnimatedStyle, useSharedValue, withSpring,} from "react-native-reanimated";
+import Animated, {useAnimatedStyle, useSharedValue, withSpring, withTiming,} from "react-native-reanimated";
 import {Provider as PaperProvider} from 'react-native-paper';
 import {AppData, ProgressData, Track} from "./utils/types";
 import {checkLocalStorageAvailable, loadInitialNativeMetadata, savePlaylist} from "./utils/persistence";
@@ -350,18 +350,35 @@ const TabButton: React.FC<{
     onPress: () => void;
 }> = ({ label, icon: Icon, active, onPress }) => {
     const styles = STYLE(useTheme());
+
+    const scale = useSharedValue(1);
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePress = () => {
+        scale.value = withTiming(1.3, { duration: 120 }, () => {
+            scale.value = withSpring(1, {
+                damping: 12,
+                stiffness: 180,
+            });
+        });
+        onPress();
+    };
+
     return(
-        <TouchableOpacity style={styles.tabButton} onPress={onPress}  activeOpacity={0.8}>
-            <View style={styles.iconRow}>
+        <TouchableOpacity style={styles.tabButton} onPress={handlePress} activeOpacity={0.8}>
+            <Animated.View style={[styles.iconRow, animatedIconStyle]}>
                 <Icon
                     size={20}
                     color={active ? styles.tabIconActive.color : styles.tabIconNonActive.color}
-                    style={{ marginRight: 6 }}
+                    style={{marginRight: 6}}
                 />
                 <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
                     {label}
                 </Text>
-            </View>
+            </Animated.View>
         </TouchableOpacity>
     );
 }
