@@ -141,6 +141,12 @@ export const PlayerView = forwardRef<PlayerViewRef, PlayerViewProps>(({
 
             return;
         }
+        else{
+            if(audioState.mediaPath && fullImage){
+                setFullImage(false);
+            }
+        }
+
     }, [playerMode, audioState.name]);
 
 

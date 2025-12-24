@@ -363,7 +363,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             onSelectTrack={onSelectTrack}
             onViewMetadata={onViewMetadata}
 
-            // Exporting
+            // Menu actions
             onSaveData={handleSaveData}
             onExportCues={onExportCues}
             onCleanCues={onCleanCues}

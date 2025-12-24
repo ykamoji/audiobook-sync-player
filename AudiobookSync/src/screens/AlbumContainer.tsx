@@ -150,7 +150,8 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
             />
         </View>
         <Modal visible={showModal} transparent animationType="slide">
-            <Pressable style={modelStyles.backdrop} onPress={()=> setShowModal(false)}>
+            <View style={modelStyles.wrapper}>
+            <Pressable style={modelStyles.backdropWrapper} onPress={()=> setShowModal(false)}/>
                 <View style={modelStyles.modalContainer}>
                     <Text style={modelStyles.headerText}>Rename Playlist</Text>
                     <TextInput
@@ -183,6 +184,7 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
                                 playlistManager.updatePlaylistName(selectedPlaylistId!, renameAlbumRef.current)
                                 renameAlbumRef.current = ""
                                 setShowModal(false)
+                                onUpdate()
                             }}
                             style={[
                                 modelStyles.primaryButton,
@@ -193,7 +195,7 @@ export const AlbumContainer : FC<AlbumsContainerProps> = ({
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Pressable>
+            </View>
         </Modal>
     </>)
 };
