@@ -9,12 +9,15 @@ import {
 import { Track, Playlist, ProgressData } from '../../utils/types.ts';
 import { SpinnerIcon } from '../../services/SpinnerIcon.tsx';
 import { TrackRow } from '../TrackRow.tsx';
-import {MD3LightTheme, Menu,} from "react-native-paper";
+import {Menu} from "react-native-paper";
 import {
     BrushCleaningIcon,
     Download,
-    DownloadCloudIcon, InfoIcon,
-    MoreVertical, PencilIcon,
+    DownloadCloudIcon,
+    Eraser,
+    InfoIcon,
+    MoreVertical,
+    PencilIcon,
     Save,
     Trash2
 } from "lucide-react-native";
@@ -32,7 +35,7 @@ interface LibraryProps {
     onExportCues: () => void;
     onCleanCues: () => void;
     onDownloadData: () => void;
-    onClearStorage: () => void;
+    onClearStorage: (option:number) => void;
     exportSuccess: boolean;
     onViewMetadata: (name: string) => void;
 }
@@ -226,7 +229,7 @@ export const Library: React.FC<LibraryProps> = ({
                                 onExportCues();
                             }}
                             titleStyle={{ color: "#050505" }}
-                            title="Cues"
+                            title="Export Cues"
                             leadingIcon={() => <DownloadCloudIcon size={18} color="#0A84FF" />}
                         />
 
@@ -237,10 +240,19 @@ export const Library: React.FC<LibraryProps> = ({
                                 onDownloadData();
                             }}
                             titleStyle={{ color: "#050505" }}
-                            title="Metadata"
+                            title="Export Metadata"
                             leadingIcon={() => <Download size={18} color="#0A84FF" />}
                         />
 
+                        <Menu.Item
+                            onPress={() => {
+                                closeMenu();
+                                onClearStorage(1);
+                            }}
+                            title="Clean App Data"
+                            titleStyle={{ color: "#050505" }}
+                            leadingIcon={() => <Eraser size={18} color="orange" />}
+                        />
 
                         <Menu.Item
                             onPress={() => {
@@ -248,17 +260,16 @@ export const Library: React.FC<LibraryProps> = ({
                                 onCleanCues();
                             }}
                             titleStyle={{ color: "#050505" }}
-                            title="Cues"
+                            title="Clear Cues"
                             leadingIcon={() => <BrushCleaningIcon size={18} color="#FF3B30" />}
                         />
-
 
                         <Menu.Item
                             onPress={() => {
                                 closeMenu();
-                                onClearStorage();
+                                onClearStorage(2);
                             }}
-                            title="Clear"
+                            title="Clear App Data"
                             titleStyle={{ color: "#050505" }}
                             leadingIcon={() => <Trash2 size={18} color="#FF3B30" />}
                         />

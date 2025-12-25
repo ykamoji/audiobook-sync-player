@@ -34,7 +34,7 @@ interface LibraryContainerProps {
     onSelectTrack: (track: Track, index: number, specificPlaylist?: Track[], option?:number) => void;
     onViewMetadata: (name: string) => void;
     onUpdate: () => void;
-    clearStorage: () => void;
+    clearStorage: (option:number) => void;
     playlistManager: {
         savedPlaylists: Playlist[];
         createPlaylist: (name: string, initialTracks: Track[]) => void;
@@ -83,7 +83,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                 setExportSuccess(false)
                 Toast.show({
                     type:"snackbar",
-                    text1:"Saved"
+                    text1:"App Data Saved"
                 });
             }, 1000);
         }
@@ -96,7 +96,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                 cancelButtonIndex: 0,
                 destructiveButtonIndex: 1,
                 userInterfaceStyle: 'dark',
-                message: "Are you sure you want to delete " + data + "?",
+                message: "Are you sure you want to " + data + "?",
             },
             (buttonIndex) => {
                 if (buttonIndex === 1) {
@@ -106,25 +106,31 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         );
     };
 
-    const onClearStorage = async () => {
+    const onClearStorage = async (option:number) => {
         try {
 
             const call = async() => {
-                await AsyncStorage.clear();
 
-                clearStorage()
+                if(option === 1){
+                    await AsyncStorage.removeItem('filePaths');
+                }else{
+                    await AsyncStorage.clear();
+                }
+
+                clearStorage(option)
 
                 setExportSuccess(true);
                 setTimeout(() => {
                     setExportSuccess(false)
                     Toast.show({
                         type:"snackbar",
-                        text1:"Storage cleared"
+                        text1: option === 1 ? "App data cleaned": "App Data deleted"
                     });
                 }, 1000);
             }
 
-            handleMenuDelete(call, "app data");
+
+            handleMenuDelete(call, option === 1 ? "clean app data" : "delete app data");
 
         } catch (err) {
             console.error("Clear error:", err);
@@ -164,7 +170,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
                 setExportSuccess(false)
                 Toast.show({
                     type:"snackbar",
-                    text1:"Data Exported"
+                    text1:"App Data Exported"
                 });
             }, 1000);
 
@@ -264,7 +270,7 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
         }
 
         try {
-            handleMenuDelete(call, "edited cues")
+            handleMenuDelete(call, "delete edited cues")
         }
         catch (err) {
             console.log(err);

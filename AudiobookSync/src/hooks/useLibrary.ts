@@ -6,7 +6,7 @@ import { scanNativePath } from '../utils/fileScanner';
 
 
 interface UseLibraryProps {
-    onMetadataLoaded: (data: AppData, tracks: Track[]) => void;
+    onMetadataLoaded: (data?: AppData, tracks?: Track[]) => Promise<void>;
     onUploadSuccess: () => void;
     onReloadFromStorage: () => Promise<boolean>;
 }
@@ -53,7 +53,7 @@ export const useLibrary = ({
                 const tracks = scan.tracks;
                 const appData = scan.appData;
 
-                if (appData) onMetadataLoaded(appData, tracks);
+                await onMetadataLoaded(appData, tracks);
 
                 setAllTracks(tracks)
 

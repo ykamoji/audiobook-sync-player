@@ -142,13 +142,7 @@ export const scanNativePath = async (
             subtitlePath:subtitlePath,
             coverPath: coverPath,
             mediaPath: mediaPath,
-            // colorScheme: colorMap.get(base) as Object ?? [255, 131, 0],
-            // audioSize: 0
         };
-
-        // getFileSize(path).then(size => {
-        //     trackData.audioSize = size;
-        // })
 
         tracks.push(trackData)
     });

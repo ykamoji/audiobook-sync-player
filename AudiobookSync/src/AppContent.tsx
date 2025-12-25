@@ -95,19 +95,27 @@ const MainContent: React.FC = () => {
         return true;
     };
 
-    const onMetadataLoaded = (data: AppData, tracks:Track[]) => {
+    const onMetadataLoaded = async (data?: AppData, tracks?:Track[]) => {
 
-        initProgress(data.audiobook_progress, tracks).then()
+        const {playlists, progress} = await loadInitialNativeMetadata()
 
-        if (data.audiobook_playlists) {
-            playlistManager.setSavedPlaylists(data.audiobook_playlists);
-            savePlaylist(data.audiobook_playlists).then();
+        const merged_playlists = data ? [...playlists, ...data.audiobook_playlists] : playlists;
+
+        const merged_progress = data ? {...progress, ...data.audiobook_progress} : progress;
+
+        initProgress(merged_progress, tracks!).then()
+
+        if (merged_playlists.length > 0) {
+            savePlaylist(merged_playlists).then();
+            playlistManager.setSavedPlaylists(prev => {
+                if(prev.length > 0) return [...prev, ...merged_playlists]
+                else return merged_playlists
+            });
         }
 
-        if(data.static){
+        if(data && data.static){
             updateStaticData(data.static)
         }
-
     };
 
     const loadStorage = async () => {
@@ -158,7 +166,7 @@ const MainContent: React.FC = () => {
 
     const { dispatch, state } = usePlayerContext();
 
-    const clearStorage = () => {
+    const clearStorage = (option:number) => {
 
         dispatch({
             type: "LOAD_TRACK",
@@ -171,6 +179,7 @@ const MainContent: React.FC = () => {
 
         playlistManager.setSavedPlaylists([]);
         clearProgress()
+
         setAllTracks([])
     }
 

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AppData, Playlist} from './types.ts';
+import {AppData, Playlist, ProgressData} from './types.ts';
 
 /**
  * Save metadata (progress, playlists, settings) to device storage.
@@ -40,6 +40,7 @@ export const checkLocalStorageAvailable = async () => {
 export const loadInitialNativeMetadata = async (): Promise<{
     playlists: Playlist[],
     filePaths: string[],
+    progress: Record<string, ProgressData>
 }> => {
     try {
         const storedPlaylists = await AsyncStorage.getItem("audiobook_playlists")
@@ -50,10 +51,14 @@ export const loadInitialNativeMetadata = async (): Promise<{
 
         const filePaths: string[] = reload_files !== null ? JSON.parse(reload_files) : []
 
-        return { playlists,  filePaths}
+        const storedProgress = await AsyncStorage.getItem("audiobook_progress")
+
+        const progress: Record<string, ProgressData> = storedProgress !== null ? JSON.parse(storedProgress): []
+
+        return { playlists,  filePaths, progress}
 
     } catch (e) {
         console.warn("Failed to load metadata", e);
-        return { playlists: [],  filePaths: [] }
+        return { playlists: [],  filePaths: [], progress:{} }
     }
 };

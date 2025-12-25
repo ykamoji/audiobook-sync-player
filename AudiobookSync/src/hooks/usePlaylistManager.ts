@@ -7,15 +7,12 @@ import { Playlist, Track } from '../utils/types'
 export const usePlaylistManager = (isStorageLoaded: boolean) => {
     const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
 
-    // Save playlists when they change
-    useEffect(() => {
-        if (!isStorageLoaded) return;
-
-        AsyncStorage.setItem(
+    const persistPlaylists = async (updated_playlist:Playlist[]) => {
+        await AsyncStorage.setItem(
             'audiobook_playlists',
-            JSON.stringify(savedPlaylists)
-        ).then();
-    }, [savedPlaylists, isStorageLoaded]);
+            JSON.stringify(updated_playlist)
+        )
+    }
 
     const isPlaylistNameTaken = (name: string) => {
         const lower = name.trim().toLowerCase();
@@ -30,33 +27,44 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
             trackNames: initialTracks.map(t => t.name),
             createdAt: Date.now(),
         };
-        setSavedPlaylists(prev => [...prev, newPlaylist]);
+        setSavedPlaylists(prev => {
+            const updated = [...prev, newPlaylist]
+            persistPlaylists(updated).then()
+            return updated;
+        });
     };
 
     const deletePlaylist = (playlistId: string) => {
-        setSavedPlaylists(prev => prev.filter(p => p.id !== playlistId));
+        setSavedPlaylists(prev => {
+            const updated = prev.filter(p => p.id !== playlistId);
+            persistPlaylists(updated).then();
+            return updated;
+        });
     };
 
     const updatePlaylistName = (playlistId: string, newName: string) => {
-        setSavedPlaylists(prev =>
-            prev.map(p => (p.id === playlistId ? { ...p, name: newName } : p))
-        );
+        setSavedPlaylists(prev => {
+            const updated = prev.map(p => (p.id === playlistId ? { ...p, name: newName } : p))
+            persistPlaylists(updated).then()
+            return updated;
+        });
     };
 
     const addToPlaylist = (playlistId: string, track: Track) => {
-        setSavedPlaylists(prev =>
-            prev.map(p => {
+        setSavedPlaylists(prev => {
+            const updated = prev.map(p => {
                 if (p.id !== playlistId) return p;
                 if (p.trackNames.includes(track.name)) return p;
-
                 return { ...p, trackNames: [...p.trackNames, track.name] };
-            })
-        );
+            });
+            persistPlaylists(updated).then();
+            return updated;
+        });
     };
 
     const addMultipleToPlaylist = (playlistId: string, tracks: Track[]) => {
-        setSavedPlaylists(prev =>
-            prev.map(p => {
+        setSavedPlaylists(prev => {
+            const updated = prev.map(p => {
                 if (p.id !== playlistId) return p;
 
                 const newNames = tracks
@@ -67,30 +75,37 @@ export const usePlaylistManager = (isStorageLoaded: boolean) => {
 
                 return { ...p, trackNames: [...p.trackNames, ...newNames] };
             })
-        );
+            persistPlaylists(updated).then()
+            return updated;
+        });
     };
 
     const removeFromPlaylist = (playlistId: string, trackName: string) => {
-        setSavedPlaylists(prev =>
-            prev.map(p =>
+        setSavedPlaylists(prev => {
+            const updated = prev.map(p =>
                 p.id === playlistId
                     ? { ...p, trackNames: p.trackNames.filter(n => n !== trackName) }
                     : p
-            )
-        );
+            );
+            persistPlaylists(updated).then()
+            return updated;
+        });
     };
 
     const removeMultipleFromPlaylist = (playlistId: string, trackNames: string[]) => {
-        setSavedPlaylists(prev =>
-            prev.map(p =>
+        setSavedPlaylists(prev => {
+           const updated = prev.map(p =>
                 p.id === playlistId
                     ? {
                         ...p,
                         trackNames: p.trackNames.filter(n => !trackNames.includes(n)),
                     }
                     : p
-            )
-        );
+            );
+            persistPlaylists(updated).then()
+           return updated;
+        });
+        persistPlaylists(savedPlaylists).then()
     };
 
     return {
