@@ -20,31 +20,31 @@ export const useProgressManager = () => {
 
     const initProgress = async (data: Record<string, ProgressData>, tracks:Track[]) => {
 
-        if(Object.entries(data).length > 0) {
-            persistProgress(data).then();
-            setProgressMap(data);
-        }
-        else {
-            initializeEmptyProgress(tracks);
-        }
-
+        const combinedProgress = initializeProgress(data, tracks);
+        persistProgress(combinedProgress).then();
+        setProgressMap(combinedProgress);
     }
 
-    const initializeEmptyProgress = (tracks:Track[]) => {
+    const initializeProgress = (data: Record<string, ProgressData>, tracks:Track[]) => {
 
-        const emptyProgress: Record<string, ProgressData> = {};
+        const combinedProgress: Record<string, ProgressData> = {};
 
         for (const track of tracks) {
-            emptyProgress[track.name] = {
-                currentTime: 0,
-                percentage: 0,
-                updatedAt: Date.now(),
-                segmentHistory: {}
-            };
+            if(data[track.name]){
+                combinedProgress[track.name] = data[track.name];
+            }
+            else{
+                combinedProgress[track.name] = {
+                    currentTime: 0,
+                    percentage: 0,
+                    updatedAt: Date.now(),
+                    segmentHistory: {}
+                };
+            }
+
         }
 
-        setProgressMap(emptyProgress);
-        persistProgress(emptyProgress).then();
+        return combinedProgress
     }
 
     const saveProgress = (
@@ -77,11 +77,10 @@ export const useProgressManager = () => {
     const reloadProgress = async (tracks:Track[]) => {
         try {
             const stored = await AsyncStorage.getItem('audiobook_progress');
-            if (stored && Object.entries(stored).length > 0) {
-                setProgressMap(JSON.parse(stored));
-            }
-            else{
-                initializeEmptyProgress(tracks);
+            if (stored) {
+                const parsed_stored:Record<string, ProgressData> = JSON.parse(stored)
+                const combinedProgress = initializeProgress(parsed_stored, tracks);
+                setProgressMap(combinedProgress);
             }
         } catch (e) {
             console.warn('Failed to load progress', e);
