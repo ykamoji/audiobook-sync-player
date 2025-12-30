@@ -137,7 +137,6 @@ const MainContent: React.FC = () => {
             await reloadProgress(resultTracks);
             setAllTracks(resultTracks);
             const characterPathMap = scan.characterPathMap
-            console.log("loadStorage characterPathMap", characterPathMap);
             await loadCharacters(characterPathMap);
 
         } catch (e) {

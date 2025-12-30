@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import {Animated, StyleSheet, Text, View} from "react-native";
 import uuid from "react-native-uuid";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 interface ThumbnailProps {
     images: string[];          // local or remote URIs
+    titles?: string[];          // additional titles
     intervalMs?: number;       // time between image switches
     fadeDurationMs?: number;   // cross-fade duration
 }
@@ -11,11 +13,14 @@ interface ThumbnailProps {
 type Layer = {
     id: string;
     uri: string;
+    title?: string;
     opacity: Animated.Value;
 };
 
+
 export const Thumbnail: React.FC<ThumbnailProps> = ({
                                                         images,
+                                                        titles,
                                                         intervalMs = 8000,
                                                         fadeDurationMs = 450,
                                                     }) => {
@@ -23,11 +28,13 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
     const indexRef = useRef(0);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const pushImage = (uri: string) => {
+    const insets = useSafeAreaInsets();
+
+    const pushImage = (uri: string, title?:string) => {
         const opacity = new Animated.Value(0);
         const id = uuid.v4().toString();
 
-        setLayers((prev) => [...prev, { id, uri, opacity }]);
+        setLayers((prev) => [...prev, { id, uri, opacity, title }]);
 
         Animated.timing(opacity, {
             toValue: 1,
@@ -44,13 +51,13 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
 
         // Seed first image immediately
         indexRef.current = 0;
-        pushImage(images[0]);
+        pushImage(images[0], titles && titles[0]);
 
         if (images.length === 1) return;
 
         intervalRef.current = setInterval(() => {
             indexRef.current = (indexRef.current + 1) % images.length;
-            pushImage(images[indexRef.current]);
+            pushImage(images[indexRef.current], titles && titles[indexRef.current]);
         }, intervalMs);
 
         return () => {
@@ -66,6 +73,7 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
     }
 
     return (
+        <>
         <View style={styles.container}>
             {layers.map((layer) => (
                 <Animated.Image
@@ -76,14 +84,26 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
                 />
             ))}
         </View>
+        {titles &&
+            <View style={[styles.titleBox,{top:insets.top}]}>
+                <Animated.Text
+                    key={layers[layers.length - 1].id}
+                    style={[styles.title, { opacity: layers[layers.length - 1].opacity }]}
+                >
+                    {layers[layers.length - 1].title}
+                </Animated.Text>
+            </View>
+        }
+        </>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#1a1a1a",
         overflow: "hidden",
+        position: "relative",
+        zIndex: 50,
     },
     placeholder: {
         flex: 1,
@@ -94,4 +114,15 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "100%",
     },
+    titleBox:{
+        position: "absolute",
+        left: 30,
+        top:100,
+        zIndex: 100,
+    },
+    title: {
+        color: '#f97316',
+        fontWeight: 'bold',
+        fontSize: 20,
+    }
 });
