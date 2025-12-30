@@ -55,7 +55,7 @@ export const loadInitialNativeMetadata = async (): Promise<{
 
         const progress: Record<string, ProgressData> = storedProgress !== null ? JSON.parse(storedProgress): []
 
-        return { playlists,  filePaths, progress}
+        return { playlists,  filePaths, progress }
 
     } catch (e) {
         console.warn("Failed to load metadata", e);

@@ -7,8 +7,9 @@ import {
 } from "react-native";
 import { Playlist, Track, ProgressData } from "../../utils/types.ts";
 import { MusicIcon } from "lucide-react-native";
-import {Thumbnail} from "./Thumbnail.tsx";
+import {Thumbnail} from "../../services/Thumbnail.tsx";
 import {useTheme} from "../../utils/themes.ts";
+import {shuffle} from "../../utils/formatting.ts";
 
 interface PlaylistCardProps {
     playlist: Playlist;
@@ -46,15 +47,6 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
             totalTracks: total,
         };
     }, [allTracks, progressMap, playlist.trackNames]);
-
-    const shuffle = <T,>(arr: T[]): T[] => {
-        const copy = [...arr];
-        for (let i = copy.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        return copy;
-    };
 
     const shuffledCovers = useMemo(() => {
         return covers.length > 1 ? shuffle(covers) : covers;
