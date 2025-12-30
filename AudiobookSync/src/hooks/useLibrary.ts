@@ -9,12 +9,14 @@ interface UseLibraryProps {
     onMetadataLoaded: (data?: AppData, tracks?: Track[]) => Promise<void>;
     onUploadSuccess: () => void;
     onReloadFromStorage: () => Promise<boolean>;
+    onCharacterLoaded: (data: Map<string, {path:string, scheme:object}>) => Promise<void>;
 }
 
 export const useLibrary = ({
                                onMetadataLoaded,
                                onUploadSuccess,
-                               onReloadFromStorage
+                               onReloadFromStorage,
+                               onCharacterLoaded
                         }: UseLibraryProps) => {
     const [allTracks, setAllTracks] = useState<Track[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +56,10 @@ export const useLibrary = ({
                 const appData = scan.appData;
 
                 await onMetadataLoaded(appData, tracks);
+
+                const characterPathMap = scan.characterPathMap;
+
+                await onCharacterLoaded(characterPathMap);
 
                 setAllTracks(tracks)
 

@@ -1,4 +1,4 @@
-import React, {useMemo} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {
     View,
     Text,
@@ -7,36 +7,53 @@ import {
 import { Playlist, Track, ProgressData } from "../utils/types.ts";
 import { Thumbnail } from "../services/Thumbnail.tsx";
 import { useTheme } from "../utils/themes.ts";
+import {shuffle} from "../utils/formatting.ts";
+import {useCharacters} from "../hooks/useCharacters.ts";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CharactersProps {
-
+    open: boolean
 }
 
 
 
-export const Characters: React.FC<CharactersProps> = ({}) => {
+export const Characters: React.FC<CharactersProps> = ({open}) => {
 
-    // const { covers } = useMemo(() => {
-    //
-    // }, []);
 
-    // const shuffledCovers = useMemo(() => {
-    //     return covers.length > 1 ? shuffle(covers) : covers;
-    // }, [covers]);
+    const { getCharacters } = useCharacters()
+
+    const [covers, setCovers] = useState<{
+        path: string
+        scheme: object
+        id: string
+    }[]>([])
+
+    useEffect(() => {
+        if(open) {
+            getCharacters().then(characters_data => {
+                if (characters_data.length > 0 && covers.length !== characters_data.length) setCovers(characters_data)
+            })
+        }
+        else{
+            setCovers([])
+        }
+    }, [open]);
+
+    const shuffledCovers = useMemo(() => {
+        return covers.length > 1 ? shuffle(covers) : covers;
+    }, [covers]);
 
     const styles = STYLES(useTheme())
 
     return (
         <View style={styles.card}>
-                <View style={styles.coverContainer}>
-                    <Thumbnail
-                        images={[]}
-                        intervalMs={8000}
-                        fadeDurationMs={800}
-                    />
-                </View>
-
-
+            <View style={styles.coverContainer}>
+                <Thumbnail
+                    images={shuffledCovers.map(cover => cover.path)}
+                    intervalMs={8000}
+                    fadeDurationMs={800}
+                />
+            </View>
             <View style={styles.infoContainer}>
                 <Text style={styles.name} numberOfLines={1}>
                     {}
@@ -48,11 +65,11 @@ export const Characters: React.FC<CharactersProps> = ({}) => {
 
 const STYLES = (theme:any) => StyleSheet.create({
     card: {
-        marginVertical: 20,
-        width: "100%",
+        flex: 1,
     },
     coverContainer:{
-
+        width: "100%",
+        height: "100%",
     },
     infoContainer: {
         width: "100%",

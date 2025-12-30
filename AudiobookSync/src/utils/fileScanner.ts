@@ -1,6 +1,6 @@
 import RNFS from 'react-native-fs';
 import uuid from 'react-native-uuid';
-import { Track, AppData } from './types.ts';
+import {Track, AppData} from './types.ts';
 
 // Valid extensions
 const AUDIO_EXTS = ['.mp3', '.wav', '.aac', '.m4a', '.ogg', '.flac'];
@@ -37,6 +37,7 @@ export const scanNativePath = async (
 ): Promise<{
     tracks: Track[];
     appData?: AppData;
+    characterPathMap:Map<string, {path:string, scheme:object}>;
 }> => {
     const audioMap = new Map<string, string>();
     const subtitleMap = new Map<string, string>();
@@ -147,8 +148,27 @@ export const scanNativePath = async (
         tracks.push(trackData)
     });
 
+    const characterPathMap = new Map<string, {path:string, scheme:object}>();
+    if(appData?.characters){
+       Object.entries(appData.characters).forEach(([key, value]) => {
+           for (const cover of COVER_EXTS) {
+               const match = `${key}${cover}`;
+               if (coverMap.has(match)) {
+                   let coverPath = coverMap.get(match)!;
+                   characterPathMap.set(key, {
+                       path:coverPath,
+                       // @ts-ignore
+                       scheme:value['scheme'],
+                   })
+                   break;
+               }
+           }
+       })
+    }
+
     return {
         tracks: sortTracks(tracks),
-        appData
+        appData,
+        characterPathMap
     };
 };

@@ -72,7 +72,8 @@ export const LibraryContainer: React.FC<LibraryContainerProps> = ({
             audiobook_progress: progressMap,
             audiobook_playlists: playlists,
             exportedAt: Date.now(),
-            static: {}
+            static: {},
+            characters:{}
         };
 
         const saved = await saveToNativeFilesystem(data);
