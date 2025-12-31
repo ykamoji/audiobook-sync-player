@@ -67,4 +67,5 @@ export interface AppData {
     audiobook_playlists: Playlist[];
     exportedAt: number;
     static: Record<string, Static>;
+    characters: Record<string, object>
 }

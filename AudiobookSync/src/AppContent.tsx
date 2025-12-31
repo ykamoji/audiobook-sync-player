@@ -22,12 +22,14 @@ import TrackPlayer, {
 import {scanNativePath} from "./utils/fileScanner.ts";
 import {AlbumContainer} from "./screens/AlbumContainer.tsx";
 import Toast, {ToastConfig} from "react-native-toast-message";
-import {Library, ListMusic, RefreshCw} from "lucide-react-native";
+import {Library, ListMusic, RefreshCw, User} from "lucide-react-native";
 import {PlayerView, PlayerViewRef} from "./screens/PlayerView.tsx";
 import {PlayerProvider} from "./context/PlayerProvider.tsx";
 import {usePlayerContext} from "./context/PlayerContext.tsx";
 import {useStaticData} from "./hooks/useStaticData.ts";
 import {useTheme} from "./utils/themes.ts";
+import {Characters} from "./screens/Characters.tsx";
+import {useCharacters} from "./hooks/useCharacters.ts";
 
 export const setupPlayer = async () => {
 
@@ -65,7 +67,7 @@ export const setupPlayer = async () => {
     }
 };
 
-type ViewName = "setup" | "library" | "albums";
+type ViewName = "setup" | "library" | "albums" | "characters";
 export type PlayerMode = "mini" | "full";
 
 const MainContent: React.FC = () => {
@@ -118,6 +120,8 @@ const MainContent: React.FC = () => {
         }
     };
 
+    const {loadCharacters}  = useCharacters()
+
     const loadStorage = async () => {
         try {
             const {playlists, filePaths} = await loadInitialNativeMetadata();
@@ -132,6 +136,8 @@ const MainContent: React.FC = () => {
             if (appData?.static) updateStaticData(appData.static)
             await reloadProgress(resultTracks);
             setAllTracks(resultTracks);
+            const characterPathMap = scan.characterPathMap
+            await loadCharacters(characterPathMap);
 
         } catch (e) {
             console.error("Storage load error", e);
@@ -147,7 +153,8 @@ const MainContent: React.FC = () => {
                 if (playlistManager.savedPlaylists.length > 0) setView("albums")
                 else setView("library")
             },
-            onReloadFromStorage
+            onReloadFromStorage,
+            onCharacterLoaded: async (data) => await loadCharacters(data)
         });
 
     const { preparePanelData, updateStaticData } = useStaticData();
@@ -239,7 +246,7 @@ const MainContent: React.FC = () => {
             playerMode === "mini" ? 0 : 70,
             { stiffness: 60, damping: 20 }
         );
-    }, [playerMode]);
+    }, [playerMode, view]);
 
     const bottomStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: bottomBarTranslate.value }]
@@ -310,6 +317,17 @@ const MainContent: React.FC = () => {
                         />
                     </SafeAreaView>
                 </View>
+                <View
+                    style={[
+                        styles.screen,
+                        view !== "characters" && styles.hiddenScreen,
+                    ]}
+                >
+                    <Characters
+                        open={view === 'characters'}
+                    />
+                </View>
+
             </View>
             <PlayerView
                 ref={playerRef}
@@ -333,6 +351,12 @@ const MainContent: React.FC = () => {
                         icon={ListMusic}
                         active={view === "albums"}
                         onPress={() => setView("albums")}
+                    />
+                    <TabButton
+                        label="Characters"
+                        icon={User}
+                        active={view === "characters"}
+                        onPress={() => setView("characters")}
                     />
                     <TabButton
                         label="Library"
